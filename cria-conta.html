@@ -23,86 +23,142 @@ body {
 
 /* HERO */
 .hero-section {
-    background: #0b6b3a;
+    background: linear-gradient(135deg, #0b6b3a, #095c32);
     color: white;
-    padding: 40px 20px;
+    padding: 50px 20px 70px;
     text-align: center;
+    border-bottom-left-radius: 30px;
+    border-bottom-right-radius: 30px;
 }
 
 .logo-main {
     width: 120px;
+    margin-bottom: 10px;
+}
+
+.hero-section h2 {
+    font-weight: 600;
+    margin-top: 10px;
+}
+
+/* AUTH */
+.auth-section {
+    padding: 20px;
+    margin-top: -50px;
 }
 
 /* CARD */
-.auth-section {
-    padding: 20px;
-}
-
 .login-card {
     background: white;
     border-radius: 20px;
     padding: 25px;
-    box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+    box-shadow: 0 15px 40px rgba(0,0,0,0.08);
+    animation: fadeUp 0.5s ease;
+}
+
+@keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
 /* INPUTS */
+.input-group {
+    margin-bottom: 15px;
+}
+
 input {
     width: 100%;
-    padding: 12px;
-    margin-top: 10px;
-    border-radius: 10px;
-    border: 1px solid #ccc;
-}
-
-/* BOTÃO PADRÃO */
-.btn-login {
-    width: 100%;
-    background: #0b6b3a;
-    color: white;
-    border: none;
     padding: 14px;
     border-radius: 12px;
-    margin-top: 15px;
-    font-weight: 600;
-    cursor: pointer;
+    border: 1px solid #e0e0e0;
+    font-size: 0.95rem;
+    background: #fafafa;
+    transition: 0.3s;
 }
 
-/* BOTÃO GOOGLE */
+input:focus {
+    border-color: #0b6b3a;
+    background: white;
+    box-shadow: 0 0 0 3px rgba(11,107,58,0.1);
+    outline: none;
+}
+
+/* BOTÃO PRINCIPAL */
+.btn-login {
+    width: 100%;
+    background: linear-gradient(135deg, #0b6b3a, #095c32);
+    color: white;
+    border: none;
+    padding: 15px;
+    border-radius: 12px;
+    margin-top: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.25s;
+    box-shadow: 0 6px 18px rgba(11,107,58,0.3);
+}
+
+.btn-login:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(11,107,58,0.35);
+}
+
+/* GOOGLE BUTTON PROFISSIONAL */
 .google-btn {
     width: 100%;
-    background: linear-gradient(135deg, #ffffff, #f8f8f8);
-    border: none;
-    border-radius: 14px;
-    padding: 14px;
+    padding: 13px;
+    background: #fff;
+    border: 1px solid #dadce0;
+    border-radius: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 12px;
-    font-weight: 600;
     cursor: pointer;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: #3c4043;
     transition: 0.2s;
-    margin-top: 10px;
 }
 
 .google-btn img {
-    width: 20px;
+    width: 18px;
 }
 
 .google-btn:hover {
-    transform: translateY(-2px);
+    background: #f8f9fa;
 }
 
+.google-btn:active {
+    transform: scale(0.98);
+}
+
+/* SEPARADOR */
 .separator {
     text-align: center;
     margin: 15px 0;
-    color: #888;
+    color: #999;
+    font-size: 0.9rem;
 }
 
+/* LINK */
 a {
     color: #0b6b3a;
     text-decoration: none;
     font-weight: 600;
+}
+
+/* RESPONSIVO */
+@media (min-width: 768px) {
+    .auth-section {
+        display: flex;
+        justify-content: center;
+    }
+
+    .login-card {
+        max-width: 400px;
+        width: 100%;
+    }
 }
 </style>
 </head>
@@ -111,26 +167,35 @@ a {
 
 <div class="main-container">
 
+    <!-- HERO -->
     <div class="hero-section">
         <img src="https://i.postimg.cc/rp5Py0Rr/Eco-Pneus-2-removebg-preview.png" class="logo-main">
         <h2>Sua jornada sustentável começa aqui</h2>
     </div>
 
+    <!-- FORM -->
     <div class="auth-section">
         <div class="login-card">
 
             <h2>Criar Conta</h2>
 
-            <input type="email" id="email" placeholder="E-mail">
-            <input type="password" id="senha" placeholder="Senha">
+            <div class="input-group">
+                <input type="email" id="email" placeholder="E-mail">
+            </div>
 
-            <button class="btn-login" onclick="criarConta()">Criar Conta</button>
+            <div class="input-group">
+                <input type="password" id="senha" placeholder="Senha">
+            </div>
+
+            <button class="btn-login" onclick="criarConta()">
+                Criar Conta
+            </button>
 
             <div class="separator">ou</div>
 
             <button class="google-btn" onclick="googleLogin()">
                 <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg">
-                <span>Criar conta com Google</span>
+                <span>Continuar com Google</span>
             </button>
 
             <p style="margin-top:15px;">
@@ -142,7 +207,7 @@ a {
 
 </div>
 
-<!-- Firebase -->
+<!-- FIREBASE -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 
@@ -157,7 +222,7 @@ if (!firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
 }
 
-// 🔐 CRIAR CONTA
+// CRIAR CONTA
 async function criarConta() {
     const email = document.getElementById('email').value;
     const senha = document.getElementById('senha').value;
@@ -169,14 +234,13 @@ async function criarConta() {
 
     try {
         await firebase.auth().createUserWithEmailAndPassword(email, senha);
-        alert("Conta criada com sucesso!");
         window.location.href = "dashboard.html";
     } catch (error) {
         alert(error.message);
     }
 }
 
-// 🔐 GOOGLE
+// GOOGLE
 async function googleLogin() {
     const provider = new firebase.auth.GoogleAuthProvider();
 
@@ -184,16 +248,11 @@ async function googleLogin() {
         await firebase.auth().signInWithPopup(provider);
         window.location.href = "dashboard.html";
     } catch (error) {
-        alert("Erro: " + error.message);
+        alert(error.message);
     }
 }
 
-// 🔒 AUTO LOGIN
-firebase.auth().onAuthStateChanged(user => {
-    if (user) {
-        window.location.href = "dashboard.html";
-    }
-});
+
 </script>
 
 </body>
