@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nova Coleta - Eco Pneus</title>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<style>
+body {
+    margin:0;
+    font-family: Arial;
+    background:#f4f6f9;
+}
+
+.header {
+    background:#1f7a3a;
+    color:white;
+    padding:15px;
+    font-size:20px;
+}
+
+.container {
+    padding:20px;
+}
+
+.card {
+    background:white;
+    padding:15px;
+    border-radius:12px;
+    margin-bottom:20px;
+    box-shadow:0 4px 10px rgba(0,0,0,0.05);
+}
+
+.btn {
+    width:100%;
+    padding:15px;
+    background:#1f7a3a;
+    color:white;
+    border:none;
+    border-radius:10px;
+    font-size:16px;
+}
+
+#map {
+    height:300px;
+    border-radius:12px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="header">Nova Coleta</div>
+
+<div class="container">
+
+<div class="card">
+<h3>Escolha o local da coleta</h3>
+<div id="map"></div>
+</div>
+
+<div class="card">
+<h3>Quantidade de pneus</h3>
+<input id="qtd" type="number" placeholder="Ex: 50" style="width:100%;padding:10px">
+</div>
+
+<button class="btn" onclick="criarColeta()">Confirmar Coleta</button>
+
+<p id="codigo"></p>
+
+</div>
+
+<script>
+let map, marker, lat, lng;
+
+// Inicializa mapa
+map = L.map('map').setView([-22.90, -47.06], 13);
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap'
+}).addTo(map);
+
+marker = L.marker([-22.90, -47.06]).addTo(map);
+
+// Clique no mapa
+map.on('click', function(e){
+    lat = e.latlng.lat;
+    lng = e.latlng.lng;
+    marker.setLatLng(e.latlng);
+});
+
+// Criar coleta
+async function criarColeta(){
+    let token = localStorage.getItem('token');
+
+    let res = await fetch('http://127.0.0.1:3000/coleta', {
+        method:'POST',
+        headers:{
+            'Content-Type':'application/json',
+            'Authorization':'Bearer ' + token
+        },
+        body: JSON.stringify({
+            quantidade: document.getElementById('qtd').value,
+            lat,
+            lng
+        })
+    });
+
+    let d = await res.json();
+
+    document.getElementById('codigo').innerText = "Código: " + d.codigo;
+}
+</script>
+
+</body>
+</html>

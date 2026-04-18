@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eco Pneus - Login</title>
+
+    <!-- Fontes e Ícones -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+    <!-- Estilo -->
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="main-container">
+    <div class="hero-section">
+        <div class="logo-container">
+            <img src="https://i.postimg.cc/rp5Py0Rr/Eco-Pneus-2-removebg-preview.png" alt="Eco Pneus" class="logo-main">
+        </div>
+
+        <div class="hero-content">
+            <h1>Transformando pneus em novos caminhos para um <span>futuro sustentável.</span></h1>
+            <p>Conectamos geradores, transportadores e recicladoras em um sistema inteligente.</p>
+        </div>
+    </div>
+
+    <div class="auth-section">
+        <div class="login-card">
+            <h2>Bem-vindo ao <span>Eco Pneus</span></h2>
+            <p>Faça login para acessar o sistema</p>
+
+            <div class="input-group">
+                <label>E-mail</label>
+                <div class="field">
+                    <i class="far fa-envelope"></i>
+                    <input type="email" id="email" placeholder="Digite seu e-mail" required>
+                </div>
+            </div>
+
+            <div class="input-group">
+                <label>Senha</label>
+                <div class="field">
+                    <i class="fas fa-lock"></i>
+                    <input type="password" id="senha" placeholder="Digite sua senha" required>
+                    <i class="far fa-eye show-pass"></i>
+                </div>
+            </div>
+
+            <button class="btn-login" onclick="login()">
+                <i class="fas fa-arrow-right"></i> Entrar
+            </button>
+
+            <div class="separator">ou</div>
+
+            <button class="btn-google" onclick="googleLogin()">
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg">
+                <span>Entrar com Google</span>
+            </button>
+
+            <div class="signup-link-container">
+                Não tem uma conta? <a href="cria-conta.html">Cadastre-se</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+
+<script>
+const firebaseConfig = { apiKey: "AIzaSyCnO3B_Px9KkQUl79MVq3zcxwoxa3x87XU", 
+authDomain: "eco-pneus.firebaseapp.com", projectId: "eco-pneus",
+storageBucket: "eco-pneus.firebasestorage.app",
+messagingSenderId: "621224107269", 
+appId: "1:621224107269:web:13cd1e804ee275621b2b6c" };
+
+firebase.initializeApp(firebaseConfig);
+
+// Mostrar/ocultar senha
+document.querySelector(".show-pass").addEventListener("click", function () {
+    const senha = document.getElementById("senha");
+    senha.type = senha.type === "password" ? "text" : "password";
+});
+
+// Login tradicional (Node.js + JWT)
+async function login() {
+    const email = document.getElementById("email").value;
+    const senha = document.getElementById("senha").value;
+
+    if (!email || !senha) {
+        alert("Preencha todos os campos!");
+        return;
+    }
+
+    try {
+        const response = await fetch("/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, senha })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            alert(data.msg);
+            return;
+        }
+
+        localStorage.setItem("token", data.token);
+        window.location.href = "dashboard.html";
+    } catch (error) {
+        alert("Erro ao conectar ao servidor.");
+        console.error(error);
+    }
+}
+
+// Autenticação no backend após login com Google
+async function autenticarNoBackend(idToken) {
+    const res = await fetch("/google-login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token: idToken })
+    });
+
+    const data = await res.json();
+
+    if (data.token) {
+        localStorage.setItem("token", data.token);
+        window.location.href = "dashboard.html";
+    } else {
+        alert("Erro ao autenticar no backend.");
+    }
+}
+
+// Login com Google
+async function googleLogin() {
+    const provider = new firebase.auth.GoogleAuthProvider();
+
+    try {
+        const result = await firebase.auth().signInWithPopup(provider);
+        const idToken = await result.user.getIdToken();
+        await autenticarNoBackend(idToken);
+    } catch (error) {
+        alert("Erro ao entrar com Google: " + error.message);
+    }
+}
+</script>
+
+</body>
+</html>
