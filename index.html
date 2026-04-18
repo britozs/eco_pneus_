@@ -1,3 +1,37 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Eco Pneus - Login</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+
+<div class="main-container">
+    <div class="hero-section">
+        <h1>Eco Pneus</h1>
+    </div>
+
+    <div class="auth-section">
+        <div class="login-card">
+
+            <input type="email" id="email" placeholder="E-mail">
+            <input type="password" id="senha" placeholder="Senha">
+
+            <button onclick="login()">Entrar</button>
+
+            <button onclick="googleLogin()">Entrar com Google</button>
+
+            <p><a href="cria-conta.html">Criar conta</a></p>
+
+        </div>
+    </div>
+</div>
+
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 
@@ -8,50 +42,22 @@ storageBucket: "eco-pneus.firebasestorage.app",
 messagingSenderId: "621224107269", 
 appId: "1:621224107269:web:13cd1e804ee275621b2b6c" };
 
-if (!firebase.apps.length) {
-    firebase.initializeApp(firebaseConfig);
+firebase.initializeApp(firebaseConfig);
+
+async function login(){
+ const email = email.value;
+ const senha = document.getElementById('senha').value;
+
+ await firebase.auth().signInWithEmailAndPassword(email, senha);
+ window.location.href = "dashboard.html";
 }
 
-// 👁 Mostrar senha
-document.querySelector(".show-pass").addEventListener("click", function () {
-    const senha = document.getElementById("senha");
-    senha.type = senha.type === "password" ? "text" : "password";
-});
-
-// 🔐 LOGIN COM EMAIL
-async function login() {
-    const email = document.getElementById("email").value;
-    const senha = document.getElementById("senha").value;
-
-    if (!email || !senha) {
-        alert("Preencha os campos!");
-        return;
-    }
-
-    try {
-        await firebase.auth().signInWithEmailAndPassword(email, senha);
-        window.location.href = "dashboard.html";
-    } catch (error) {
-        alert("Erro: " + error.message);
-    }
+async function googleLogin(){
+ const provider = new firebase.auth.GoogleAuthProvider();
+ await firebase.auth().signInWithPopup(provider);
+ window.location.href = "dashboard.html";
 }
-
-// 🔐 LOGIN GOOGLE
-async function googleLogin() {
-    const provider = new firebase.auth.GoogleAuthProvider();
-
-    try {
-        await firebase.auth().signInWithPopup(provider);
-        window.location.href = "dashboard.html";
-    } catch (error) {
-        alert("Erro ao entrar com Google: " + error.message);
-    }
-}
-
-// 🔒 AUTO LOGIN
-firebase.auth().onAuthStateChanged(user => {
-    if (user) {
-        window.location.href = "dashboard.html";
-    }
-});
 </script>
+
+</body>
+</html>
