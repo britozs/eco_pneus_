@@ -1,146 +1,200 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Eco Pneus - Criar Conta</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link rel="stylesheet" href="css/style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Eco Pneus - Criar Conta</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+<style>
+body {
+    margin: 0;
+    font-family: 'Inter', sans-serif;
+    background: #f4f6f9;
+}
+
+/* CONTAINER */
+.main-container {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+/* HERO */
+.hero-section {
+    background: #0b6b3a;
+    color: white;
+    padding: 40px 20px;
+    text-align: center;
+}
+
+.logo-main {
+    width: 120px;
+}
+
+/* CARD */
+.auth-section {
+    padding: 20px;
+}
+
+.login-card {
+    background: white;
+    border-radius: 20px;
+    padding: 25px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+}
+
+/* INPUTS */
+input {
+    width: 100%;
+    padding: 12px;
+    margin-top: 10px;
+    border-radius: 10px;
+    border: 1px solid #ccc;
+}
+
+/* BOTÃO PADRÃO */
+.btn-login {
+    width: 100%;
+    background: #0b6b3a;
+    color: white;
+    border: none;
+    padding: 14px;
+    border-radius: 12px;
+    margin-top: 15px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+/* BOTÃO GOOGLE */
+.google-btn {
+    width: 100%;
+    background: linear-gradient(135deg, #ffffff, #f8f8f8);
+    border: none;
+    border-radius: 14px;
+    padding: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    transition: 0.2s;
+    margin-top: 10px;
+}
+
+.google-btn img {
+    width: 20px;
+}
+
+.google-btn:hover {
+    transform: translateY(-2px);
+}
+
+.separator {
+    text-align: center;
+    margin: 15px 0;
+    color: #888;
+}
+
+a {
+    color: #0b6b3a;
+    text-decoration: none;
+    font-weight: 600;
+}
+</style>
 </head>
+
 <body>
 
 <div class="main-container">
+
     <div class="hero-section">
-        <div class="logo-container">
-            <img src="https://i.postimg.cc/rp5Py0Rr/Eco-Pneus-2-removebg-preview.png" alt="Eco Pneus" class="logo-main">
-        </div>
-
-        <div class="hero-content">
-            <h1>Sua jornada sustentável <span>começa aqui.</span></h1>
-            <p>Cadastre-se para gerenciar suas coletas, emitir certificados e transformar o futuro ambiental do nosso planeta.</p>
-        </div>
-
-        <div class="features-row">
-            <div class="feature-card">
-                <i class="fas fa-check-circle"></i>
-                <div>
-                    <strong>Rápido e Grátis</strong>
-                    <span>Acesso imediato ao ecossistema</span>
-                </div>
-            </div>
-        </div>
+        <img src="https://i.postimg.cc/rp5Py0Rr/Eco-Pneus-2-removebg-preview.png" class="logo-main">
+        <h2>Sua jornada sustentável começa aqui</h2>
     </div>
 
     <div class="auth-section">
         <div class="login-card">
-            <div class="brand-icon">
-                <i class="fas fa-user-plus"></i>
-            </div>
-            <h2>Criar <span>Conta</span></h2>
-            <p class="instruction">Preencha os campos para se registrar</p>
 
-            <div class="input-group">
-                <label>E-mail</label>
-                <div class="field">
-                    <i class="far fa-envelope"></i>
-                    <input type="email" id="email" placeholder="Digite seu e-mail">
-                </div>
-            </div>
+            <h2>Criar Conta</h2>
 
-            <div class="input-group">
-                <label>Senha</label>
-                <div class="field">
-                    <i class="fas fa-lock"></i>
-                    <input type="password" id="senha" placeholder="Crie uma senha">
-                </div>
-            </div>
+            <input type="email" id="email" placeholder="E-mail">
+            <input type="password" id="senha" placeholder="Senha">
 
-            <button class="btn-login" onclick="criarConta()">
-                <i class="fas fa-user-check"></i> Criar Conta
+            <button class="btn-login" onclick="criarConta()">Criar Conta</button>
+
+            <div class="separator">ou</div>
+
+            <button class="google-btn" onclick="googleLogin()">
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg">
+                <span>Criar conta com Google</span>
             </button>
 
-            <div class="separator">ou cadastre-se com</div>
+            <p style="margin-top:15px;">
+                Já tem conta? <a href="index.html">Entrar</a>
+            </p>
 
-            <button class="btn-google" onclick="googleLogin()">
-              <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
-              <span>Entrar com Google</span>
-            </button>
-
-            <div class="signup-link-container">
-                Já tem uma conta? <a href="index.html" class="link-green">Fazer Login</a>
-            </div>
-
-            <div class="copyright">
-                © 2025 Eco Pneus. Todos os direitos reservados. ♻️
-            </div>
         </div>
     </div>
+
 </div>
 
+<!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 
 <script>
-// 1. CONFIGURAÇÃO (Certifique-se que esta parte rode primeiro)
-const firebaseConfig = {
-    apiKey: "AIzaSyCnO3B_Px9KkQUl79MVq3zcxwoxa3x87XU",
-    authDomain: "eco-pneus.firebaseapp.com",
-    projectId: "eco-pneus",
-    storageBucket: "eco-pneus.firebasestorage.app",
-    messagingSenderId: "621224107269",
-    appId: "1:621224107269:web:13cd1e804ee275621b2b6c"
-};
+const firebaseConfig = { apiKey: "AIzaSyCnO3B_Px9KkQUl79MVq3zcxwoxa3x87XU", 
+authDomain: "eco-pneus.firebaseapp.com", projectId: "eco-pneus",
+storageBucket: "eco-pneus.firebasestorage.app",
+messagingSenderId: "621224107269", 
+appId: "1:621224107269:web:13cd1e804ee275621b2b6c" };
 
-// INICIALIZAÇÃO (Isso resolve o erro que você recebeu)
 if (!firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
 }
 
-// Suas funções originais permanecem aqui
-async function autenticarNoBackend(idToken) {
-    try {
-        const res = await fetch("http://localhost:3000/google-login", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ token: idToken })
-        });
-        const data = await res.json();
-        if (data.token) {
-            localStorage.setItem("token", data.token);
-            window.location.href = "dashboard.html";
-        }
-    } catch (err) {
-        console.error(err);
-        alert("Erro ao conectar com o servidor.");
-    }
-}
-
-async function googleLogin() {
-    const provider = new firebase.auth.GoogleAuthProvider();
-    try {
-        const result = await firebase.auth().signInWithPopup(provider);
-        const idToken = await result.user.getIdToken();
-        await autenticarNoBackend(idToken);
-    } catch (error) {
-        alert("Erro Google: " + error.message);
-    }
-}
-
+// 🔐 CRIAR CONTA
 async function criarConta() {
     const email = document.getElementById('email').value;
     const senha = document.getElementById('senha').value;
-    if (!email || !senha) return alert("Preencha os campos!");
+
+    if (!email || !senha) {
+        alert("Preencha os campos!");
+        return;
+    }
 
     try {
-        const userCredential = await firebase.auth().createUserWithEmailAndPassword(email, senha);
-        const idToken = await userCredential.user.getIdToken();
-        alert("Conta criada com sucesso! 🚀");
-        await autenticarNoBackend(idToken);
+        await firebase.auth().createUserWithEmailAndPassword(email, senha);
+        alert("Conta criada com sucesso!");
+        window.location.href = "dashboard.html";
     } catch (error) {
         alert(error.message);
     }
 }
+
+// 🔐 GOOGLE
+async function googleLogin() {
+    const provider = new firebase.auth.GoogleAuthProvider();
+
+    try {
+        await firebase.auth().signInWithPopup(provider);
+        window.location.href = "dashboard.html";
+    } catch (error) {
+        alert("Erro: " + error.message);
+    }
+}
+
+// 🔒 AUTO LOGIN
+firebase.auth().onAuthStateChanged(user => {
+    if (user) {
+        window.location.href = "dashboard.html";
+    }
+});
 </script>
+
 </body>
 </html>

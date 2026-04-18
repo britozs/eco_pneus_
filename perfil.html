@@ -5,10 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Perfil - Eco Pneus</title>
 
-<!-- Google Fonts -->
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-
-<!-- Ícones Lucide -->
 <script src="https://unpkg.com/lucide@latest"></script>
 
 <!-- Firebase -->
@@ -22,43 +19,31 @@ body {
     background: #f4f6f9;
 }
 
-/* HEADER VERDE */
 .header {
     background: #0b6b3a;
     color: white;
     padding: 30px 20px 60px;
     border-bottom-left-radius: 30px;
     border-bottom-right-radius: 30px;
-    position: relative;
 }
 
-/* BOTÕES SUPERIORES */
 .top-icons {
     display: flex;
     justify-content: space-between;
-    align-items: center;
 }
 
-/* ESTILO DOS BOTÕES */
 .icon-btn {
     background: transparent;
     border: none;
     cursor: pointer;
     color: white;
-    padding: 5px;
 }
 
 .icon-btn svg {
     width: 28px;
     height: 28px;
-    stroke-width: 2.5;
 }
 
-.icon-btn:hover {
-    opacity: 0.8;
-}
-
-/* PERFIL */
 .profile-info {
     display: flex;
     align-items: center;
@@ -76,22 +61,13 @@ body {
 
 .profile-text h2 {
     margin: 0;
-    font-size: 22px;
 }
 
-.profile-text p {
-    margin: 3px 0;
-    font-size: 14px;
-    opacity: 0.9;
-}
-
-/* CONTEÚDO ABAIXO */
 .content {
     margin-top: -40px;
     padding: 20px;
 }
 
-/* GRID */
 .grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -102,31 +78,8 @@ body {
     background: white;
     border-radius: 15px;
     padding: 15px;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
 }
 
-.card h3 {
-    margin: 0 0 10px;
-    color: #0b6b3a;
-}
-
-/* ESTRELAS */
-.stars {
-    color: gold;
-    font-size: 18px;
-}
-
-/* MAPA */
-.map {
-    height: 120px;
-    background: #ddd;
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-/* RESPONSIVO */
 @media(max-width: 600px){
     .grid {
         grid-template-columns: 1fr;
@@ -137,9 +90,7 @@ body {
 
 <body>
 
-<!-- HEADER -->
 <div class="header">
-
     <div class="top-icons">
         <button class="icon-btn" onclick="voltar()">
             <i data-lucide="arrow-left"></i>
@@ -154,65 +105,58 @@ body {
         <img id="foto" class="profile-img" src="https://via.placeholder.com/150">
 
         <div class="profile-text">
-            <h2 id="nome">Nome da Empresa</h2>
-            <p id="cnpj">CPF/CNPJ</p>
-            <p id="telefone">Telefone</p>
-            <p id="email">email@email.com</p>
+            <h2 id="nome">Carregando...</h2>
+            <p id="cnpj">---</p>
+            <p id="telefone">---</p>
+            <p id="email">---</p>
         </div>
     </div>
 </div>
 
-<!-- CONTEÚDO (SCROLL) -->
 <div class="content">
     <div class="grid">
 
         <div class="card">
             <h3>Avaliação</h3>
-            <div class="stars">★★★★★</div>
+            <p>★★★★★</p>
         </div>
 
         <div class="card">
             <h3>Materiais</h3>
-            <ul>
-                <li>Pneus de passeio</li>
-                <li>Pneus de caminhão</li>
-                <li>Borracha</li>
-            </ul>
+            <p>Pneus e borracha</p>
         </div>
 
         <div class="card">
             <h3>Coletas</h3>
-            <p>12 realizadas</p>
+            <p>--</p>
         </div>
 
         <div class="card">
-            <h3>Registros</h3>
+            <h3>Status</h3>
             <p>Empresa verificada</p>
-        </div>
-
-        <div class="card" style="grid-column: span 2;">
-            <h3>Localização</h3>
-            <div class="map">Mapa aqui</div>
         </div>
 
     </div>
 </div>
 
 <script>
-// Inicializa os ícones Lucide
 lucide.createIcons();
 
 /* ================= FIREBASE ================= */
 const firebaseConfig = {
-    apiKey: "AIzaSyCnO3B_Px9KkQUl79MVq3zcxwoxa3x87XU",
+    apiKey: "SUA_API_KEY",
     authDomain: "eco-pneus.firebaseapp.com",
     projectId: "eco-pneus"
 };
 
-firebase.initializeApp(firebaseConfig);
+// 🔥 EVITA ERRO DE DUPLICAÇÃO
+if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+}
+
 const auth = firebase.auth();
 
-/* ================= CARREGAR DADOS ================= */
+/* ================= AUTH ================= */
 auth.onAuthStateChanged(user => {
     if (!user) {
         window.location.href = "index.html";
@@ -220,15 +164,15 @@ auth.onAuthStateChanged(user => {
     }
 
     document.getElementById("nome").innerText =
-        user.displayName || "Empresa";
+        user.displayName || "Usuário";
 
     document.getElementById("email").innerText =
-        user.email;
+        user.email || "Sem email";
 
     document.getElementById("foto").src =
         user.photoURL || "https://via.placeholder.com/150";
 
-    // Dados simulados (integrar com Firestore depois)
+    // Dados temporários
     document.getElementById("cnpj").innerText =
         "00.000.000/0001-00";
 
@@ -242,7 +186,7 @@ function voltar() {
 }
 
 function editar() {
-    alert("Abrir tela de edição do perfil.");
+    alert("Editar perfil em breve");
 }
 </script>
 

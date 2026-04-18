@@ -5,20 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Eco Pneus - Dashboard</title>
 
-    <link rel="stylesheet" href="css/dashboard.css">
+    <link rel="stylesheet" href="./css/dashboard.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body>
-
-<!-- Verificação de Login -->
-<script>
-const token = localStorage.getItem("token");
-if (!token) {
-    alert("Você precisa fazer login!");
-    window.location.href = "index.html";
-}
-</script>
 
 <header class="main-header">
     <div class="header-content">
@@ -34,8 +25,7 @@ if (!token) {
 
 <main id="app-content">
     <div class="welcome-section">
-        <h2>Bem-vindo ao Sistema</h2>
-        <p>Selecione uma opção no menu abaixo.</p>
+        <h2>Carregando...</h2>
     </div>
 </main>
 
@@ -58,132 +48,164 @@ if (!token) {
     </button>
 </nav>
 
-<script>
-lucide.createIcons();
+<script type="module">
 
-// Navegação entre abas
-function nav(aba) {
-    const content = document.getElementById("app-content");
+// ================= FIREBASE =================
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 
-    // Remove classe ativa dos botões
-    document.querySelectorAll('.nav-item').forEach(btn => {
-        btn.classList.remove('active');
+import {
+  getAuth,
+  onAuthStateChanged,
+  signOut
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+import {
+  getFirestore,
+  collection,
+  addDoc,
+  getDocs,
+  query,
+  where
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+// 🔑 COLOQUE SUA CONFIG AQUI
+const firebaseConfig = { apiKey: "AIzaSyCnO3B_Px9KkQUl79MVq3zcxwoxa3x87XU", 
+authDomain: "eco-pneus.firebaseapp.com", projectId: "eco-pneus",
+storageBucket: "eco-pneus.firebasestorage.app",
+messagingSenderId: "621224107269", 
+appId: "1:621224107269:web:13cd1e804ee275621b2b6c" };
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+// ================= AUTH =================
+onAuthStateChanged(auth, (user) => {
+  if (!user) {
+    alert("Você precisa fazer login!");
+    window.location.href = "index.html";
+  } else {
+    nav("dashboard");
+  }
+});
+
+// ================= NAVEGAÇÃO =================
+window.nav = function(aba) {
+  const content = document.getElementById("app-content");
+
+  document.querySelectorAll('.nav-item').forEach(btn => {
+    btn.classList.remove('active');
+  });
+
+  event.currentTarget.classList.add('active');
+
+  if (aba === "dashboard") {
+    content.innerHTML = `
+      <div class="welcome-section">
+        <h2>Bem-vindo ao Eco Pneus</h2>
+        <p>Gerencie suas coletas de forma sustentável.</p>
+      </div>
+    `;
+  }
+
+  if (aba === "registrar") {
+    content.innerHTML = `
+      <div class="form-container">
+        <h2>Registrar Coleta</h2>
+        <input type="number" id="quantidade" placeholder="Quantidade de Pneus">
+        <input type="text" id="endereco" placeholder="Endereço">
+        <button onclick="registrarColeta()">Registrar</button>
+      </div>
+    `;
+  }
+
+  if (aba === "listar") {
+    listarColetas();
+  }
+
+  if (aba === "perfil") {
+    window.location.href = "perfil.html";
+  }
+
+  lucide.createIcons();
+};
+
+// ================= REGISTRAR =================
+window.registrarColeta = async function() {
+  const user = auth.currentUser;
+
+  const quantidade = document.getElementById("quantidade").value;
+  const endereco = document.getElementById("endereco").value;
+
+  if (!quantidade || !endereco) {
+    alert("Preencha todos os campos!");
+    return;
+  }
+
+  try {
+    await addDoc(collection(db, "coletas"), {
+      uid: user.uid,
+      quantidade,
+      endereco,
+      status: "Pendente",
+      data: new Date()
     });
 
-    // Adiciona a classe ativa ao botão clicado
-    event.currentTarget.classList.add('active');
+    alert("Coleta registrada!");
+    nav("listar");
 
-    if (aba === "dashboard") {
-        content.innerHTML = `
-            <div class="welcome-section">
-                <h2>Bem-vindo ao Sistema</h2>
-                <p>Gerencie suas coletas de pneus de forma sustentável.</p>
-            </div>
-        `;
-    }
+  } catch (e) {
+    console.error(e);
+    alert("Erro ao salvar");
+  }
+};
 
-    if (aba === "registrar") {
-        content.innerHTML = `
-            <div class="form-container">
-                <h2>Registrar Coleta</h2>
-                <input type="number" id="quantidade" placeholder="Quantidade de Pneus">
-                <input type="text" id="endereco" placeholder="Endereço">
-                <button onclick="registrarColeta()">Registrar</button>
-            </div>
-        `;
-    }
+// ================= LISTAR =================
+window.listarColetas = async function() {
+  const user = auth.currentUser;
 
-    if (aba === "listar") {
-        listarColetas();
-    }
+  const q = query(
+    collection(db, "coletas"),
+    where("uid", "==", user.uid)
+  );
 
-    // Redireciona para a página de perfil
-    if (aba === "perfil") {
-        window.location.href = "perfil.html";
-    }
+  const snapshot = await getDocs(q);
 
-    lucide.createIcons();
-}
+  let html = "<h2>Lista de Coletas</h2>";
 
-// Registrar coleta
-async function registrarColeta() {
-    const token = localStorage.getItem("token");
-    const quantidade = document.getElementById("quantidade").value;
-    const endereco = document.getElementById("endereco").value;
+  if (snapshot.empty) {
+    html += "<p>Nenhuma coleta registrada.</p>";
+  } else {
+    html += "<ul>";
 
-    if (!quantidade || !endereco) {
-        alert("Preencha todos os campos!");
-        return;
-    }
+    snapshot.forEach(doc => {
+      const c = doc.data();
 
-    try {
-        const res = await fetch("/coleta", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Authorization": "Bearer " + token
-            },
-            body: JSON.stringify({ quantidade, endereco })
-        });
+      html += `
+        <li>
+          <strong>${c.quantidade} pneus</strong><br>
+          📍 ${c.endereco}<br>
+          📅 ${new Date(c.data.seconds * 1000).toLocaleDateString()}
+        </li>
+      `;
+    });
 
-        const data = await res.json();
+    html += "</ul>";
+  }
 
-        if (!res.ok) {
-            alert(data.msg || "Erro ao registrar coleta.");
-            return;
-        }
+  document.getElementById("app-content").innerHTML = html;
+};
 
-        alert("Coleta registrada com sucesso!");
-        nav("listar");
-    } catch (error) {
-        console.error(error);
-        alert("Erro ao conectar com o servidor.");
-    }
-}
-
-// Listar coletas
-async function listarColetas() {
-    const token = localStorage.getItem("token");
-
-    try {
-        const res = await fetch("/coletas", {
-            headers: {
-                "Authorization": "Bearer " + token
-            }
-        });
-
-        const coletas = await res.json();
-
-        let html = "<h2>Lista de Coletas</h2>";
-
-        if (!coletas.length) {
-            html += "<p>Nenhuma coleta registrada.</p>";
-        } else {
-            html += "<ul>";
-            coletas.forEach(c => {
-                html += `
-                    <li>
-                        <strong>${c.quantidade} pneus</strong><br>
-                        📍 ${c.endereco}<br>
-                        📅 ${c.data}
-                    </li>
-                `;
-            });
-            html += "</ul>";
-        }
-
-        document.getElementById("app-content").innerHTML = html;
-    } catch (error) {
-        console.error(error);
-        alert("Erro ao carregar coletas.");
-    }
-}
-
-// Logout (caso queira usar no dashboard)
-function logout() {
-    localStorage.removeItem("token");
+// ================= LOGOUT =================
+window.logout = function() {
+  signOut(auth).then(() => {
     window.location.href = "index.html";
-}
+  });
+};
+
+// Inicializa ícones
+lucide.createIcons();
+
 </script>
 
 </body>

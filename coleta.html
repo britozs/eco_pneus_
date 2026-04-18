@@ -8,6 +8,11 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
 <style>
 body {
     margin:0;
@@ -74,45 +79,85 @@ body {
 </div>
 
 <script>
-let map, marker, lat, lng;
 
-// Inicializa mapa
-map = L.map('map').setView([-22.90, -47.06], 13);
+// 🔥 CONFIG FIREBASE
+const firebaseConfig = { apiKey: "AIzaSyCnO3B_Px9KkQUl79MVq3zcxwoxa3x87XU", 
+authDomain: "eco-pneus.firebaseapp.com", projectId: "eco-pneus",
+storageBucket: "eco-pneus.firebasestorage.app",
+messagingSenderId: "621224107269", 
+appId: "1:621224107269:web:13cd1e804ee275621b2b6c" };
+
+if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+}
+
+const auth = firebase.auth();
+const db = firebase.firestore();
+
+let map, marker, lat = -22.90, lng = -47.06;
+
+// 🔐 PROTEÇÃO
+auth.onAuthStateChanged(user => {
+    if (!user) {
+        window.location.href = "index.html";
+    }
+});
+
+// 🗺️ MAPA
+map = L.map('map').setView([lat, lng], 13);
 
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '© OpenStreetMap'
 }).addTo(map);
 
-marker = L.marker([-22.90, -47.06]).addTo(map);
+marker = L.marker([lat, lng]).addTo(map);
 
-// Clique no mapa
 map.on('click', function(e){
     lat = e.latlng.lat;
     lng = e.latlng.lng;
     marker.setLatLng(e.latlng);
 });
 
-// Criar coleta
-async function criarColeta(){
-    let token = localStorage.getItem('token');
-
-    let res = await fetch('http://127.0.0.1:3000/coleta', {
-        method:'POST',
-        headers:{
-            'Content-Type':'application/json',
-            'Authorization':'Bearer ' + token
-        },
-        body: JSON.stringify({
-            quantidade: document.getElementById('qtd').value,
-            lat,
-            lng
-        })
-    });
-
-    let d = await res.json();
-
-    document.getElementById('codigo').innerText = "Código: " + d.codigo;
+// 🔢 GERAR CÓDIGO
+function gerarCodigo() {
+    return Math.floor(1000 + Math.random() * 9000); // 4 dígitos
 }
+
+// 🚀 CRIAR COLETA
+async function criarColeta(){
+    const user = auth.currentUser;
+
+    const quantidade = document.getElementById('qtd').value;
+
+    if (!quantidade) {
+        alert("Informe a quantidade!");
+        return;
+    }
+
+    const codigo = gerarCodigo();
+
+    try {
+        await db.collection("coletas").add({
+            uid: user.uid,
+            quantidade: Number(quantidade),
+            lat: lat,
+            lng: lng,
+            codigo: codigo,
+            status: "Pendente",
+            data: new Date()
+        });
+
+        document.getElementById('codigo').innerText =
+            "Código da coleta: " + codigo;
+
+        alert("Coleta criada com sucesso!");
+
+    } catch (e) {
+        console.error(e);
+        alert("Erro ao salvar coleta.");
+    }
+}
+
 </script>
 
 </body>
