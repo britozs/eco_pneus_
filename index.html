@@ -1,45 +1,3 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Eco Pneus - Login</title>
-
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css">
-</head>
-<body>
-
-<div class="main-container">
-    <div class="hero-section">
-        <div class="logo-container">
-            <img src="https://i.postimg.cc/rp5Py0Rr/Eco-Pneus-2-removebg-preview.png" class="logo-main">
-        </div>
-
-        <div class="hero-content">
-            <h1>Transformando pneus em novos caminhos para um <span>futuro sustentável.</span></h1>
-            <p>Conectamos tudo em um sistema inteligente.</p>
-        </div>
-    </div>
-
-    <div class="auth-section">
-        <div class="login-card">
-            <h2>Bem-vindo ao <span>Eco Pneus</span></h2>
-            <p>Faça login para acessar</p>
-
-            <button class="btn-google" onclick="googleLogin()">
-                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg">
-                <span>Entrar com Google</span>
-            </button>
-
-            <div class="signup-link-container">
-                <a href="cria-conta.html">Criar conta</a>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 
@@ -50,9 +8,35 @@ storageBucket: "eco-pneus.firebasestorage.app",
 messagingSenderId: "621224107269", 
 appId: "1:621224107269:web:13cd1e804ee275621b2b6c" };
 
-firebase.initializeApp(firebaseConfig);
+if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+}
 
-// 🔐 LOGIN COM GOOGLE (SEM BACKEND)
+// 👁 Mostrar senha
+document.querySelector(".show-pass").addEventListener("click", function () {
+    const senha = document.getElementById("senha");
+    senha.type = senha.type === "password" ? "text" : "password";
+});
+
+// 🔐 LOGIN COM EMAIL
+async function login() {
+    const email = document.getElementById("email").value;
+    const senha = document.getElementById("senha").value;
+
+    if (!email || !senha) {
+        alert("Preencha os campos!");
+        return;
+    }
+
+    try {
+        await firebase.auth().signInWithEmailAndPassword(email, senha);
+        window.location.href = "dashboard.html";
+    } catch (error) {
+        alert("Erro: " + error.message);
+    }
+}
+
+// 🔐 LOGIN GOOGLE
 async function googleLogin() {
     const provider = new firebase.auth.GoogleAuthProvider();
 
@@ -60,17 +44,14 @@ async function googleLogin() {
         await firebase.auth().signInWithPopup(provider);
         window.location.href = "dashboard.html";
     } catch (error) {
-        alert("Erro ao entrar: " + error.message);
+        alert("Erro ao entrar com Google: " + error.message);
     }
 }
 
-// 🔒 já logado? entra direto
+// 🔒 AUTO LOGIN
 firebase.auth().onAuthStateChanged(user => {
     if (user) {
         window.location.href = "dashboard.html";
     }
 });
 </script>
-
-</body>
-</html>
