@@ -1,164 +1,133 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Nova Coleta - Eco Pneus</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nova Coleta - Eco Pneus</title>
+    <link rel="icon" href="https://i.postimg.cc/rp5Py0Rr/Eco-Pneus-2-removebg-preview.png">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <link rel="stylesheet" href="global.css">
+    <link rel="stylesheet" href="coleta.css">
+</head>
+<body>
 
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<div class="coleta-page">
+
+    <!-- HEADER -->
+    <div class="coleta-header">
+        <button class="back-btn" onclick="voltar()">&#8592;</button>
+        <div>
+            <h1>Nova Coleta com Mapa</h1>
+            <p class="header-sub">Selecione o local e preencha os dados</p>
+        </div>
+    </div>
+
+    <!-- PROGRESS -->
+    <div class="progress-bar">
+        <div class="progress-fill" id="progress-fill" style="width:33%"></div>
+    </div>
+    <div class="step-labels">
+        <span class="step-label active" id="step-1-label">1. Local</span>
+        <span class="step-label" id="step-2-label">2. Dados</span>
+        <span class="step-label" id="step-3-label">3. Confirmar</span>
+    </div>
+
+    <!-- STEPS -->
+    <div class="coleta-content">
+
+        <!-- STEP 1: MAPA -->
+        <div class="step-content active" id="step-1">
+            <div class="card fade-up">
+                <h3>&#128205; Escolha o local da coleta</h3>
+                <div id="map"></div>
+                <p class="map-hint">Toque no mapa ou arraste o marcador para definir o local</p>
+                <div class="location-info" id="location-info">
+                    <span class="loc-icon">&#128205;</span>
+                    <span id="loc-text">Buscando localizacao...</span>
+                </div>
+            </div>
+            <button class="btn-next" onclick="nextStep(2)">Proximo: Dados da Coleta &#8594;</button>
+        </div>
+
+        <!-- STEP 2: DADOS -->
+        <div class="step-content" id="step-2">
+            <div class="card fade-up">
+                <h3>&#128203; Dados da Coleta</h3>
+
+                <label>Tipo de Pneu *</label>
+                <div class="tipo-grid">
+                    <div class="tipo-chip" onclick="selTipo(this,'Passeio')"><span class="chip-icon">&#128663;</span>Passeio</div>
+                    <div class="tipo-chip" onclick="selTipo(this,'Caminhao')"><span class="chip-icon">&#128666;</span>Caminhao</div>
+                    <div class="tipo-chip" onclick="selTipo(this,'Moto')"><span class="chip-icon">&#127949;</span>Moto</div>
+                    <div class="tipo-chip" onclick="selTipo(this,'Onibus')"><span class="chip-icon">&#128653;</span>Onibus</div>
+                    <div class="tipo-chip" onclick="selTipo(this,'Agricola')"><span class="chip-icon">&#127806;</span>Agricola</div>
+                    <div class="tipo-chip" onclick="selTipo(this,'Outro')"><span class="chip-icon">&#128260;</span>Outro</div>
+                </div>
+
+                <div class="row-2">
+                    <div>
+                        <label>Quantidade *</label>
+                        <input type="number" id="col-qtd" placeholder="Ex: 50" min="1">
+                    </div>
+                    <div>
+                        <label>Peso estimado (kg)</label>
+                        <input type="number" id="col-peso" placeholder="Ex: 500" min="0">
+                    </div>
+                </div>
+
+                <label>Urgencia</label>
+                <div class="urgencia-row">
+                    <div class="urg-chip" onclick="selUrg(this,'baixa','low')">&#128994; Baixa</div>
+                    <div class="urg-chip active-low" onclick="selUrg(this,'normal','med')">&#128992; Normal</div>
+                    <div class="urg-chip" onclick="selUrg(this,'alta','high')">&#128308; Alta</div>
+                </div>
+
+                <label>Observacoes</label>
+                <textarea id="col-obs" rows="3" placeholder="Estado dos pneus, acesso ao local, horario..."></textarea>
+            </div>
+
+            <div class="btn-row">
+                <button class="btn-back" onclick="nextStep(1)">&#8592; Voltar</button>
+                <button class="btn-next" onclick="nextStep(3)">Revisar &#8594;</button>
+            </div>
+        </div>
+
+        <!-- STEP 3: CONFIRMACAO -->
+        <div class="step-content" id="step-3">
+            <div class="card fade-up">
+                <h3>&#9989; Revisar e Confirmar</h3>
+                <div class="summary" id="summary"></div>
+            </div>
+
+            <div class="btn-row">
+                <button class="btn-back" onclick="nextStep(2)">&#8592; Voltar</button>
+                <button class="btn-submit" onclick="criarColeta()">Confirmar Coleta</button>
+            </div>
+
+            <!-- RESULTADO -->
+            <div class="result-card" id="result-card" style="display:none;">
+                <div class="result-icon">&#9989;</div>
+                <h3>Coleta Registrada!</h3>
+                <p class="result-sub">Seu codigo de rastreamento:</p>
+                <div class="result-codigo" id="result-codigo">----</div>
+                <p class="result-hint">Guarde este codigo para acompanhar sua coleta</p>
+                <button class="btn-next" onclick="window.location.href='dashboard.html'">Voltar ao Dashboard</button>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+<!-- Leaflet -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
 <!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
-
-<style>
-body {
-    margin:0;
-    font-family: Arial;
-    background:#f4f6f9;
-}
-
-.header {
-    background:#1f7a3a;
-    color:white;
-    padding:15px;
-    font-size:20px;
-}
-
-.container {
-    padding:20px;
-}
-
-.card {
-    background:white;
-    padding:15px;
-    border-radius:12px;
-    margin-bottom:20px;
-    box-shadow:0 4px 10px rgba(0,0,0,0.05);
-}
-
-.btn {
-    width:100%;
-    padding:15px;
-    background:#1f7a3a;
-    color:white;
-    border:none;
-    border-radius:10px;
-    font-size:16px;
-}
-
-#map {
-    height:300px;
-    border-radius:12px;
-}
-</style>
-</head>
-
-<body>
-
-<div class="header">Nova Coleta</div>
-
-<div class="container">
-
-<div class="card">
-<h3>Escolha o local da coleta</h3>
-<div id="map"></div>
-</div>
-
-<div class="card">
-<h3>Quantidade de pneus</h3>
-<input id="qtd" type="number" placeholder="Ex: 50" style="width:100%;padding:10px">
-</div>
-
-<button class="btn" onclick="criarColeta()">Confirmar Coleta</button>
-
-<p id="codigo"></p>
-
-</div>
-
-<script>
-
-// 🔥 CONFIG FIREBASE
-const firebaseConfig = { apiKey: "AIzaSyCnO3B_Px9KkQUl79MVq3zcxwoxa3x87XU", 
-authDomain: "eco-pneus.firebaseapp.com", projectId: "eco-pneus",
-storageBucket: "eco-pneus.firebasestorage.app",
-messagingSenderId: "621224107269", 
-appId: "1:621224107269:web:13cd1e804ee275621b2b6c" };
-
-if (!firebase.apps.length) {
-    firebase.initializeApp(firebaseConfig);
-}
-
-const auth = firebase.auth();
-const db = firebase.firestore();
-
-let map, marker, lat = -22.90, lng = -47.06;
-
-// 🔐 PROTEÇÃO
-auth.onAuthStateChanged(user => {
-    if (!user) {
-        window.location.href = "index.html";
-    }
-});
-
-// 🗺️ MAPA
-map = L.map('map').setView([lat, lng], 13);
-
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '© OpenStreetMap'
-}).addTo(map);
-
-marker = L.marker([lat, lng]).addTo(map);
-
-map.on('click', function(e){
-    lat = e.latlng.lat;
-    lng = e.latlng.lng;
-    marker.setLatLng(e.latlng);
-});
-
-// 🔢 GERAR CÓDIGO
-function gerarCodigo() {
-    return Math.floor(1000 + Math.random() * 9000); // 4 dígitos
-}
-
-// 🚀 CRIAR COLETA
-async function criarColeta(){
-    const user = auth.currentUser;
-
-    const quantidade = document.getElementById('qtd').value;
-
-    if (!quantidade) {
-        alert("Informe a quantidade!");
-        return;
-    }
-
-    const codigo = gerarCodigo();
-
-    try {
-        await db.collection("coletas").add({
-            uid: user.uid,
-            quantidade: Number(quantidade),
-            lat: lat,
-            lng: lng,
-            codigo: codigo,
-            status: "Pendente",
-            data: new Date()
-        });
-
-        document.getElementById('codigo').innerText =
-            "Código da coleta: " + codigo;
-
-        alert("Coleta criada com sucesso!");
-
-    } catch (e) {
-        console.error(e);
-        alert("Erro ao salvar coleta.");
-    }
-}
-
-</script>
+<script src="firebase-config.js"></script>
+<script src="coleta.js"></script>
 
 </body>
 </html>

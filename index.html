@@ -1,139 +1,242 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Eco Pneus - Login</title>
-
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css">
-
-<style>
-/* ajuste rápido caso não use o css novo */
-.login-card input {
-    width: 100%;
-    padding: 14px;
-    margin-bottom: 15px;
-    border-radius: 10px;
-    border: 1px solid #ddd;
-}
-
-.login-card button {
-    width: 100%;
-    padding: 14px;
-    border: none;
-    border-radius: 10px;
-    margin-bottom: 10px;
-    font-weight: 600;
-    cursor: pointer;
-}
-
-.btn-login {
-    background: #2d8a4e;
-    color: white;
-}
-
-.btn-google {
-    background: #fff;
-    border: 1px solid #ddd;
-}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eco Pneus - Logistica Reversa de Pneus</title>
+    <link rel="icon" href="https://i.postimg.cc/rp5Py0Rr/Eco-Pneus-2-removebg-preview.png">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="global.css">
+    <link rel="stylesheet" href="home.css">
 </head>
-
 <body>
 
-<div class="main-container">
+<!-- NAV -->
+<nav class="landing-nav">
+    <div class="nav-logo">
+        <img src="https://i.postimg.cc/rp5Py0Rr/Eco-Pneus-2-removebg-preview.png" alt="Eco Pneus">
+        <span>Eco Pneus</span>
+    </div>
+    <a href="login.html" class="nav-cta">Acessar Plataforma</a>
+</nav>
 
-    <!-- HERO -->
-    <div class="hero-section">
-        <div class="hero-content">
-            <h1>Eco <span>Pneus</span></h1>
-            <p>Transformando pneus em soluções sustentáveis.</p>
+<!-- HERO -->
+<section class="landing-hero">
+    <div class="hero-inner">
+        <div class="hero-badge">&#9851; Plataforma de Logistica Reversa</div>
+        <h1>Transformando pneus em <span class="highlight">solucoes sustentaveis</span></h1>
+        <p>Plataforma digital que conecta geradores de residuos, transportadores e industrias recicladoras, garantindo rastreabilidade total e conformidade ambiental.</p>
+        <div class="hero-buttons">
+            <a href="login.html" class="btn-hero-primary">Comecar Agora</a>
+            <a href="#problema" class="btn-hero-secondary">Saiba Mais</a>
         </div>
     </div>
-    <!-- LOGIN -->
-    <div class="auth-section">
-        <div class="login-card">
+</section>
 
-            <h2>Entrar</h2>
-            <p class="instruction">Acesse sua conta</p>
+<!-- STATS BAR -->
+<div class="stats-bar">
+    <div class="stat-item">
+        <span class="stat-number" data-target="100" data-suffix=" mi">0</span>
+        <span class="stat-text">Pneus descartados/ano</span>
+    </div>
+    <div class="stat-item">
+        <span class="stat-number" data-target="450" data-suffix=" mil t">0</span>
+        <span class="stat-text">Toneladas anuais</span>
+    </div>
+    <div class="stat-item">
+        <span class="stat-number" data-target="600" data-suffix=" anos">0</span>
+        <span class="stat-text">Para decomposicao</span>
+    </div>
+    <div class="stat-item">
+        <span class="stat-number" data-target="60" data-suffix="%">0</span>
+        <span class="stat-text">Sem destino correto</span>
+    </div>
+</div>
 
-            <div class="input-group">
-                <input type="email" id="email" placeholder="E-mail">
-            </div>
-
-            <div class="input-group">
-                <input type="password" id="senha" placeholder="Senha">
-            </div>
-
-            <button class="btn-login" onclick="login()">
-                Entrar
-            </button>
-
-            <button class="btn-google" onclick="googleLogin()">
-                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
-                <span>Continuar com Google</span>
-            </button>
-
-            <p style="margin-top:15px;">
-                Não tem conta? 
-                <a href="cria-conta.html" class="link-green">Criar conta</a>
-            </p>
-
-        </div>
+<!-- PROBLEMA -->
+<section class="section" id="problema">
+    <div class="section-header">
+        <span class="section-label">O Problema</span>
+        <h2>O descarte irregular de pneus e uma crise silenciosa</h2>
+        <p>O Brasil lida com cerca de 100 milhoes de pneus descartados anualmente, com impactos graves na saude publica e no meio ambiente.</p>
     </div>
 
-</div>
-<div class="logo-global">
-    <img src="https://i.postimg.cc/rp5Py0Rr/Eco-Pneus-2-removebg-preview.png" alt="Eco Pneus">
-</div>
+    <div class="problem-grid">
+        <div class="problem-card animate-on-scroll">
+            <div class="problem-icon" style="background:#fef2f2;color:#ef4444;">&#127997;</div>
+            <h3>Saude Publica em Risco</h3>
+            <p>Pneus abandonados acumulam agua e se tornam criadouros do mosquito Aedes aegypti, vetor de Dengue, Zika e Chikungunya, afetando milhoes de brasileiros.</p>
+        </div>
 
-<!-- FIREBASE -->
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+        <div class="problem-card animate-on-scroll">
+            <div class="problem-icon" style="background:#fef3c7;color:#d97706;">&#127758;</div>
+            <h3>Contaminacao Ambiental</h3>
+            <p>Metais pesados e substancias toxicas dos pneus contaminam solo e aguas subterraneas. A queima irregular libera gases toxicos que comprometem o ar das comunidades.</p>
+        </div>
 
-<script>
-const firebaseConfig = { apiKey: "AIzaSyCnO3B_Px9KkQUl79MVq3zcxwoxa3x87XU", 
-authDomain: "eco-pneus.firebaseapp.com", projectId: "eco-pneus",
-storageBucket: "eco-pneus.firebasestorage.app",
-messagingSenderId: "621224107269", 
-appId: "1:621224107269:web:13cd1e804ee275621b2b6c" };
+        <div class="problem-card animate-on-scroll">
+            <div class="problem-icon" style="background:#eff6ff;color:#2563eb;">&#128176;</div>
+            <h3>Desperdicio Economico</h3>
+            <p>Borracha, aco e fibras dos pneus podem ser reciclados em asfalto, calcados, pisos ecologicos e materiais de construcao. Descartar e desperdicar materia-prima valiosa.</p>
+        </div>
+    </div>
+</section>
 
-if (!firebase.apps.length) {
-    firebase.initializeApp(firebaseConfig);
-}
+<!-- COMO FUNCIONA -->
+<section class="section bg-subtle" id="como-funciona">
+    <div class="section-header">
+        <span class="section-label">Como Funciona</span>
+        <h2>Logistica reversa inteligente em 4 passos</h2>
+        <p>Processo simples e rastreavel do inicio ao fim, com validacao bilateral e certificacao automatica.</p>
+    </div>
 
-// LOGIN EMAIL (corrigido)
-async function login(){
-    const email = document.getElementById('email').value;
-    const senha = document.getElementById('senha').value;
+    <div class="steps-grid">
+        <div class="step-card animate-on-scroll">
+            <div class="step-number">1</div>
+            <h3>Cadastro</h3>
+            <p>Geradores, transportadores e recicladores se registram na plataforma com dados verificados.</p>
+        </div>
 
-    if (!email || !senha) {
-        alert("Preencha todos os campos");
-        return;
-    }
+        <div class="step-card animate-on-scroll">
+            <div class="step-number">2</div>
+            <h3>Registro da Coleta</h3>
+            <p>O gerador registra a quantidade de pneus e a localizacao via geolocalizacao integrada.</p>
+        </div>
 
-    try {
-        await firebase.auth().signInWithEmailAndPassword(email, senha);
-        window.location.href = "dashboard.html";
-    } catch (e) {
-        alert("Erro: " + e.message);
-    }
-}
+        <div class="step-card animate-on-scroll">
+            <div class="step-number">3</div>
+            <h3>Validacao Bilateral</h3>
+            <p>Codigos temporarios e geolocalizacao confirmam que o descarte ocorreu no destino correto.</p>
+        </div>
 
-// LOGIN GOOGLE
-async function googleLogin(){
-    try {
-        const provider = new firebase.auth.GoogleAuthProvider();
-        await firebase.auth().signInWithPopup(provider);
-        window.location.href = "dashboard.html";
-    } catch (e) {
-        alert("Erro Google: " + e.message);
-    }
-}
+        <div class="step-card animate-on-scroll">
+            <div class="step-number">4</div>
+            <h3>Certificacao</h3>
+            <p>Certificados digitais de destinacao sao gerados automaticamente, garantindo conformidade legal.</p>
+        </div>
+    </div>
+</section>
 
+<!-- FUNCIONALIDADES -->
+<section class="section" id="funcionalidades">
+    <div class="section-header">
+        <span class="section-label">Funcionalidades</span>
+        <h2>Tecnologia a servico da sustentabilidade</h2>
+        <p>Ferramentas poderosas para garantir rastreabilidade, seguranca e eficiencia na logistica reversa.</p>
+    </div>
 
-</script>
+    <div class="features-grid">
+        <div class="feature-card animate-on-scroll">
+            <div class="feature-icon" style="background:#ecfdf5;color:var(--primary);">&#128205;</div>
+            <div>
+                <h3>Geolocalizacao em Tempo Real</h3>
+                <p>Rastreamento via GPS que valida a localizacao exata de cada operacao de coleta e entrega.</p>
+            </div>
+        </div>
+
+        <div class="feature-card animate-on-scroll">
+            <div class="feature-icon" style="background:#eff6ff;color:#2563eb;">&#128274;</div>
+            <div>
+                <h3>Sistema Antifraude</h3>
+                <p>Codigos temporarios e validacao bilateral entre gerador e reciclador impedem fraudes no processo.</p>
+            </div>
+        </div>
+
+        <div class="feature-card animate-on-scroll">
+            <div class="feature-icon" style="background:#fef3c7;color:#d97706;">&#128196;</div>
+            <div>
+                <h3>Certificados Automaticos</h3>
+                <p>Emissao automatica de certificados de destinacao final com dados de peso, tipo e volume.</p>
+            </div>
+        </div>
+
+        <div class="feature-card animate-on-scroll">
+            <div class="feature-icon" style="background:#f0fdf4;color:#16a34a;">&#11088;</div>
+            <div>
+                <h3>Indice de Confiabilidade</h3>
+                <p>Sistema de classificacao e reputacao digital para todos os participantes da cadeia.</p>
+            </div>
+        </div>
+
+        <div class="feature-card animate-on-scroll">
+            <div class="feature-icon" style="background:#faf5ff;color:#9333ea;">&#128202;</div>
+            <div>
+                <h3>Dashboard Completo</h3>
+                <p>Painel com estatisticas em tempo real: total de pneus, coletas pendentes e concluidas.</p>
+            </div>
+        </div>
+
+        <div class="feature-card animate-on-scroll">
+            <div class="feature-icon" style="background:#fff7ed;color:#ea580c;">&#9851;</div>
+            <div>
+                <h3>Economia Circular</h3>
+                <p>Conecta geradores a recicladores, transformando residuos em insumos valiosos como asfalto-borracha.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- LEGISLACAO -->
+<section class="section bg-subtle" id="legislacao">
+    <div class="section-header">
+        <span class="section-label">Base Legal</span>
+        <h2>Alinhado com a legislacao brasileira</h2>
+        <p>A plataforma garante conformidade com as principais normas ambientais do pais.</p>
+    </div>
+
+    <div class="features-grid">
+        <div class="feature-card animate-on-scroll">
+            <div class="feature-icon" style="background:#ecfdf5;color:var(--primary);">&#9878;</div>
+            <div>
+                <h3>Politica Nacional de Residuos Solidos</h3>
+                <p>Lei 12.305/2010 - Estabelece responsabilidade compartilhada e logistica reversa obrigatoria para fabricantes e importadores.</p>
+            </div>
+        </div>
+
+        <div class="feature-card animate-on-scroll">
+            <div class="feature-icon" style="background:#eff6ff;color:#2563eb;">&#128220;</div>
+            <div>
+                <h3>Resolucao CONAMA 416/2009</h3>
+                <p>Para cada pneu novo vendido, um pneu inservivel deve receber destinacao adequada. A plataforma garante essa rastreabilidade.</p>
+            </div>
+        </div>
+
+        <div class="feature-card animate-on-scroll">
+            <div class="feature-icon" style="background:#fef3c7;color:#d97706;">&#127760;</div>
+            <div>
+                <h3>Agenda 2030 da ONU</h3>
+                <p>Alinhado com as Metas 12.5 e 12.6 dos Objetivos de Desenvolvimento Sustentavel sobre producao e consumo responsaveis.</p>
+            </div>
+        </div>
+
+        <div class="feature-card animate-on-scroll">
+            <div class="feature-icon" style="background:#f0fdf4;color:#16a34a;">&#127793;</div>
+            <div>
+                <h3>Praticas ESG</h3>
+                <p>Transforma obrigacoes legais em praticas eficientes de sustentabilidade ambiental, social e de governanca.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-section animate-on-scroll">
+    <h2>Faca parte da mudanca</h2>
+    <p>Junte-se a plataforma que esta revolucionando a logistica reversa de pneus no Brasil.</p>
+    <a href="login.html" class="btn-cta">Acessar a Plataforma</a>
+</section>
+
+<!-- FOOTER -->
+<footer class="landing-footer">
+    <div class="footer-brand">
+        <img src="https://i.postimg.cc/rp5Py0Rr/Eco-Pneus-2-removebg-preview.png" alt="Eco Pneus">
+        <span>Eco Pneus</span>
+    </div>
+    <p>Projeto de Conclusao de Curso - Escola Salesiana Sao Jose / CPDB</p>
+    <p>Adriano Brito &amp; Miguel Bassani &bull; Campinas, 2026</p>
+</footer>
+
+<script src="index.html"></script>
 
 </body>
 </html>

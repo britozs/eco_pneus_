@@ -1,205 +1,103 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Eco Pneus - Criar Conta</title>
-
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
-
-<style>
-body {
-    margin: 0;
-    font-family: 'Inter', sans-serif;
-    background: #f4f6f9;
-}
-
-/* CONTAINER */
-.main-container {
-    display: flex;
-    flex-direction: column;
-    min-height: 100vh;
-}
-
-/* HERO */
-.hero-section {
-    background: linear-gradient(135deg, #0b6b3a, #095c32);
-    color: white;
-    padding: 50px 20px 70px;
-    text-align: center;
-    border-bottom-left-radius: 30px;
-    border-bottom-right-radius: 30px;
-}
-
-.logo-main {
-    width: 120px;
-    margin-bottom: 10px;
-}
-
-.hero-section h2 {
-    font-weight: 600;
-    margin-top: 10px;
-}
-
-/* AUTH */
-.auth-section {
-    padding: 20px;
-    margin-top: -50px;
-}
-
-/* CARD */
-.login-card {
-    background: white;
-    border-radius: 20px;
-    padding: 25px;
-    box-shadow: 0 15px 40px rgba(0,0,0,0.08);
-    animation: fadeUp 0.5s ease;
-}
-
-@keyframes fadeUp {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-/* INPUTS */
-.input-group {
-    margin-bottom: 15px;
-}
-
-input {
-    width: 100%;
-    padding: 14px;
-    border-radius: 12px;
-    border: 1px solid #e0e0e0;
-    font-size: 0.95rem;
-    background: #fafafa;
-    transition: 0.3s;
-}
-
-input:focus {
-    border-color: #0b6b3a;
-    background: white;
-    box-shadow: 0 0 0 3px rgba(11,107,58,0.1);
-    outline: none;
-}
-
-/* BOTÃO PRINCIPAL */
-.btn-login {
-    width: 100%;
-    background: linear-gradient(135deg, #0b6b3a, #095c32);
-    color: white;
-    border: none;
-    padding: 15px;
-    border-radius: 12px;
-    margin-top: 10px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: 0.25s;
-    box-shadow: 0 6px 18px rgba(11,107,58,0.3);
-}
-
-.btn-login:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 10px 25px rgba(11,107,58,0.35);
-}
-
-/* GOOGLE BUTTON PROFISSIONAL */
-.google-btn {
-    width: 100%;
-    padding: 13px;
-    background: #fff;
-    border: 1px solid #dadce0;
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
-    cursor: pointer;
-    font-size: 0.95rem;
-    font-weight: 500;
-    color: #3c4043;
-    transition: 0.2s;
-}
-
-.google-btn img {
-    width: 18px;
-}
-
-.google-btn:hover {
-    background: #f8f9fa;
-}
-
-.google-btn:active {
-    transform: scale(0.98);
-}
-
-/* SEPARADOR */
-.separator {
-    text-align: center;
-    margin: 15px 0;
-    color: #999;
-    font-size: 0.9rem;
-}
-
-/* LINK */
-a {
-    color: #0b6b3a;
-    text-decoration: none;
-    font-weight: 600;
-}
-
-/* RESPONSIVO */
-@media (min-width: 768px) {
-    .auth-section {
-        display: flex;
-        justify-content: center;
-    }
-
-    .login-card {
-        max-width: 400px;
-        width: 100%;
-    }
-}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eco Pneus - Criar Conta</title>
+    <link rel="icon" href="https://i.postimg.cc/rp5Py0Rr/Eco-Pneus-2-removebg-preview.png">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="global.css">
+    <link rel="stylesheet" href="cria-conta.css">
 </head>
-
 <body>
 
-<div class="main-container">
+<div class="signup-page">
 
-    <!-- HERO -->
-    <div class="hero-section">
-        <img src="https://i.postimg.cc/rp5Py0Rr/Eco-Pneus-2-removebg-preview.png" class="logo-main">
-        <h2>Sua jornada sustentável começa aqui</h2>
+    <!-- HEADER -->
+    <div class="signup-header">
+        <img src="https://i.postimg.cc/rp5Py0Rr/Eco-Pneus-2-removebg-preview.png" alt="Eco Pneus">
+        <h1>Crie sua conta</h1>
+        <p>Sua jornada sustentavel comeca aqui</p>
     </div>
 
     <!-- FORM -->
-    <div class="auth-section">
-        <div class="login-card">
+    <div class="signup-form-wrapper">
+        <div class="signup-card fade-up">
 
-            <h2>Criar Conta</h2>
+            <h2>Cadastro</h2>
+            <p class="subtitle">Preencha seus dados para comecar</p>
 
-            <div class="input-group">
-                <input type="email" id="email" placeholder="E-mail">
+            <!-- TIPO -->
+            <div class="tipo-selector">
+                <div class="tipo-option active" data-tipo="empresa" onclick="selecionarTipo('empresa')">
+                    <span class="tipo-icon">&#127970;</span>
+                    Empresa
+                </div>
+                <div class="tipo-option" data-tipo="pessoa" onclick="selecionarTipo('pessoa')">
+                    <span class="tipo-icon">&#128100;</span>
+                    Pessoa Fisica
+                </div>
             </div>
 
-            <div class="input-group">
-                <input type="password" id="senha" placeholder="Senha">
+            <!-- NOME -->
+            <div class="form-group">
+                <label>Nome completo *</label>
+                <input type="text" id="nome" placeholder="Digite seu nome completo">
             </div>
 
-            <button class="btn-login" onclick="criarConta()">
+            <!-- EMAIL -->
+            <div class="form-group">
+                <label>E-mail *</label>
+                <input type="email" id="email" placeholder="seu@email.com">
+            </div>
+
+            <!-- TELEFONE + CNPJ -->
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Telefone *</label>
+                    <input type="tel" id="telefone" placeholder="(11) 99999-0000" oninput="mascaraTelefone(this)">
+                </div>
+                <div class="form-group" id="cnpj-group">
+                    <label id="cnpj-label">CNPJ *</label>
+                    <input type="text" id="cnpj" placeholder="00.000.000/0001-00" oninput="mascaraCNPJ(this)">
+                </div>
+            </div>
+
+            <!-- SENHA -->
+            <div class="form-group">
+                <label>Senha *</label>
+                <input type="password" id="senha" placeholder="Minimo 6 caracteres" oninput="checkPasswordStrength(this.value)">
+                <div class="password-strength">
+                    <div class="strength-bar"></div>
+                    <div class="strength-bar"></div>
+                    <div class="strength-bar"></div>
+                </div>
+            </div>
+
+            <!-- CONFIRMAR SENHA -->
+            <div class="form-group">
+                <label>Confirmar senha *</label>
+                <input type="password" id="confirmar-senha" placeholder="Repita a senha">
+            </div>
+
+            <button class="btn-primary" onclick="criarConta()">
                 Criar Conta
             </button>
 
-            <div class="separator">ou</div>
+            <div class="divider">ou</div>
 
-            <button class="google-btn" onclick="googleLogin()">
-                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg">
-                <span>Continuar com Google</span>
+            <button class="btn-google" onclick="googleLogin()">
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
+                Continuar com Google
             </button>
 
-            <p style="margin-top:15px;">
-                Já tem conta? <a href="index.html">Entrar</a>
+            <p class="terms">
+                Ao criar sua conta, voce concorda com nossos<br>
+                <a href="#">Termos de Uso</a> e <a href="#">Politica de Privacidade</a>
+            </p>
+
+            <p class="auth-footer">
+                Ja tem conta? <a href="login.html">Fazer login</a>
             </p>
 
         </div>
@@ -207,53 +105,12 @@ a {
 
 </div>
 
-<!-- FIREBASE -->
+<!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
-
-<script>
-const firebaseConfig = { apiKey: "AIzaSyCnO3B_Px9KkQUl79MVq3zcxwoxa3x87XU", 
-authDomain: "eco-pneus.firebaseapp.com", projectId: "eco-pneus",
-storageBucket: "eco-pneus.firebasestorage.app",
-messagingSenderId: "621224107269", 
-appId: "1:621224107269:web:13cd1e804ee275621b2b6c" };
-
-if (!firebase.apps.length) {
-    firebase.initializeApp(firebaseConfig);
-}
-
-// CRIAR CONTA
-async function criarConta() {
-    const email = document.getElementById('email').value;
-    const senha = document.getElementById('senha').value;
-
-    if (!email || !senha) {
-        alert("Preencha os campos!");
-        return;
-    }
-
-    try {
-        await firebase.auth().createUserWithEmailAndPassword(email, senha);
-        window.location.href = "dashboard.html";
-    } catch (error) {
-        alert(error.message);
-    }
-}
-
-// GOOGLE
-async function googleLogin() {
-    const provider = new firebase.auth.GoogleAuthProvider();
-
-    try {
-        await firebase.auth().signInWithPopup(provider);
-        window.location.href = "dashboard.html";
-    } catch (error) {
-        alert(error.message);
-    }
-}
-
-
-</script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
+<script src="cria-conta.js"></script>
 
 </body>
 </html>

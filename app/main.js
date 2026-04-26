@@ -8,7 +8,7 @@ function createWindow(){
   height:800
  });
 
- win.loadFile(path.join(__dirname,'..','frontend','index.html'));
+ win.loadFile(path.join(__dirname,'..','frontend','login.html'));
 }
 
 app.whenReady().then(createWindow);
