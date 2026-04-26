@@ -1,0 +1,94 @@
+💻 2. COLABORADOR BAIXAR O PROJETO
+
+Ele só precisa disso (sem Node):
+
+git clone https://github.com/britozs/eco_pneus_.git
+cd eco_pneus_
+📂 3. ABRIR O PROJETO
+
+Pode abrir direto no navegador:
+
+👉 clica em:
+
+frontend/index.html
+
+OU usar Visual Studio Code:
+
+code .
+🔄 4. COMO TRABALHAR (FLUXO CORRETO)
+🟢 Sempre antes de mexer
+git pull origin main
+🟡 Editar normalmente
+
+HTML / CSS / JS (Firebase já funciona online)
+
+🔵 Enviar alterações
+git add .
+git commit -m "alteração feita"
+git push origin main
+🌐 5. RODAR O PROJETO (SEM NODE)
+
+Você tem 3 formas:
+
+✅ MAIS SIMPLES
+
+Abrir direto:
+
+index.html
+✅ MELHOR (evita erro Firebase / CORS)
+
+Usar extensão do Visual Studio Code:
+
+👉 Live Server
+
+✅ PROFISSIONAL
+
+Usar GitHub Pages:
+
+Vai em Settings
+Pages
+Branch: main
+Pasta: /root
+
+Seu site vai ficar tipo:
+
+https://britozs.github.io/eco_pneus_
+⚠️ 6. ERROS COMUNS (E COMO EVITAR)
+❌ conflito ao enviar
+git pull origin main
+❌ login Google não funciona
+
+No Firebase:
+
+👉 Authentication → Settings
+Adicionar:
+
+britozs.github.io
+❌ projeto não atualiza
+
+👉 sempre rodar:
+
+git pull origin main
+💥 7. REGRAS PRA NÃO DAR BAGUNÇA
+
+✔ não mexer no mesmo arquivo ao mesmo tempo
+✔ sempre dar git pull antes
+✔ commit com nome claro
+✔ não apagar arquivos dos outros
+
+🚀 RESUMO RÁPIDO
+
+Colaborador faz:
+
+git clone
+git pull
+(editar)
+git add .
+git commit -m "msg"
+git push
+
+
+
+
+
+rodar noo chome link q ta no zap
