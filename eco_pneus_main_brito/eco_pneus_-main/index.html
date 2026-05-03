@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Eco Pneus - Login</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+
+<style>
+/* ajuste rápido caso não use o css novo */
+.login-card input {
+    width: 100%;
+    padding: 14px;
+    margin-bottom: 15px;
+    border-radius: 10px;
+    border: 1px solid #ddd;
+}
+
+.login-card button {
+    width: 100%;
+    padding: 14px;
+    border: none;
+    border-radius: 10px;
+    margin-bottom: 10px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.btn-login {
+    background: #2d8a4e;
+    color: white;
+}
+
+.btn-google {
+    background: #fff;
+    border: 1px solid #ddd;
+}
+</style>
+</head>
+
+<body>
+
+<div class="main-container">
+
+    <!-- HERO -->
+    <div class="hero-section">
+        <div class="hero-content">
+            <h1>Eco <span>Pneus</span></h1>
+            <p>Transformando pneus em soluções sustentáveis.</p>
+        </div>
+    </div>
+    <!-- LOGIN -->
+    <div class="auth-section">
+        <div class="login-card">
+
+            <h2>Entrar</h2>
+            <p class="instruction">Acesse sua conta</p>
+
+            <div class="input-group">
+                <input type="email" id="email" placeholder="E-mail">
+            </div>
+
+            <div class="input-group">
+                <input type="password" id="senha" placeholder="Senha">
+            </div>
+
+            <button class="btn-login" onclick="login()">
+                Entrar
+            </button>
+
+            <button class="btn-google" onclick="googleLogin()">
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
+                <span>Continuar com Google</span>
+            </button>
+
+            <p style="margin-top:15px;">
+                Não tem conta? 
+                <a href="cria-conta.html" class="link-green">Criar conta</a>
+            </p>
+
+        </div>
+    </div>
+
+</div>
+<div class="logo-global">
+    <img src="https://i.postimg.cc/rp5Py0Rr/Eco-Pneus-2-removebg-preview.png" alt="Eco Pneus">
+</div>
+
+<!-- FIREBASE -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+
+<script>
+const firebaseConfig = { apiKey: "AIzaSyCnO3B_Px9KkQUl79MVq3zcxwoxa3x87XU", 
+authDomain: "eco-pneus.firebaseapp.com", projectId: "eco-pneus",
+storageBucket: "eco-pneus.firebasestorage.app",
+messagingSenderId: "621224107269", 
+appId: "1:621224107269:web:13cd1e804ee275621b2b6c" };
+
+if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+}
+
+// LOGIN EMAIL (corrigido)
+async function login(){
+    const email = document.getElementById('email').value;
+    const senha = document.getElementById('senha').value;
+
+    if (!email || !senha) {
+        alert("Preencha todos os campos");
+        return;
+    }
+
+    try {
+        await firebase.auth().signInWithEmailAndPassword(email, senha);
+        window.location.href = "dashboard.html";
+    } catch (e) {
+        alert("Erro: " + e.message);
+    }
+}
+
+// LOGIN GOOGLE
+async function googleLogin(){
+    try {
+        const provider = new firebase.auth.GoogleAuthProvider();
+        await firebase.auth().signInWithPopup(provider);
+        window.location.href = "dashboard.html";
+    } catch (e) {
+        alert("Erro Google: " + e.message);
+    }
+}
+
+
+</script>
+
+</body>
+</html>

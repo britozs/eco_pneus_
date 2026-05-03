@@ -1,0 +1,213 @@
+/* ============================================================
+   ECO PNEUS - PERFIL
+   ============================================================ */
+
+.perfil-page {
+    min-height: 100vh;
+    background: var(--bg);
+    padding-bottom: 40px;
+}
+
+/* --- HEADER --- */
+.perfil-header {
+    background: var(--primary-gradient);
+    color: white;
+    padding: 24px 20px 72px;
+    border-radius: 0 0 32px 32px;
+    position: relative;
+}
+
+.perfil-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+}
+
+.perfil-top .back-btn,
+.perfil-top .settings-btn {
+    width: 40px;
+    height: 40px;
+    background: rgba(255,255,255,0.12);
+    border: none;
+    border-radius: 12px;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: var(--transition);
+    font-size: 1.2rem;
+}
+
+.perfil-top .back-btn:hover,
+.perfil-top .settings-btn:hover {
+    background: rgba(255,255,255,0.22);
+}
+
+.perfil-info {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+}
+
+.perfil-avatar {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    border: 3px solid rgba(255,255,255,0.4);
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
+.perfil-details h2 {
+    font-size: 1.3rem;
+    font-weight: 700;
+    margin-bottom: 2px;
+}
+
+.perfil-details p {
+    font-size: 0.85rem;
+    color: rgba(255,255,255,0.7);
+    margin: 0;
+}
+
+/* --- CONTENT --- */
+.perfil-content {
+    max-width: 500px;
+    margin: -48px auto 0;
+    padding: 0 20px;
+    position: relative;
+    z-index: 2;
+}
+
+/* --- STATS GRID --- */
+.perfil-stats {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.perfil-stat {
+    background: var(--bg-card);
+    border-radius: var(--radius-lg);
+    padding: 18px;
+    box-shadow: var(--shadow-md);
+    text-align: center;
+    transition: var(--transition);
+}
+
+.perfil-stat:hover {
+    transform: translateY(-2px);
+}
+
+.perfil-stat .stat-label {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    display: block;
+    margin-bottom: 4px;
+}
+
+.perfil-stat .stat-value {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text);
+}
+
+.perfil-stat .stat-value.green {
+    color: var(--primary);
+}
+
+/* --- INFO CARD --- */
+.info-section {
+    background: var(--bg-card);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    box-shadow: var(--shadow-sm);
+    margin-bottom: 16px;
+}
+
+.info-section h3 {
+    font-size: 0.9rem;
+    font-weight: 700;
+    margin-bottom: 16px;
+    color: var(--text);
+}
+
+.info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.info-row:last-child {
+    border-bottom: none;
+}
+
+.info-row .info-label {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    font-weight: 500;
+}
+
+.info-row .info-value {
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--text);
+}
+
+/* --- BUTTONS --- */
+.perfil-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 8px;
+}
+
+.btn-edit {
+    width: 100%;
+    padding: 14px;
+    background: var(--bg-card);
+    border: 2px solid var(--primary);
+    border-radius: var(--radius-md);
+    color: var(--primary);
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.btn-edit:hover {
+    background: #ecfdf5;
+}
+
+.btn-logout {
+    width: 100%;
+    padding: 14px;
+    background: var(--bg-card);
+    border: 2px solid #fee2e2;
+    border-radius: var(--radius-md);
+    color: #ef4444;
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.btn-logout:hover {
+    background: #fef2f2;
+    border-color: #fca5a5;
+}
+
+/* --- RESPONSIVE --- */
+@media (max-width: 480px) {
+    .perfil-stats {
+        grid-template-columns: 1fr 1fr;
+    }
+}
