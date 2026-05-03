@@ -6,6 +6,7 @@
     <title>Eco Pneus - Criar Conta</title>
     <link rel="icon" href="https://i.postimg.cc/rp5Py0Rr/Eco-Pneus-2-removebg-preview.png">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="global.css">
     <link rel="stylesheet" href="cria-conta.css">
 </head>
@@ -13,21 +14,18 @@
 
 <div class="signup-page">
 
-    <!-- HEADER -->
     <div class="signup-header">
         <img src="https://i.postimg.cc/rp5Py0Rr/Eco-Pneus-2-removebg-preview.png" alt="Eco Pneus">
         <h1>Crie sua conta</h1>
         <p>Sua jornada sustentavel comeca aqui</p>
     </div>
 
-    <!-- FORM -->
     <div class="signup-form-wrapper">
         <div class="signup-card fade-up">
 
             <h2>Cadastro</h2>
             <p class="subtitle">Preencha seus dados para comecar</p>
 
-            <!-- TIPO -->
             <div class="tipo-selector">
                 <div class="tipo-option active" data-tipo="empresa" onclick="selecionarTipo('empresa')">
                     <span class="tipo-icon">&#127970;</span>
@@ -39,19 +37,16 @@
                 </div>
             </div>
 
-            <!-- NOME -->
             <div class="form-group">
                 <label>Nome completo *</label>
                 <input type="text" id="nome" placeholder="Digite seu nome completo">
             </div>
 
-            <!-- EMAIL -->
             <div class="form-group">
                 <label>E-mail *</label>
                 <input type="email" id="email" placeholder="seu@email.com">
             </div>
 
-            <!-- TELEFONE + CNPJ -->
             <div class="form-row">
                 <div class="form-group">
                     <label>Telefone *</label>
@@ -63,10 +58,44 @@
                 </div>
             </div>
 
-            <!-- SENHA -->
+            <div id="endereco-container">
+                <div class="form-group">
+                    <label>CEP *</label>
+                    <input type="text" id="cep" placeholder="00000-000" oninput="mascaraCEP(this)" onblur="buscarCEP(this.value)">
+                </div>
+                <div class="form-group">
+                    <label>Endereço *</label>
+                    <input type="text" id="endereco" placeholder="Rua, número, bairro">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Cidade *</label>
+                        <input type="text" id="cidade" placeholder="Cidade">
+                    </div>
+                    <div class="form-group">
+                        <label>UF *</label>
+                        <select id="uf">
+                            <option value="">UF</option>
+                            <option value="AC">AC</option><option value="AL">AL</option><option value="AP">AP</option>
+                            <option value="AM">AM</option><option value="BA">BA</option><option value="CE">CE</option>
+                            <option value="DF">DF</option><option value="ES">ES</option><option value="GO">GO</option>
+                            <option value="MA">MA</option><option value="MT">MT</option><option value="MS">MS</option>
+                            <option value="MG">MG</option><option value="PA">PA</option><option value="PB">PB</option>
+                            <option value="PR">PR</option><option value="PE">PE</option><option value="PI">PI</option>
+                            <option value="RJ">RJ</option><option value="RN">RN</option><option value="RS">RS</option>
+                            <option value="RO">RO</option><option value="RR">RR</option><option value="SC">SC</option>
+                            <option value="SP">SP</option><option value="SE">SE</option><option value="TO">TO</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
             <div class="form-group">
                 <label>Senha *</label>
-                <input type="password" id="senha" placeholder="Minimo 6 caracteres" oninput="checkPasswordStrength(this.value)">
+                <div class="password-wrapper">
+                    <input type="password" id="senha" placeholder="Minimo 6 caracteres" oninput="checkPasswordStrength(this.value)">
+                    <i class="far fa-eye toggle-password" onclick="togglePassword('senha', this)"></i>
+                </div>
                 <div class="password-strength">
                     <div class="strength-bar"></div>
                     <div class="strength-bar"></div>
@@ -74,10 +103,12 @@
                 </div>
             </div>
 
-            <!-- CONFIRMAR SENHA -->
             <div class="form-group">
                 <label>Confirmar senha *</label>
-                <input type="password" id="confirmar-senha" placeholder="Repita a senha">
+                <div class="password-wrapper">
+                    <input type="password" id="confirmar-senha" placeholder="Repita a senha">
+                    <i class="far fa-eye toggle-password" onclick="togglePassword('confirmar-senha', this)"></i>
+                </div>
             </div>
 
             <button class="btn-primary" onclick="criarConta()">
@@ -105,7 +136,6 @@
 
 </div>
 
-<!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
