@@ -1,0 +1,312 @@
+/* ============================================================
+   ECO PNEUS - CRIAR CONTA PAGE
+   ============================================================ */
+
+.signup-page {
+    min-height: 100vh;
+    background: var(--bg);
+}
+
+/* --- HEADER --- */
+.signup-header {
+    background: var(--primary-gradient);
+    padding: 40px 24px 64px;
+    text-align: center;
+    color: white;
+    border-radius: 0 0 32px 32px;
+    position: relative;
+}
+
+.signup-header img {
+    width: 72px;
+    margin: 0 auto 12px;
+    filter: brightness(0) invert(1);
+    opacity: 0.9;
+}
+
+.signup-header h1 {
+    font-size: 1.5rem;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+}
+
+.signup-header p {
+    color: rgba(255,255,255,0.7);
+    font-size: 0.9rem;
+    margin-top: 4px;
+}
+
+/* --- FORM CARD --- */
+.signup-form-wrapper {
+    max-width: 480px;
+    margin: -40px auto 40px;
+    padding: 0 20px;
+    position: relative;
+    z-index: 2;
+}
+
+.signup-card {
+    background: var(--bg-card);
+    border-radius: var(--radius-xl);
+    padding: 32px 28px;
+    box-shadow: var(--shadow-lg);
+    animation: fadeUp 0.6s ease;
+}
+
+.signup-card h2 {
+    font-size: 1.4rem;
+    font-weight: 700;
+    margin-bottom: 4px;
+}
+
+.signup-card .subtitle {
+    color: var(--text-secondary);
+    font-size: 0.88rem;
+    margin-bottom: 28px;
+}
+
+/* --- STEPS INDICATOR --- */
+.steps {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 28px;
+}
+
+.step-dot {
+    width: 32px;
+    height: 4px;
+    border-radius: 4px;
+    background: var(--border);
+    transition: var(--transition);
+}
+
+.step-dot.active {
+    background: var(--primary);
+    width: 48px;
+}
+
+/* --- FORM --- */
+.form-group {
+    margin-bottom: 18px;
+}
+
+.form-group label {
+    display: block;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.form-group input,
+.form-group select {
+    width: 100%;
+    padding: 13px 16px;
+    border: 2px solid var(--border);
+    border-radius: var(--radius-md);
+    font-size: 0.95rem;
+    background: var(--bg);
+    color: var(--text);
+    transition: var(--transition);
+}
+
+.form-group input:focus,
+.form-group select:focus {
+    border-color: var(--primary);
+    background: white;
+    box-shadow: 0 0 0 4px rgba(11,107,58,0.08);
+}
+
+.form-group input::placeholder {
+    color: var(--text-muted);
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+/* --- PASSWORD WRAPPER (ÍCONE OLHO) --- */
+.password-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.password-wrapper input {
+    padding-right: 45px;
+}
+
+.toggle-password {
+    position: absolute;
+    right: 15px;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 1.1rem;
+    transition: var(--transition);
+}
+
+.toggle-password:hover {
+    color: var(--primary);
+}
+
+/* --- TIPO SELECTOR --- */
+.tipo-selector {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 18px;
+}
+
+.tipo-option {
+    padding: 12px;
+    border: 2px solid var(--border);
+    border-radius: var(--radius-md);
+    text-align: center;
+    cursor: pointer;
+    transition: var(--transition);
+    font-weight: 600;
+    font-size: 0.88rem;
+    color: var(--text-secondary);
+    background: var(--bg);
+}
+
+.tipo-option:hover {
+    border-color: var(--primary-light);
+}
+
+.tipo-option.active {
+    border-color: var(--primary);
+    background: #ecfdf5;
+    color: var(--primary);
+}
+
+.tipo-option .tipo-icon {
+    font-size: 1.5rem;
+    display: block;
+    margin-bottom: 4px;
+}
+
+/* --- PASSWORD STRENGTH --- */
+.password-strength {
+    display: flex;
+    gap: 4px;
+    margin-top: 6px;
+}
+
+.strength-bar {
+    flex: 1;
+    height: 3px;
+    border-radius: 3px;
+    background: var(--border);
+    transition: var(--transition);
+}
+
+.strength-bar.weak { background: #ef4444; }
+.strength-bar.medium { background: #f59e0b; }
+.strength-bar.strong { background: var(--primary); }
+
+/* --- BUTTONS --- */
+.btn-primary {
+    width: 100%;
+    padding: 15px;
+    background: var(--primary-gradient);
+    color: white;
+    border: none;
+    border-radius: var(--radius-md);
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: var(--transition);
+    box-shadow: var(--shadow-green);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 28px rgba(11,107,58,0.35);
+}
+
+.btn-google {
+    width: 100%;
+    padding: 13px;
+    background: white;
+    border: 2px solid var(--border);
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text);
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.btn-google img {
+    width: 20px;
+    height: 20px;
+}
+
+.btn-google:hover {
+    background: #f8f9fa;
+    border-color: #c6c6c6;
+}
+
+.divider {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin: 20px 0;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+}
+
+.divider::before,
+.divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+}
+
+.auth-footer {
+    text-align: center;
+    margin-top: 24px;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+/* --- TERMS --- */
+.terms {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    text-align: center;
+    margin-top: 16px;
+    line-height: 1.5;
+}
+
+.terms a {
+    font-weight: 600;
+    font-size: 0.78rem;
+}
+
+/* --- RESPONSIVE --- */
+@media (max-width: 480px) {
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+
+    .signup-card {
+        padding: 24px 20px;
+    }
+}

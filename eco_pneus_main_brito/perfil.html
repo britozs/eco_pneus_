@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Perfil - Eco Pneus</title>
+    <link rel="icon" href="https://i.postimg.cc/rp5Py0Rr/Eco-Pneus-2-removebg-preview.png">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="global.css">
+    <link rel="stylesheet" href="perfil.css">
+</head>
+<body>
+
+<div class="perfil-page">
+
+    <!-- HEADER -->
+    <div class="perfil-header">
+        <div class="perfil-top">
+            <button class="back-btn" onclick="voltar()">&#8592;</button>
+            <span class="header-title">Meu Perfil</span>
+            <!-- ENGRENAGEM -->
+            <button class="edit-btn" onclick="toggleEditar()">⚙️</button>
+        </div>
+
+        <div class="perfil-hero">
+            <div class="avatar-wrapper">
+                <img id="perfil-avatar" class="perfil-avatar"
+                src="https://ui-avatars.com/api/?name=U&background=0b6b3a&color=fff&size=150">
+                <span class="avatar-badge" id="tipo-badge">&#127970;</span>
+            </div>
+
+            <h2 id="perfil-nome">Carregando...</h2>
+            <p id="perfil-email-header">---</p>
+
+            <div class="perfil-rating" id="perfil-rating" style="display:none;">
+                <div class="stars-display" id="perfil-stars"></div>
+                <span class="rating-number" id="perfil-rating-num">0.0</span>
+                <span class="rating-count" id="perfil-rating-count">(0 avaliacoes)</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- CONTENT -->
+    <div class="perfil-content" id="perfil-content">
+        <div class="empty-state">
+            <div class="empty-icon">&#9203;</div>
+            <p>Carregando...</p>
+        </div>
+    </div>
+
+</div>
+
+<!-- MODAL EDITAR -->
+<div class="modal-overlay" id="modal-editar" style="display:none;">
+    <div class="modal-card">
+        <div class="modal-header">
+            <h3>Editar Perfil</h3>
+            <button class="modal-close" onclick="fecharEditar()">&times;</button>
+        </div>
+
+        <div class="modal-body">
+
+            <!-- FOTO -->
+            <label>Foto de Perfil</label>
+            <input type="file" id="edit-foto" accept="image/*">
+
+            <label>Nome</label>
+            <input type="text" id="edit-nome">
+
+            <label>Telefone</label>
+            <input type="tel" id="edit-telefone" oninput="mascaraTel(this)">
+
+            <label id="edit-cnpj-label">CNPJ</label>
+            <input type="text" id="edit-cnpj">
+
+            <label>Cidade</label>
+            <input type="text" id="edit-cidade" placeholder="Ex: Campinas, SP">
+
+            <label>Descricao / Bio</label>
+            <textarea id="edit-bio" rows="3" placeholder="Fale sobre voce ou sua empresa..."></textarea>
+
+            <div id="edit-empresa-fields" style="display:none;">
+                <label>Materiais aceitos</label>
+                <input type="text" id="edit-materiais" placeholder="Pneus, borracha, aco...">
+
+                <label>Capacidade mensal (toneladas)</label>
+                <input type="number" id="edit-capacidade" placeholder="Ex: 50">
+            </div>
+
+            <button class="btn-save" onclick="salvarPerfil()">Salvar Alteracoes</button>
+
+        </div>
+    </div>
+</div>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
+<script src="perfil.js"></script>
+
+</body>
+</html>
