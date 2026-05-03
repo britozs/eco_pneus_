@@ -5,8 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Eco Pneus - Login</title>
     <link rel="icon" href="https://i.postimg.cc/rp5Py0Rr/Eco-Pneus-2-removebg-preview.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link href="https://unpkg.com/lucide-static@latest/font/lucide.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="global.css">
     <link rel="stylesheet" href="login.css">
 </head>
@@ -15,34 +17,38 @@
 <div class="login-page">
 
     <!-- HERO -->
-    <div class="login-hero">
-        <div class="hero-logo">
-            <img src="https://i.postimg.cc/rp5Py0Rr/Eco-Pneus-2-removebg-preview.png" alt="Eco Pneus">
-        </div>
+    <section class="login-hero">
+        <img 
+            src="https://i.postimg.cc/rp5Py0Rr/Eco-Pneus-2-removebg-preview.png" 
+            alt="Eco Pneus" 
+            class="hero-logo"
+        >
 
-        <div class="hero-text">
-            <h1>Eco <span>Pneus</span></h1>
-            <p>Plataforma inteligente de logistica reversa de pneus. Contribua com o meio ambiente de forma simples e eficiente.</p>
-        </div>
+        <div class="hero-content">
+            <h1>
+                Sua gestão de pneus
+                <span>mais lucrativa e verde.</span>
+            </h1>
 
-        <div class="hero-features">
-            <div class="hero-feature">
-                <div class="icon">&#x267B;</div>
-                <span>Coleta sustentavel</span>
-            </div>
-            <div class="hero-feature">
-                <div class="icon">&#x1F4CD;</div>
-                <span>Rastreamento em tempo real</span>
-            </div>
-            <div class="hero-feature">
-                <div class="icon">&#x1F4CA;</div>
-                <span>Dashboard completo</span>
-            </div>
+            <ul class="benefits-list">
+                <li>
+                    <i class="fas fa-check-circle"></i>
+                    <span>Logística reversa <b>100% automatizada</b>.</span>
+                </li>
+                <li>
+                    <i class="fas fa-chart-line"></i>
+                    <span>Controle total de <b>coletas e certificados</b>.</span>
+                </li>
+                <li>
+                    <i class="fas fa-leaf"></i>
+                    <span>Sua empresa em conformidade <b>ambiental</b>.</span>
+                </li>
+            </ul>
         </div>
-    </div>
+    </section>
 
     <!-- AUTH -->
-    <div class="login-auth">
+    <section class="login-auth">
         <div class="login-card fade-up">
 
             <div class="mobile-logo">
@@ -50,22 +56,22 @@
                 <h3>Eco Pneus</h3>
             </div>
 
-            <h2>Bem-vindo de volta</h2>
-            <p class="subtitle">Entre na sua conta para continuar</p>
+            <h2>Fazer Login</h2>
+            <p class="subtitle">Bem-vindo de volta! Acesse sua conta.</p>
 
             <div class="form-group">
-                <label>E-mail</label>
+                <label for="email">E-mail</label>
                 <div class="input-wrapper">
+                    <i class="fas fa-envelope"></i>
                     <input type="email" id="email" placeholder="seu@email.com">
-                    <i class="icon-mail" style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--text-muted);pointer-events:none;">&#9993;</i>
                 </div>
             </div>
 
             <div class="form-group">
-                <label>Senha</label>
+                <label for="senha">Senha</label>
                 <div class="input-wrapper">
+                    <i class="fas fa-lock"></i>
                     <input type="password" id="senha" placeholder="Digite sua senha">
-                    <i style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--text-muted);pointer-events:none;">&#128274;</i>
                 </div>
             </div>
 
@@ -73,19 +79,20 @@
                 Entrar
             </button>
 
-            <div class="divider">ou</div>
+            <div class="divider">ou acesse com</div>
 
             <button class="btn-google" onclick="googleLogin()">
                 <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
-                Continuar com Google
+                <span>Continuar com Google</span>
             </button>
 
             <p class="auth-footer">
-                Nao tem conta? <a href="cria-conta.html">Criar conta</a>
+                Não tem uma conta? <a href="cria-conta.html">Cadastre-se</a>
             </p>
 
+            <div class="copyright">© 2026 Eco Pneus. ♻️</div>
         </div>
-    </div>
+    </section>
 
 </div>
 
@@ -94,7 +101,6 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="firebase-config.js"></script>
 <script src="login.js"></script>
-<script>
-</script>
+
 </body>
 </html>
