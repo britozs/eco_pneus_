@@ -1,0 +1,795 @@
+/* ==========================================================
+   ECO PNEUS - PERFIL
+   HTML + CSS + JS PURO
+   Persistência completa via localStorage
+   ========================================================== */
+
+(function () {
+  "use strict";
+
+  /* ---------------------------------------
+   * ÍCONES SVG
+   * ------------------------------------- */
+  const icons = {
+    "arrow-left": `<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"></path><path d="M12 19l-7-7 7-7"></path></svg>`,
+    "settings": `<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06A1.65 1.65 0 0 0 15 19.4a1.65 1.65 0 0 0-1 .6 1.65 1.65 0 0 0-.33 1V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-.33-1 1.65 1.65 0 0 0-1-.6 1.65 1.65 0 0 0-1.82.33l-.06.06A2 2 0 1 1 3.63 17l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-.6-1 1.65 1.65 0 0 0-1-.33H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1-.33 1.65 1.65 0 0 0 .6-1 1.65 1.65 0 0 0-.33-1.82L4.3 6.46A2 2 0 1 1 7.13 3.63l.06.06A1.65 1.65 0 0 0 9 4.6h0a1.65 1.65 0 0 0 1-.6 1.65 1.65 0 0 0 .33-1V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 .33 1 1.65 1.65 0 0 0 1 .6h0a1.65 1.65 0 0 0 1.82-.33l.06-.06A2 2 0 1 1 20.37 7.1l-.06.06A1.65 1.65 0 0 0 19.4 9v0a1.65 1.65 0 0 0 .6 1 1.65 1.65 0 0 0 1 .33H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1 .33 1.65 1.65 0 0 0-.51.34z"></path></svg>`,
+    "camera": `<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>`,
+    "edit": `<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.1 2.1 0 1 1 3 3L7 19l-4 1 1-4 12.5-12.5z"></path></svg>`,
+    "phone": `<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.86 19.86 0 0 1-8.63-3.07A19.5 19.5 0 0 1 5.15 12.8 19.86 19.86 0 0 1 2.08 4.09 2 2 0 0 1 4.06 2h3a2 2 0 0 1 2 1.72c.12.9.33 1.79.61 2.65a2 2 0 0 1-.45 2.11L8 9.91a16 16 0 0 0 6.09 6.09l1.43-1.22a2 2 0 0 1 2.11-.45c.86.28 1.75.49 2.65.61A2 2 0 0 1 22 16.92z"></path></svg>`,
+    "map-pin": `<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 1 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>`,
+    "lock": `<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>`,
+    "logout": `<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><path d="M16 17l5-5-5-5"></path><path d="M21 12H9"></path></svg>`,
+    "trash": `<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><path d="M10 11v6"></path><path d="M14 11v6"></path><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path></svg>`,
+    "x": `<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18"></path><path d="M6 6l12 12"></path></svg>`,
+    "user": `<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21a8 8 0 0 0-16 0"></path><circle cx="12" cy="7" r="4"></circle></svg>`,
+    "briefcase": `<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"></rect><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"></path></svg>`,
+    "box": `<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><path d="M3.27 6.96L12 12.01l8.73-5.05"></path><path d="M12 22.08V12"></path></svg>`,
+    "clock": `<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M12 6v6l4 2"></path></svg>`,
+    "check-circle": `<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"></path><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>`,
+    "leaf": `<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 4 13C4 8 8 4 13 4c4 0 7 2 7 7 0 5-4 9-9 9z"></path><path d="M8 12c2-2 4-3 8-4"></path></svg>`
+  };
+
+  function applyIcons() {
+    document.querySelectorAll("[data-icon]").forEach(function (node) {
+      var iconName = node.getAttribute("data-icon");
+      if (icons[iconName]) node.innerHTML = icons[iconName];
+    });
+  }
+
+  applyIcons();
+
+  /* ---------------------------------------
+   * STORAGE
+   * ------------------------------------- */
+  var STORAGE_KEYS = {
+    currentUser: "eco_pneus_current_user",
+    users: "eco_pneus_users"
+  };
+
+  function getUsers() {
+    try {
+      return JSON.parse(localStorage.getItem(STORAGE_KEYS.users)) || [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function setUsers(users) {
+    localStorage.setItem(STORAGE_KEYS.users, JSON.stringify(users));
+  }
+
+  function getCurrentUserId() {
+    return localStorage.getItem(STORAGE_KEYS.currentUser);
+  }
+
+  function setCurrentUserId(id) {
+    if (!id) {
+      localStorage.removeItem(STORAGE_KEYS.currentUser);
+      return;
+    }
+    localStorage.setItem(STORAGE_KEYS.currentUser, id);
+  }
+
+  function seedDemoData() {
+    var existingUsers = getUsers();
+    if (existingUsers.length) return;
+
+    var demoUsers = [
+      {
+        id: "usr_pf_001",
+        loginType: "normal",
+        accountType: "pessoa_fisica",
+        name: "Adriano Antônio",
+        email: "adriano@ecopneus.com.br",
+        phone: "(11) 98765-4321",
+        createdAt: "2026-01-14",
+        status: "Ativa",
+        sustainableLevel: "Bronze",
+        totalCollections: 0,
+        lastCollection: "",
+        password: "123456",
+        photo: "",
+        googlePhoto: "",
+        address: "Rua das Coletas, 120 - Jardim Verde",
+        city: "Cuiabá",
+        state: "MT"
+      },
+      {
+        id: "usr_emp_001",
+        loginType: "normal",
+        accountType: "empresa",
+        companyRole: "Recicladora",
+        companyName: "Eco Pneus Reciclagem Ltda",
+        name: "Eco Pneus Reciclagem Ltda",
+        email: "contato@ecopneus.com.br",
+        phone: "(65) 3333-2211",
+        createdAt: "2026-01-14",
+        status: "Ativa",
+        sustainableLevel: "Bronze",
+        totalCollections: 0,
+        lastCollection: "",
+        password: "123456",
+        photo: "",
+        googlePhoto: "",
+        cnpj: "12.345.678/0001-99",
+        address: "Av. Industrial, 800 - Distrito Verde",
+        city: "Cuiabá",
+        state: "MT"
+      }
+    ];
+
+    setUsers(demoUsers);
+    setCurrentUserId("usr_pf_001");
+  }
+
+  seedDemoData();
+
+  /* ---------------------------------------
+   * STATE
+   * ------------------------------------- */
+  var currentUser = null;
+  var confirmAction = null;
+
+  /* ---------------------------------------
+   * ELEMENTOS
+   * ------------------------------------- */
+  var refs = {
+    pageShell: document.getElementById("pageShell"),
+    pageOverlay: document.getElementById("pageOverlay"),
+    settingsDrawer: document.getElementById("settingsDrawer"),
+
+    btnConfiguracoes: document.getElementById("btnConfiguracoes"),
+    btnFecharDrawer: document.getElementById("btnFecharDrawer"),
+    btnVoltar: document.getElementById("btnVoltar"),
+    btnUploadFoto: document.getElementById("btnUploadFoto"),
+    fotoInput: document.getElementById("fotoInput"),
+
+    topbarAvatarBox: document.getElementById("topbarAvatarBox"),
+    topbarAvatar: document.getElementById("topbarAvatar"),
+    topbarAvatarFallback: document.getElementById("topbarAvatarFallback"),
+    topbarUserName: document.getElementById("topbarUserName"),
+
+    profileAvatarBox: document.getElementById("profileAvatarBox"),
+    profileAvatar: document.getElementById("profileAvatar"),
+    profileAvatarFallback: document.getElementById("profileAvatarFallback"),
+    profileName: document.getElementById("profileName"),
+    accountBadge: document.getElementById("accountBadge"),
+    leftInfoStack: document.getElementById("leftInfoStack"),
+    summaryGrid: document.getElementById("summaryGrid"),
+    activityArea: document.getElementById("activityArea"),
+
+    btnEditarPerfil: document.getElementById("btnEditarPerfil"),
+    btnAlterarSenha: document.getElementById("btnAlterarSenha"),
+    btnVerTodas: document.getElementById("btnVerTodas"),
+
+    editModalBackdrop: document.getElementById("editModalBackdrop"),
+    passwordModalBackdrop: document.getElementById("passwordModalBackdrop"),
+    confirmModalBackdrop: document.getElementById("confirmModalBackdrop"),
+
+    btnFecharEditModal: document.getElementById("btnFecharEditModal"),
+    btnCancelarEdicao: document.getElementById("btnCancelarEdicao"),
+    editForm: document.getElementById("editForm"),
+
+    btnFecharPasswordModal: document.getElementById("btnFecharPasswordModal"),
+    btnCancelarSenha: document.getElementById("btnCancelarSenha"),
+    passwordForm: document.getElementById("passwordForm"),
+
+    btnFecharConfirmModal: document.getElementById("btnFecharConfirmModal"),
+    btnCancelConfirm: document.getElementById("btnCancelConfirm"),
+    btnProceedConfirm: document.getElementById("btnProceedConfirm"),
+    confirmTitle: document.getElementById("confirmTitle"),
+    confirmText: document.getElementById("confirmText"),
+    confirmEyebrow: document.getElementById("confirmEyebrow"),
+
+    inputNome: document.getElementById("inputNome"),
+    inputRazaoSocial: document.getElementById("inputRazaoSocial"),
+    inputEmail: document.getElementById("inputEmail"),
+    inputTelefone: document.getElementById("inputTelefone"),
+    inputDocumento: document.getElementById("inputDocumento"),
+    inputCompanyRole: document.getElementById("inputCompanyRole"),
+    inputEndereco: document.getElementById("inputEndereco"),
+    inputCidade: document.getElementById("inputCidade"),
+    inputUF: document.getElementById("inputUF"),
+    inputCreatedAt: document.getElementById("inputCreatedAt"),
+    inputNivel: document.getElementById("inputNivel"),
+    inputColetas: document.getElementById("inputColetas"),
+    inputUltimaColeta: document.getElementById("inputUltimaColeta"),
+    inputStatus: document.getElementById("inputStatus"),
+
+    groupRazaoSocial: document.getElementById("groupRazaoSocial"),
+    groupDocumento: document.getElementById("groupDocumento"),
+    groupCompanyRole: document.getElementById("groupCompanyRole"),
+    groupEndereco: document.getElementById("groupEndereco"),
+
+    inputSenhaAtual: document.getElementById("inputSenhaAtual"),
+    inputNovaSenha: document.getElementById("inputNovaSenha"),
+    inputConfirmarSenha: document.getElementById("inputConfirmarSenha"),
+
+    toastStack: document.getElementById("toastStack")
+  };
+
+  /* ---------------------------------------
+   * HELPERS
+   * ------------------------------------- */
+  function getCurrentUser() {
+    var currentId = getCurrentUserId();
+    var users = getUsers();
+    return users.find(function (u) { return u.id === currentId; }) || null;
+  }
+
+  function updateCurrentUser(patch) {
+    var users = getUsers();
+    var index = users.findIndex(function (u) { return u.id === currentUser.id; });
+    if (index === -1) return;
+    users[index] = Object.assign({}, users[index], patch);
+    setUsers(users);
+    currentUser = users[index];
+  }
+
+  function formatDateBR(dateStr) {
+    if (!dateStr) return "—";
+    var parts = dateStr.split("-");
+    if (parts.length < 3) return "—";
+    var year = Number(parts[0]);
+    var month = Number(parts[1]);
+    var day = Number(parts[2]);
+    var date = new Date(year, month - 1, day);
+    return new Intl.DateTimeFormat("pt-BR", {
+      day: "numeric",
+      month: "long",
+      year: "numeric"
+    }).format(date);
+  }
+
+  function initialsFromName(name) {
+    if (!name) return "U";
+    var parts = name.trim().split(/\s+/).filter(Boolean);
+    if (!parts.length) return "U";
+    return parts.slice(0, 2).map(function (p) { return p[0].toUpperCase(); }).join("");
+  }
+
+  function sanitize(value) {
+    return String(value == null ? "" : value)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
+  function formatPhone(value) {
+    var digits = String(value || "").replace(/\D/g, "").slice(0, 11);
+    if (!digits) return "";
+    if (digits.length <= 2) return "(" + digits;
+    if (digits.length <= 6) return "(" + digits.slice(0, 2) + ") " + digits.slice(2);
+    if (digits.length <= 10) return "(" + digits.slice(0, 2) + ") " + digits.slice(2, 6) + "-" + digits.slice(6);
+    return "(" + digits.slice(0, 2) + ") " + digits.slice(2, 7) + "-" + digits.slice(7);
+  }
+
+  function openDrawer() {
+    refs.pageShell.classList.add("drawer-open");
+    refs.settingsDrawer.setAttribute("aria-hidden", "false");
+  }
+
+  function closeDrawer() {
+    refs.pageShell.classList.remove("drawer-open");
+    refs.settingsDrawer.setAttribute("aria-hidden", "true");
+  }
+
+  function openModal(backdrop) {
+    backdrop.classList.add("active");
+    backdrop.setAttribute("aria-hidden", "false");
+  }
+
+  function closeModal(backdrop) {
+    backdrop.classList.remove("active");
+    backdrop.setAttribute("aria-hidden", "true");
+  }
+
+  function showToast(message, type) {
+    type = type || "success";
+    var toast = document.createElement("div");
+    toast.className = "toast " + type;
+    toast.textContent = message;
+    refs.toastStack.appendChild(toast);
+
+    setTimeout(function () {
+      toast.style.transition = "opacity 0.25s ease, transform 0.25s ease";
+      toast.style.opacity = "0";
+      toast.style.transform = "translateY(8px)";
+      setTimeout(function () { toast.remove(); }, 280);
+    }, 3200);
+  }
+
+  /* ---------------------------------------
+   * RENDERIZAR AVATAR
+   * ------------------------------------- */
+  function renderAvatar(container, imgEl, fallbackEl, imageUrl, name) {
+    var initials = initialsFromName(name);
+    fallbackEl.textContent = initials;
+
+    if (imageUrl) {
+      imgEl.src = imageUrl;
+      imgEl.alt = "Foto de " + name;
+      container.classList.add("has-image");
+    } else {
+      imgEl.removeAttribute("src");
+      container.classList.remove("has-image");
+    }
+  }
+
+  /* ---------------------------------------
+   * CONSTRUIR INFO STACK (COLUNA ESQUERDA)
+   * ------------------------------------- */
+  function buildInfoMiniCard(label, value) {
+    return (
+      '<div class="info-mini-card">' +
+        '<span class="label">' + sanitize(label) + '</span>' +
+        '<span class="value">' + sanitize(value || "—") + '</span>' +
+      '</div>'
+    );
+  }
+
+  function renderLeftInfo() {
+    var u = currentUser;
+    var html = "";
+
+    if (u.accountType === "empresa") {
+      if (u.cnpj) html += buildInfoMiniCard("CNPJ", u.cnpj);
+      if (u.companyRole) html += buildInfoMiniCard("TIPO DE EMPRESA", u.companyRole);
+    }
+
+    html += buildInfoMiniCard("E-MAIL", u.email);
+    html += buildInfoMiniCard("TELEFONE", u.phone || "—");
+
+    if (u.accountType === "empresa" && u.address) {
+      var fullAddr = u.address;
+      if (u.city) fullAddr += " — " + u.city;
+      if (u.state) fullAddr += "/" + u.state;
+      html += buildInfoMiniCard("ENDEREÇO", fullAddr);
+    }
+
+    html += buildInfoMiniCard("CONTA CRIADA EM", formatDateBR(u.createdAt));
+
+    refs.leftInfoStack.innerHTML = html;
+  }
+
+  /* ---------------------------------------
+   * CONSTRUIR SUMMARY GRID (COLUNA DIREITA)
+   * ------------------------------------- */
+  function buildSummaryItem(iconName, label, value) {
+    return (
+      '<div class="summary-item">' +
+        '<div class="summary-icon" data-icon="' + iconName + '"></div>' +
+        '<span class="summary-label">' + sanitize(label) + '</span>' +
+        '<div class="summary-value">' + sanitize(value || "—") + '</div>' +
+      '</div>'
+    );
+  }
+
+  function renderSummary() {
+    var u = currentUser;
+    var tipoLabel = u.accountType === "empresa"
+      ? (u.companyRole || "Empresa")
+      : "Pessoa Física";
+
+    var totalCol = String(u.totalCollections || 0);
+    var ultimaCol = u.lastCollection ? formatDateBR(u.lastCollection) : "—";
+
+    var html = "";
+    html += buildSummaryItem("user", "TIPO DA CONTA", tipoLabel);
+    html += buildSummaryItem("box", "COLETAS REALIZADAS", totalCol);
+    html += buildSummaryItem("clock", "ÚLTIMA COLETA", ultimaCol);
+    html += buildSummaryItem("check-circle", "STATUS DA CONTA", u.status || "Ativa");
+    html += buildSummaryItem("leaf", "NÍVEL SUSTENTÁVEL", u.sustainableLevel || "Bronze");
+
+    refs.summaryGrid.innerHTML = html;
+
+    /* Reaplicar ícones nos novos elementos */
+    refs.summaryGrid.querySelectorAll("[data-icon]").forEach(function (node) {
+      var iconName = node.getAttribute("data-icon");
+      if (icons[iconName]) node.innerHTML = icons[iconName];
+    });
+  }
+
+  /* ---------------------------------------
+   * RENDER PRINCIPAL
+   * ------------------------------------- */
+  function renderPage() {
+    currentUser = getCurrentUser();
+
+    if (!currentUser) {
+      showToast("Usuário não encontrado. Redirecionando...", "error");
+      setTimeout(function () {
+        window.location.href = "index.html";
+      }, 1800);
+      return;
+    }
+
+    var u = currentUser;
+    var displayName = u.name || "Usuário";
+    var photoUrl = u.photo || u.googlePhoto || "";
+
+    /* Topbar */
+    refs.topbarUserName.textContent = displayName;
+    renderAvatar(refs.topbarAvatarBox, refs.topbarAvatar, refs.topbarAvatarFallback, photoUrl, displayName);
+
+    /* Avatar principal */
+    renderAvatar(refs.profileAvatarBox, refs.profileAvatar, refs.profileAvatarFallback, photoUrl, displayName);
+
+    /* Nome */
+    refs.profileName.textContent = displayName;
+
+    /* Badge */
+    if (u.accountType === "empresa") {
+      refs.accountBadge.textContent = (u.companyRole || "EMPRESA").toUpperCase();
+    } else {
+      refs.accountBadge.textContent = "PESSOA FÍSICA";
+    }
+
+    /* Info stack esquerda */
+    renderLeftInfo();
+
+    /* Summary */
+    renderSummary();
+
+    /* Atividade */
+    refs.activityArea.innerHTML = '<p>Nenhuma coleta registrada ainda.</p>';
+  }
+
+  /* ---------------------------------------
+   * PREENCHER FORMULÁRIO DE EDIÇÃO
+   * ------------------------------------- */
+  function fillEditForm() {
+    var u = currentUser;
+    var isEmpresa = u.accountType === "empresa";
+
+    refs.inputNome.value = u.name || "";
+    refs.inputRazaoSocial.value = u.companyName || u.name || "";
+    refs.inputEmail.value = u.email || "";
+    refs.inputTelefone.value = u.phone || "";
+    refs.inputDocumento.value = u.cnpj || u.cpf || "";
+    refs.inputCompanyRole.value = u.companyRole || "Gerador";
+    refs.inputEndereco.value = u.address || "";
+    refs.inputCidade.value = u.city || "";
+    refs.inputUF.value = u.state || "";
+    refs.inputCreatedAt.value = u.createdAt || "";
+    refs.inputNivel.value = u.sustainableLevel || "Bronze";
+    refs.inputColetas.value = u.totalCollections || 0;
+    refs.inputUltimaColeta.value = u.lastCollection || "";
+    refs.inputStatus.value = u.status || "Ativa";
+
+    /* Mostrar/ocultar campos empresa */
+    refs.groupRazaoSocial.style.display = isEmpresa ? "" : "none";
+    refs.groupDocumento.style.display = isEmpresa ? "" : "none";
+    refs.groupCompanyRole.style.display = isEmpresa ? "" : "none";
+    refs.groupEndereco.style.display = "";
+
+    /* Label dinâmica do documento */
+    var docLabel = refs.groupDocumento.querySelector("label");
+    if (docLabel) docLabel.textContent = isEmpresa ? "CNPJ" : "CPF";
+  }
+
+  /* ---------------------------------------
+   * SALVAR EDIÇÃO DO PERFIL
+   * ------------------------------------- */
+  function saveEditForm(e) {
+    e.preventDefault();
+
+    var isEmpresa = currentUser.accountType === "empresa";
+    var patch = {
+      name: refs.inputNome.value.trim(),
+      email: refs.inputEmail.value.trim(),
+      phone: refs.inputTelefone.value.trim(),
+      address: refs.inputEndereco.value.trim(),
+      city: refs.inputCidade.value.trim(),
+      state: refs.inputUF.value.trim().toUpperCase(),
+      createdAt: refs.inputCreatedAt.value,
+      sustainableLevel: refs.inputNivel.value,
+      totalCollections: parseInt(refs.inputColetas.value, 10) || 0,
+      lastCollection: refs.inputUltimaColeta.value,
+      status: refs.inputStatus.value
+    };
+
+    if (isEmpresa) {
+      patch.companyName = refs.inputRazaoSocial.value.trim();
+      patch.name = refs.inputRazaoSocial.value.trim() || refs.inputNome.value.trim();
+      patch.companyRole = refs.inputCompanyRole.value;
+      patch.cnpj = refs.inputDocumento.value.trim();
+    }
+
+    updateCurrentUser(patch);
+    closeModal(refs.editModalBackdrop);
+    renderPage();
+    showToast("Perfil atualizado com sucesso!", "success");
+  }
+
+  /* ---------------------------------------
+   * ALTERAR SENHA
+   * ------------------------------------- */
+  function savePassword(e) {
+    e.preventDefault();
+
+    var senhaAtual = refs.inputSenhaAtual.value;
+    var novaSenha = refs.inputNovaSenha.value;
+    var confirmar = refs.inputConfirmarSenha.value;
+
+    if (currentUser.loginType === "google") {
+      showToast("Contas Google não possuem senha local.", "info");
+      closeModal(refs.passwordModalBackdrop);
+      return;
+    }
+
+    if (senhaAtual !== currentUser.password) {
+      showToast("Senha atual incorreta.", "error");
+      return;
+    }
+
+    if (novaSenha.length < 6) {
+      showToast("A nova senha deve ter pelo menos 6 caracteres.", "error");
+      return;
+    }
+
+    if (novaSenha !== confirmar) {
+      showToast("As senhas não coincidem.", "error");
+      return;
+    }
+
+    updateCurrentUser({ password: novaSenha });
+    refs.passwordForm.reset();
+    closeModal(refs.passwordModalBackdrop);
+    showToast("Senha alterada com sucesso!", "success");
+  }
+
+  /* ---------------------------------------
+   * UPLOAD DE FOTO
+   * ------------------------------------- */
+  function handleFotoUpload(file) {
+    if (!file || !file.type.startsWith("image/")) {
+      showToast("Selecione uma imagem válida.", "error");
+      return;
+    }
+
+    if (file.size > 2 * 1024 * 1024) {
+      showToast("A imagem deve ter no máximo 2MB.", "error");
+      return;
+    }
+
+    var reader = new FileReader();
+    reader.onload = function (event) {
+      updateCurrentUser({ photo: event.target.result });
+      renderPage();
+      showToast("Foto atualizada!", "success");
+    };
+    reader.readAsDataURL(file);
+  }
+
+  /* ---------------------------------------
+   * MODAL DE CONFIRMAÇÃO GENÉRICO
+   * ------------------------------------- */
+  function showConfirm(eyebrow, title, text, btnLabel, action) {
+    refs.confirmEyebrow.textContent = eyebrow;
+    refs.confirmTitle.textContent = title;
+    refs.confirmText.textContent = text;
+    refs.btnProceedConfirm.textContent = btnLabel || "Confirmar";
+    confirmAction = action;
+    openModal(refs.confirmModalBackdrop);
+  }
+
+  /* ---------------------------------------
+   * LOGOUT
+   * ------------------------------------- */
+  function doLogout() {
+    setCurrentUserId(null);
+    showToast("Sessão encerrada. Até logo!", "info");
+    setTimeout(function () {
+      window.location.href = "index.html";
+    }, 1400);
+  }
+
+  /* ---------------------------------------
+   * EXCLUIR CONTA
+   * ------------------------------------- */
+  function doDeleteAccount() {
+    var users = getUsers();
+    var remaining = users.filter(function (u) { return u.id !== currentUser.id; });
+    setUsers(remaining);
+    setCurrentUserId(null);
+    showToast("Conta excluída permanentemente.", "error");
+    setTimeout(function () {
+      window.location.href = "index.html";
+    }, 1800);
+  }
+
+  /* ---------------------------------------
+   * AÇÕES DO DRAWER
+   * ------------------------------------- */
+  function handleDrawerAction(action) {
+    closeDrawer();
+
+    switch (action) {
+      case "foto":
+        setTimeout(function () { refs.fotoInput.click(); }, 180);
+        break;
+
+      case "nome":
+        fillEditForm();
+        /* Focar no campo nome */
+        openModal(refs.editModalBackdrop);
+        setTimeout(function () { refs.inputNome.focus(); }, 200);
+        break;
+
+      case "telefone":
+        fillEditForm();
+        openModal(refs.editModalBackdrop);
+        setTimeout(function () { refs.inputTelefone.focus(); }, 200);
+        break;
+
+      case "endereco":
+        fillEditForm();
+        openModal(refs.editModalBackdrop);
+        setTimeout(function () { refs.inputEndereco.focus(); }, 200);
+        break;
+
+      case "senha":
+        refs.passwordForm.reset();
+        openModal(refs.passwordModalBackdrop);
+        setTimeout(function () { refs.inputSenhaAtual.focus(); }, 200);
+        break;
+
+      case "logout":
+        showConfirm(
+          "SESSÃO",
+          "Sair da conta?",
+          "Você será desconectado desta sessão. Poderá entrar novamente a qualquer momento.",
+          "Sair",
+          doLogout
+        );
+        break;
+
+      case "delete":
+        showConfirm(
+          "ATENÇÃO",
+          "Excluir conta permanentemente?",
+          "Todos os seus dados serão removidos e esta ação não pode ser desfeita.",
+          "Excluir conta",
+          doDeleteAccount
+        );
+        break;
+
+      default:
+        break;
+    }
+  }
+
+  /* ---------------------------------------
+   * MÁSCARA DE TELEFONE
+   * ------------------------------------- */
+  refs.inputTelefone.addEventListener("input", function () {
+    var digits = this.value.replace(/\D/g, "").slice(0, 11);
+    this.value = formatPhone(digits);
+  });
+
+  /* ---------------------------------------
+   * EVENT LISTENERS
+   * ------------------------------------- */
+
+  /* Voltar */
+  refs.btnVoltar.addEventListener("click", function () {
+    window.history.length > 1 ? window.history.back() : (window.location.href = "index.html");
+  });
+
+  /* Abrir/fechar drawer */
+  refs.btnConfiguracoes.addEventListener("click", openDrawer);
+  refs.btnFecharDrawer.addEventListener("click", closeDrawer);
+  refs.pageOverlay.addEventListener("click", closeDrawer);
+
+  /* Itens do drawer */
+  refs.settingsDrawer.querySelectorAll(".drawer-item[data-action]").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      handleDrawerAction(this.getAttribute("data-action"));
+    });
+  });
+
+  /* Abrir modal de edição */
+  refs.btnEditarPerfil.addEventListener("click", function () {
+    fillEditForm();
+    openModal(refs.editModalBackdrop);
+  });
+
+  /* Fechar modal de edição */
+  refs.btnFecharEditModal.addEventListener("click", function () { closeModal(refs.editModalBackdrop); });
+  refs.btnCancelarEdicao.addEventListener("click", function () { closeModal(refs.editModalBackdrop); });
+  refs.editModalBackdrop.addEventListener("click", function (e) {
+    if (e.target === refs.editModalBackdrop) closeModal(refs.editModalBackdrop);
+  });
+
+  /* Salvar edição */
+  refs.editForm.addEventListener("submit", saveEditForm);
+
+  /* Abrir modal de senha */
+  refs.btnAlterarSenha.addEventListener("click", function () {
+    refs.passwordForm.reset();
+    openModal(refs.passwordModalBackdrop);
+  });
+
+  /* Fechar modal de senha */
+  refs.btnFecharPasswordModal.addEventListener("click", function () { closeModal(refs.passwordModalBackdrop); });
+  refs.btnCancelarSenha.addEventListener("click", function () { closeModal(refs.passwordModalBackdrop); });
+  refs.passwordModalBackdrop.addEventListener("click", function (e) {
+    if (e.target === refs.passwordModalBackdrop) closeModal(refs.passwordModalBackdrop);
+  });
+
+  /* Salvar senha */
+  refs.passwordForm.addEventListener("submit", savePassword);
+
+  /* Fechar modal de confirmação */
+  refs.btnFecharConfirmModal.addEventListener("click", function () {
+    confirmAction = null;
+    closeModal(refs.confirmModalBackdrop);
+  });
+  refs.btnCancelConfirm.addEventListener("click", function () {
+    confirmAction = null;
+    closeModal(refs.confirmModalBackdrop);
+  });
+  refs.confirmModalBackdrop.addEventListener("click", function (e) {
+    if (e.target === refs.confirmModalBackdrop) {
+      confirmAction = null;
+      closeModal(refs.confirmModalBackdrop);
+    }
+  });
+
+  /* Executar ação confirmada */
+  refs.btnProceedConfirm.addEventListener("click", function () {
+    closeModal(refs.confirmModalBackdrop);
+    if (typeof confirmAction === "function") {
+      confirmAction();
+      confirmAction = null;
+    }
+  });
+
+  /* Upload de foto pelo botão câmera */
+  refs.btnUploadFoto.addEventListener("click", function () {
+    refs.fotoInput.click();
+  });
+
+  refs.fotoInput.addEventListener("change", function () {
+    if (this.files && this.files[0]) {
+      handleFotoUpload(this.files[0]);
+    }
+    this.value = "";
+  });
+
+  /* Ver todas as atividades */
+  refs.btnVerTodas.addEventListener("click", function () {
+    showToast("Nenhuma coleta registrada ainda.", "info");
+  });
+
+  /* Fechar drawer com ESC, fechar modais com ESC */
+  document.addEventListener("keydown", function (e) {
+    if (e.key !== "Escape") return;
+
+    if (refs.confirmModalBackdrop.classList.contains("active")) {
+      confirmAction = null;
+      closeModal(refs.confirmModalBackdrop);
+      return;
+    }
+    if (refs.editModalBackdrop.classList.contains("active")) {
+      closeModal(refs.editModalBackdrop);
+      return;
+    }
+    if (refs.passwordModalBackdrop.classList.contains("active")) {
+      closeModal(refs.passwordModalBackdrop);
+      return;
+    }
+    if (refs.pageShell.classList.contains("drawer-open")) {
+      closeDrawer();
+    }
+  });
+
+  /* ---------------------------------------
+   * INICIALIZAÇÃO
+   * ------------------------------------- */
+  renderPage();
+
+})();

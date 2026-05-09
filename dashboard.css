@@ -1242,6 +1242,11 @@ img {
     color: #b67806;
 }
 
+.status-pill.em_rota {
+    background: #e8f4ff;
+    color: #1a6598;
+}
+
 .status-pill.concluida {
     background: #e8fbf2;
     color: #0b8661;

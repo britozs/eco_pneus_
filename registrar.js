@@ -40,19 +40,25 @@ auth.onAuthStateChanged(async (user) => {
         console.log('Sem dados extras do usuário');
     }
 
+    try {
+        await migrarRascunhoLegacyLocalStorageParaFirestore(user);
+    } catch (e2) {
+        console.warn(e2);
+    }
+
     // Pré-preencher responsável e telefone
     const respInput = document.getElementById('responsavel');
     const telInput = document.getElementById('telefone');
     if (respInput && user.displayName) respInput.value = user.displayName;
     if (telInput && currentUserData?.telefone) telInput.value = currentUserData.telefone;
 
-    initRegistrar();
+    await initRegistrar();
 });
 
 // ============================================================
 // INIT
 // ============================================================
-function initRegistrar() {
+async function initRegistrar() {
     document.getElementById('protocol-preview').textContent = protocoloProvisorio;
 
     bindStepsNav();
@@ -67,6 +73,7 @@ function initRegistrar() {
     bindConfirmCheckbox();
     bindNavigationButtons();
     bindRascunho();
+    await carregarRascunhoFirestore();
 
     // Inicializa cálculo de peso e summary
     recalcularPesoSugerido();
@@ -447,8 +454,7 @@ async function registrarColeta() {
             data: new Date()
         });
 
-        // Limpa rascunho
-        try { localStorage.removeItem('ecoPneus_rascunho'); } catch(e) {}
+        await limparRascunhoFirestore();
 
         mostrarSucesso(protocoloFinal);
     } catch (e) {
@@ -472,67 +478,131 @@ function mostrarSucesso(protocolo) {
 }
 
 // ============================================================
-// RASCUNHO (LocalStorage)
+// RASCUNHO (Firestore doc usuários / rascunhoRegistrarColeta)
 // ============================================================
 function bindRascunho() {
     const btn = document.getElementById('btn-salvar-rascunho');
-    btn?.addEventListener('click', salvarRascunho);
-    carregarRascunho();
+    btn?.addEventListener('click', salvarRascunhoFirestore);
 }
 
-function salvarRascunho() {
+function objetoRascunhoParaFirestore() {
+    return {
+        tipoPneu: formState.tipoPneu,
+        pesoUnitario: formState.pesoUnitario,
+        quantidade: formState.quantidade,
+        pesoEstimado: formState.pesoEstimado,
+        endereco: formState.endereco,
+        urgencia: formState.urgencia,
+        observacoes: formState.observacoes || '',
+        responsavel: formState.responsavel,
+        telefone: formState.telefone,
+        savedAt: firebase.firestore.FieldValue.serverTimestamp()
+    };
+}
+
+async function salvarRascunhoFirestore() {
+    if (!currentUser || typeof db === 'undefined') return;
     try {
-        const rascunho = { ...formState, fotoFile: null, savedAt: new Date().toISOString() };
-        localStorage.setItem('ecoPneus_rascunho', JSON.stringify(rascunho));
+        await db.collection('usuarios').doc(currentUser.uid).set(
+            { rascunhoRegistrarColeta: objetoRascunhoParaFirestore() },
+            { merge: true }
+        );
         showToast('Rascunho salvo com sucesso!');
     } catch (e) {
+        console.warn(e);
         showToast('Não foi possível salvar o rascunho', 'error');
     }
 }
 
-function carregarRascunho() {
+async function limparRascunhoFirestore() {
+    if (!currentUser || typeof db === 'undefined') return;
+    try {
+        await db.collection('usuarios').doc(currentUser.uid).update({
+            rascunhoRegistrarColeta: firebase.firestore.FieldValue.delete()
+        });
+    } catch (e) {
+        console.warn(e);
+    }
+}
+
+async function migrarRascunhoLegacyLocalStorageParaFirestore(user) {
     try {
         const raw = localStorage.getItem('ecoPneus_rascunho');
-        if (!raw) return;
-        const r = JSON.parse(raw);
-        if (!r) return;
+        if (!raw || !user) return;
+        const parsed = JSON.parse(raw);
+        if (!parsed || typeof parsed !== 'object') return;
 
-        // Restaura campos visíveis
-        if (r.tipoPneu) {
-            const opt = document.querySelector(`.tire-option[data-type="${r.tipoPneu}"]`);
-            if (opt) opt.click();
-        }
-        if (r.quantidade) {
-            const inp = document.getElementById('quantidade');
-            if (inp) { inp.value = r.quantidade; atualizarQuantidade(); }
-        }
-        if (r.pesoEstimado) {
-            const p = document.getElementById('pesoEstimado');
-            if (p) { p.value = r.pesoEstimado; formState.pesoEstimado = r.pesoEstimado; }
-        }
-        if (r.endereco) {
-            const e = document.getElementById('endereco');
-            if (e) { e.value = r.endereco; formState.endereco = r.endereco; }
-        }
-        if (r.urgencia) {
-            const card = document.querySelector(`.urgency-card[data-urgency="${r.urgencia}"]`);
-            if (card) card.click();
-        }
-        if (r.observacoes) {
-            const o = document.getElementById('observacoes');
-            if (o) { o.value = r.observacoes; formState.observacoes = r.observacoes; }
-            const counter = document.getElementById('obs-counter');
-            if (counter) counter.textContent = `${r.observacoes.length}/300`;
-        }
-        if (r.responsavel) {
-            const resp = document.getElementById('responsavel');
-            if (resp) { resp.value = r.responsavel; formState.responsavel = r.responsavel; }
-        }
-        if (r.telefone) {
-            const tel = document.getElementById('telefone');
-            if (tel) { tel.value = r.telefone; formState.telefone = r.telefone; }
-        }
-        atualizarSummary();
+        localStorage.removeItem('ecoPneus_rascunho');
+
+        const mig = {
+            tipoPneu: parsed.tipoPneu,
+            pesoUnitario: parsed.pesoUnitario,
+            quantidade: parsed.quantidade,
+            pesoEstimado: parsed.pesoEstimado,
+            endereco: parsed.endereco,
+            urgencia: parsed.urgencia,
+            observacoes: parsed.observacoes || '',
+            responsavel: parsed.responsavel,
+            telefone: parsed.telefone,
+            migratedFromLocalStorageAt: firebase.firestore.FieldValue.serverTimestamp()
+        };
+
+        await db.collection('usuarios').doc(user.uid).set(
+            { rascunhoRegistrarColeta: mig },
+            { merge: true }
+        );
+    } catch (e) {
+        console.warn('Migração rascunho localStorage:', e);
+    }
+}
+
+function aplicarRascunhoNoFormulario(r) {
+    if (!r || typeof r !== 'object') return;
+
+    if (r.tipoPneu) {
+        const opt = document.querySelector(`.tire-option[data-type="${r.tipoPneu}"]`);
+        if (opt) opt.click();
+    }
+    if (r.quantidade != null && r.quantidade !== '') {
+        const inp = document.getElementById('quantidade');
+        if (inp) { inp.value = r.quantidade; atualizarQuantidade(); }
+    }
+    if (r.pesoEstimado != null && r.pesoEstimado !== '') {
+        const p = document.getElementById('pesoEstimado');
+        if (p) { p.value = r.pesoEstimado; formState.pesoEstimado = r.pesoEstimado; }
+    }
+    if (r.endereco) {
+        const e = document.getElementById('endereco');
+        if (e) { e.value = r.endereco; formState.endereco = r.endereco; }
+    }
+    if (r.urgencia) {
+        const card = document.querySelector(`.urgency-card[data-urgency="${r.urgencia}"]`);
+        if (card) card.click();
+    }
+    if (r.observacoes) {
+        const o = document.getElementById('observacoes');
+        if (o) { o.value = r.observacoes; formState.observacoes = r.observacoes; }
+        const counter = document.getElementById('obs-counter');
+        if (counter) counter.textContent = `${String(r.observacoes).length}/300`;
+    }
+    if (r.responsavel) {
+        const resp = document.getElementById('responsavel');
+        if (resp) { resp.value = r.responsavel; formState.responsavel = r.responsavel; }
+    }
+    if (r.telefone) {
+        const tel = document.getElementById('telefone');
+        if (tel) { tel.value = r.telefone; formState.telefone = r.telefone; }
+    }
+    atualizarSummary();
+}
+
+async function carregarRascunhoFirestore() {
+    if (!currentUser || typeof db === 'undefined') return;
+    try {
+        const docSnap = await db.collection('usuarios').doc(currentUser.uid).get();
+        if (!docSnap.exists) return;
+        const raw = docSnap.data()?.rascunhoRegistrarColeta;
+        aplicarRascunhoNoFormulario(raw || null);
     } catch (e) {
         console.warn('Erro ao carregar rascunho', e);
     }

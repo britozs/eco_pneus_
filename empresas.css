@@ -835,13 +835,13 @@ img { max-width: 100%; display: block; }
     background: #fff;
     border: 1px solid #ecefe9;
 }
-#partners-map { width: 100%; height: 100%; }
+#partners-map { width: 100%; height: 100%; min-height: 360px; }
+#partners-map.leaflet-container { z-index: 1; }
 
 .fixed-markers-overlay {
-    position: absolute;
-    inset: 0;
+    display: none !important;
+    visibility: hidden;
     pointer-events: none;
-    z-index: 500;
 }
 .fixed-pin {
     position: absolute;

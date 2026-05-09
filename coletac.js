@@ -33,6 +33,20 @@ auth.onAuthStateChanged(user => {
 // ------------------------------------------
 // INIT
 // ------------------------------------------
+function scheduleLeafletResize() {
+    const run = () => {
+        try {
+            if (map) map.invalidateSize();
+            if (reviewMap) reviewMap.invalidateSize();
+            syncReviewMap();
+        } catch (e) {}
+    };
+    requestAnimationFrame(run);
+    setTimeout(run, 120);
+    setTimeout(run, 380);
+    setTimeout(run, 800);
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     initFallbackHelpers();
     initMap();
@@ -40,7 +54,21 @@ document.addEventListener('DOMContentLoaded', () => {
     bindEvents();
     updateStepper(1);
     renderImpact();
+    scheduleLeafletResize();
+    window.addEventListener('resize', scheduleLeafletResize);
+    const mapHost = document.getElementById('map');
+    if (mapHost && typeof ResizeObserver !== 'undefined') {
+        const ro = new ResizeObserver(() => scheduleLeafletResize());
+        ro.observe(mapHost.parentElement || mapHost);
+    }
+    const rm = document.getElementById('review-map');
+    if (rm && typeof ResizeObserver !== 'undefined') {
+        const ro2 = new ResizeObserver(() => scheduleLeafletResize());
+        ro2.observe(rm.parentElement || rm);
+    }
 });
+
+window.addEventListener('load', () => scheduleLeafletResize());
 
 // ------------------------------------------
 // EVENTOS

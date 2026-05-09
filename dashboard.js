@@ -18,15 +18,22 @@ auth.onAuthStateChanged(async (user) => {
     }
 
     currentUser = user;
-    setHeaderUser(user);
 
+    let perfilFirestore = {};
     try {
         const doc = await db.collection('usuarios').doc(user.uid).get();
         if (doc.exists) {
             currentUserData = doc.data();
+            perfilFirestore = currentUserData || {};
         }
     } catch (error) {
         console.log('Não foi possível carregar dados extras do usuário.');
+    }
+
+    if (typeof ecoPneusAplicarHeaderPerfilFirebase === 'function') {
+        ecoPneusAplicarHeaderPerfilFirebase(user, perfilFirestore);
+    } else {
+        setHeaderUser(user);
     }
 
     await renderDashboard();
@@ -151,10 +158,46 @@ function isEstaSemana(dataObj) {
     return dias <= 7;
 }
 
+/** Alinha com registrar.js / coletac.js (maiúsculas ou minúsculas). */
+function normalizeColetaStatusDb(status) {
+    const v = String(status || '').toLowerCase();
+    if (v.includes('cancel')) return 'cancelada';
+    if (v.includes('conclu') || v.includes('finaliz')) return 'concluida';
+    if (v.includes('rota') || v.includes('despach') || v.includes('transito')) return 'em_rota';
+    return 'pendente';
+}
+
+function pickColetaDataObj(c) {
+    if (!c) return null;
+    return c.criadoEm || c.data || c.createdAt || c.created_at || null;
+}
+
+function coletaTsMillis(c) {
+    const d = pickColetaDataObj(c);
+    if (!d) return 0;
+    if (typeof d.seconds === 'number') return d.seconds * 1000 + (d.nanoseconds || 0) / 1e6;
+    const t = new Date(d).getTime();
+    return Number.isFinite(t) ? t : 0;
+}
+
+function sortColetasRecentFirst(arr) {
+    return [...arr].sort((a, b) => coletaTsMillis(b) - coletaTsMillis(a));
+}
+
 function getStatusClass(status) {
-    if (status === 'Pendente') return 'pendente';
-    if (status === 'Cancelada') return 'cancelada';
-    return 'concluida';
+    const n = normalizeColetaStatusDb(status);
+    if (n === 'cancelada') return 'cancelada';
+    if (n === 'concluida') return 'concluida';
+    if (n === 'em_rota') return 'em_rota';
+    return 'pendente';
+}
+
+function statusLabelUi(status) {
+    const n = normalizeColetaStatusDb(status);
+    if (n === 'concluida') return 'Concluída';
+    if (n === 'em_rota') return 'Em rota';
+    if (n === 'cancelada') return 'Cancelada';
+    return 'Pendente';
 }
 
 function getUrgenciaLabel(urgencia) {
@@ -543,42 +586,103 @@ async function renderDashboard() {
 // ============================================================
 // CARREGAR DADOS DO DASHBOARD
 // ============================================================
+function aplicarPainelDashboardVazio(logError) {
+    if (logError) console.warn('Dashboard — usando valores zerados:', logError);
+
+    setText('total-pneus', '0 pneus');
+    setText('co2-evitado', `${formatDecimalBR(0)} t`);
+    setText('frota-rota', formatNumberBR(0));
+    setText('parceiros-ativos', formatNumberBR(0));
+    setText('chip-total-pneus', '+0%');
+    setText('chip-co2', '+0%');
+    setText('hero-impact', `0 pneus processados`);
+
+    setText('mes-pneus', formatNumberBR(0));
+    setText('mes-coletas', formatNumberBR(0));
+    setText('mes-pendentes', formatNumberBR(0));
+    setText('ops-meta-pneus', `+0% vs. mês anterior`);
+    setText('ops-meta-coletas', `0 esta semana`);
+    setText('ops-right-pneus', `0%`);
+    setText('ops-right-coletas', `0%`);
+    setText('ops-right-pendentes', `0%`);
+    setWidth('ops-bar-pneus', `0%`);
+    setWidth('ops-bar-coletas', `0%`);
+    setWidth('ops-bar-pendentes', `0%`);
+
+    setHTML(
+        'impact-text',
+        'Desde janeiro, sua operação destinou corretamente <strong>0 pneus</strong>, reduzindo passivos ambientais e fortalecendo a logística reversa.'
+    );
+    setText('impact-agua', '0 L');
+    setText('impact-energia', '0 kWh');
+    setText('impact-aterro', `${formatDecimalBR(0)} t`);
+
+    setWidth('goal-progress', `0%`);
+    setText('goal-left', `0% concluído`);
+    setText('goal-right', `${formatNumberBR(1600)} pneus restantes`);
+    setText('goal-subtitle', `${formatNumberBR(1600)} pneus reciclados na meta mensal`);
+    setText('goal-pendentes', formatNumberBR(0));
+    setText('goal-concluidas', formatNumberBR(0));
+    setText('last-update', 'Atualizado agora');
+
+    setHTML('recent-list', renderRecentesDashboard([]));
+    preencherRealtime([], 0);
+    setHTML('upcoming-box', renderAgendaDashboard([], 0));
+}
+
+async function fetchParceirosAtivosCount() {
+    try {
+        const empresasSnap = await db.collection('usuarios').where('tipo', '==', 'empresa').get();
+        return empresasSnap.size;
+    } catch (e1) {
+        try {
+            const snap = await db.collection('parceiros').get();
+            return snap.size;
+        } catch (e2) {
+            return 0;
+        }
+    }
+}
+
 async function carregarDadosDashboard() {
     if (!currentUser) return;
 
-    try {
-        const recentesSnap = await db.collection('coletas')
-            .where('uid', '==', currentUser.uid)
-            .orderBy('data', 'desc')
-            .limit(8)
-            .get();
+    if (typeof db === 'undefined') {
+        aplicarPainelDashboardVazio(new Error('Firestore não carregado'));
+        replaceIcons();
+        return;
+    }
 
+    try {
+        /** Uma única query por uid (evita índice composto com orderBy + falha quando falta campo `data`). */
         const todasSnap = await db.collection('coletas')
             .where('uid', '==', currentUser.uid)
             .get();
 
-        const recentes = [];
-        recentesSnap.forEach(doc => recentes.push({ id: doc.id, ...doc.data() }));
-
         const todas = [];
         todasSnap.forEach(doc => todas.push({ id: doc.id, ...doc.data() }));
 
-        const totalPneus = todas.reduce((acc, c) => acc + Number(c.quantidade || 0), 0);
+        const todasOrdenadas = sortColetasRecentFirst(todas);
+        const recentes = todasOrdenadas.slice(0, 8);
+
+        const totalPneus = todas.reduce((acc, c) => acc + Number(c.quantidade || c.qtd || 0), 0);
         const totalColetas = todas.length;
-        const totalPendentes = todas.filter(c => c.status === 'Pendente').length;
-        const totalConcluidas = todas.filter(c => c.status === 'Concluida').length;
-        const totalEmRota = todas.filter(c => c.status === 'Pendente').length;
+        const totalPendentes = todas.filter(c => normalizeColetaStatusDb(c.status) === 'pendente').length;
+        const totalEmRota = todas.filter(c => normalizeColetaStatusDb(c.status) === 'em_rota').length;
+        const totalConcluidas = todas.filter(c => normalizeColetaStatusDb(c.status) === 'concluida').length;
 
         const coletasMes = todas.filter(c => {
-            if (!c.data) return false;
-            const dt = c.data.seconds ? new Date(c.data.seconds * 1000) : new Date(c.data);
+            const dRaw = pickColetaDataObj(c);
+            if (!dRaw) return false;
+            const dt = dRaw.seconds ? new Date(dRaw.seconds * 1000) : new Date(dRaw);
+            if (Number.isNaN(dt.getTime())) return false;
             const now = new Date();
             return dt.getMonth() === now.getMonth() && dt.getFullYear() === now.getFullYear();
         });
 
-        const pneusMes = coletasMes.reduce((acc, c) => acc + Number(c.quantidade || 0), 0);
-        const pendentesMes = coletasMes.filter(c => c.status === 'Pendente').length;
-        const coletasSemana = todas.filter(c => isEstaSemana(c.data)).length;
+        const pneusMes = coletasMes.reduce((acc, c) => acc + Number(c.quantidade || c.qtd || 0), 0);
+        const pendentesMes = coletasMes.filter(c => normalizeColetaStatusDb(c.status) === 'pendente').length;
+        const coletasSemana = todas.filter(c => isEstaSemana(pickColetaDataObj(c))).length;
 
         const metaMensal = 1600;
         const percentualMeta = Math.min((pneusMes / metaMensal) * 100, 100);
@@ -591,8 +695,9 @@ async function carregarDadosDashboard() {
 
         setText('total-pneus', `${formatNumberBR(totalPneus)} pneus`);
         setText('co2-evitado', `${formatDecimalBR(co2)} t`);
-        setText('frota-rota', formatNumberBR(totalEmRota));
-        setText('parceiros-ativos', '--');
+        const coletasOperacionais = totalPendentes + totalEmRota;
+        setText('frota-rota', formatNumberBR(coletasOperacionais));
+        setText('parceiros-ativos', formatNumberBR(await fetchParceirosAtivosCount()));
 
         setText('chip-total-pneus', `+${Math.min(totalColetas * 4, 28)}%`);
         setText('chip-co2', `+${Math.min(Math.round(co2 * 3), 49)}%`);
@@ -648,25 +753,9 @@ async function carregarDadosDashboard() {
         setHTML('recent-list', renderRecentesDashboard(recentes));
         setHTML('upcoming-box', renderAgendaDashboard(recentes, totalPendentes));
 
-        try {
-            const empresasSnap = await db.collection('usuarios').where('tipo', '==', 'empresa').get();
-            setText('parceiros-ativos', formatNumberBR(empresasSnap.size));
-        } catch {
-            setText('parceiros-ativos', '--');
-        }
-
     } catch (error) {
         console.error(error);
-        setHTML(
-            'recent-list',
-            `
-            <div class="empty-state">
-                <div class="empty-icon">⚠</div>
-                <h3>Erro ao carregar</h3>
-                <p>Não foi possível carregar as coletas.</p>
-            </div>
-            `
-        );
+        aplicarPainelDashboardVazio(error);
     }
 
     replaceIcons();
@@ -675,7 +764,7 @@ async function carregarDadosDashboard() {
 function preencherRealtime(recentes, totalPendentes) {
     const item1 = recentes[0];
     const item2 = recentes[1];
-    const item3 = recentes.find(c => c.status === 'Pendente') || recentes[2];
+    const item3 = recentes.find(c => normalizeColetaStatusDb(c.status) === 'pendente') || recentes[2];
 
     setText(
         'rt-1-title',
@@ -684,17 +773,19 @@ function preencherRealtime(recentes, totalPendentes) {
 
     setText(
         'rt-1-sub',
-        item1 ? `${item1.endereco || 'Local informado'} • ${formatDateTimeShort(item1.data)}` : 'Sem eventos recentes'
+        item1 ? `${item1.endereco || 'Local informado'} • ${formatDateTimeShort(pickColetaDataObj(item1))}` : 'Sem eventos recentes'
     );
 
     setText(
         'rt-2-title',
-        item2 ? `Coleta ${item2.status || 'atualizada'}` : 'Coletas em atualização'
+        item2 ? `Coleta ${statusLabelUi(item2.status)}` : 'Coletas em atualização'
     );
 
     setText(
         'rt-2-sub',
-        item2 ? `${item2.tipoPneu || 'Pneus'} • ${formatDateTimeShort(item2.data)}` : 'Monitorando novas movimentações'
+        item2
+            ? `${item2.tipoPneu || item2.tipo || 'Pneus'} • ${formatDateTimeShort(pickColetaDataObj(item2))}`
+            : 'Monitorando novas movimentações'
     );
 
     setText(
@@ -723,9 +814,16 @@ function renderRecentesDashboard(lista) {
 
     lista.slice(0, 4).forEach(c => {
         const statusClass = getStatusClass(c.status);
-        const endereco = c.endereco || (c.lat ? `Lat: ${Number(c.lat).toFixed(3)}` : '--');
-        const whenText = c.data
-            ? (isHoje(c.data) ? `Hoje • ${formatDateTimeShort(c.data).split(' ')[1] || ''}` : formatDateTimeShort(c.data))
+        const enderecoLinha =
+            String(c.endereco || '').trim() ||
+            (Number.isFinite(Number(c.latitude)) && Number.isFinite(Number(c.longitude))
+                ? `${Number(c.latitude).toFixed(4)}, ${Number(c.longitude).toFixed(4)}`
+                : c.lat
+                  ? `Lat: ${Number(c.lat).toFixed(3)}`
+                  : '--');
+        const quando = pickColetaDataObj(c);
+        const whenText = quando
+            ? (isHoje(quando) ? `Hoje • ${formatDateTimeShort(quando).split(' ')[1] || ''}` : formatDateTimeShort(quando))
             : '--';
 
         html += `
@@ -742,7 +840,7 @@ function renderRecentesDashboard(lista) {
 
                     <div class="recent-item-meta">
                         <span><i data-lucide="clock-3"></i> ${escapeHtml(whenText)}</span>
-                        <span><i data-lucide="map-pin"></i> ${escapeHtml(endereco)}</span>
+                        <span><i data-lucide="map-pin"></i> ${escapeHtml(enderecoLinha)}</span>
                         <span><i data-lucide="alert-circle"></i> ${escapeHtml(getUrgenciaLabel(c.urgencia))}</span>
                     </div>
                 </div>
@@ -750,7 +848,7 @@ function renderRecentesDashboard(lista) {
                 <div class="recent-item-side">
                     <strong>${formatNumberBR(c.quantidade || 0)}</strong>
                     <span>pneus</span>
-                    <div class="status-pill ${statusClass}">${escapeHtml(c.status || 'Pendente')}</div>
+                    <div class="status-pill ${statusClass}">${escapeHtml(statusLabelUi(c.status))}</div>
                 </div>
 
                 <div class="recent-arrow">
@@ -765,8 +863,8 @@ function renderRecentesDashboard(lista) {
 }
 
 function renderAgendaDashboard(lista, totalPendentes) {
-    const ultimaPendente = lista.find(c => c.status === 'Pendente');
-    const ultimaConcluida = lista.find(c => c.status === 'Concluida');
+    const ultimaPendente = lista.find(c => normalizeColetaStatusDb(c.status) === 'pendente');
+    const ultimaConcluida = lista.find(c => normalizeColetaStatusDb(c.status) === 'concluida');
     const ultimaQualquer = lista[0];
 
     return `
@@ -793,7 +891,7 @@ function renderAgendaDashboard(lista, totalPendentes) {
                 <div class="upcoming-icon gold"><i data-lucide="file-text"></i></div>
                 <div class="upcoming-text">
                     <strong>Relatório IBAMA</strong>
-                    <span>${ultimaConcluida ? `Última conclusão em ${formatDateBR(ultimaConcluida.data)}` : 'Dados prontos para fechamento mensal'}</span>
+                    <span>${ultimaConcluida ? `Última conclusão em ${formatDateBR(pickColetaDataObj(ultimaConcluida))}` : 'Dados prontos para fechamento mensal'}</span>
                 </div>
                 <div class="upcoming-meta">${ultimaQualquer ? 'Atualizado' : 'Pendente'}</div>
             </div>
@@ -849,14 +947,14 @@ async function carregarEmpresasDestaque() {
         replaceIcons();
 
     } catch (error) {
-        console.error(error);
+        console.warn(error);
         setHTML(
             'dash-empresas',
             `
             <div class="empty-state">
-                <div class="empty-icon">⚠</div>
-                <h3>Erro ao carregar</h3>
-                <p>Não foi possível carregar as empresas.</p>
+                <div class="empty-icon">🏢</div>
+                <h3>Nenhuma empresa disponível agora</h3>
+                <p>Os parceiros cadastrados aparecerão quando a lista puder ser carregada.</p>
             </div>
             `
         );

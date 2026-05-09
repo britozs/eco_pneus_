@@ -52,10 +52,6 @@ function initAuth() {
 }
 
 async function loadUserHeader(user) {
-    const userNameEl = document.getElementById('user-name');
-    const avatarEl = document.getElementById('user-avatar');
-
-    let displayName = user.displayName || '';
     let extraData = null;
 
     try {
@@ -68,15 +64,19 @@ async function loadUserHeader(user) {
         console.warn('Não foi possível carregar dados extras do usuário:', error);
     }
 
-    const finalName =
-        displayName ||
-        extraData?.nome ||
-        extraData?.nomeCompleto ||
-        extraData?.razaoSocial ||
-        (user.email ? user.email.split('@')[0] : 'Usuário');
-
-    if (userNameEl) userNameEl.textContent = finalName.split(' ')[0];
-    if (avatarEl) avatarEl.textContent = getInitials(finalName);
+    if (typeof ecoPneusAplicarHeaderPerfilFirebase === 'function') {
+        ecoPneusAplicarHeaderPerfilFirebase(user, extraData || {});
+    } else {
+        const userNameEl = document.getElementById('user-name');
+        const avatarEl = document.getElementById('user-avatar');
+        const displayName =
+            user.displayName ||
+            extraData?.nome ||
+            extraData?.razaoSocial ||
+            (user.email ? user.email.split('@')[0] : 'Usuário');
+        if (userNameEl) userNameEl.textContent = displayName.split(' ')[0];
+        if (avatarEl) avatarEl.textContent = getInitials(displayName);
+    }
 }
 
 // ------------------------------------------------------------

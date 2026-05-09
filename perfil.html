@@ -1,103 +1,378 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Perfil - Eco Pneus</title>
-    <link rel="icon" href="https://i.postimg.cc/rp5Py0Rr/Eco-Pneus-2-removebg-preview.png">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="perfil.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Perfil - Eco Pneus</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=DM+Serif+Display&display=swap"
+    rel="stylesheet"
+  >
+  <link rel="stylesheet" href="perfil.css" />
 </head>
 <body>
+  <div class="page-shell" id="pageShell">
+    <div class="page-overlay" id="pageOverlay"></div>
 
-<div class="perfil-page">
+    <main class="content-blur-target">
+      <!-- TOPO -->
+      <header class="topbar container">
+        <button class="back-link" id="btnVoltar" type="button" aria-label="Voltar ao painel">
+          <span class="icon-wrap icon-sm" data-icon="arrow-left"></span>
+          <span>Voltar ao painel</span>
+        </button>
 
-    <!-- HEADER -->
-    <div class="perfil-header">
-        <div class="perfil-top">
-            <button class="back-btn" onclick="voltar()">&#8592;</button>
-            <span class="header-title">Meu Perfil</span>
-            <!-- ENGRENAGEM -->
-            <button class="edit-btn" onclick="toggleEditar()">⚙️</button>
+        <div class="brand-area" aria-label="Eco Pneus Minha Conta">
+          <div class="brand-logo">
+            <span class="brand-logo-mark"></span>
+          </div>
+          <div class="brand-copy">
+            <strong>Eco Pneus</strong>
+            <small>MINHA CONTA</small>
+          </div>
         </div>
 
-        <div class="perfil-hero">
-            <div class="avatar-wrapper">
-                <img id="perfil-avatar" class="perfil-avatar"
-                src="https://ui-avatars.com/api/?name=U&background=0b6b3a&color=fff&size=150">
-                <span class="avatar-badge" id="tipo-badge">&#127970;</span>
+        <div class="topbar-actions">
+          <button class="user-chip" type="button" id="userChip">
+            <div class="user-chip-avatar" id="topbarAvatarBox">
+              <img id="topbarAvatar" alt="Avatar do usuário" />
+              <span id="topbarAvatarFallback">AA</span>
+            </div>
+            <span class="user-chip-name" id="topbarUserName">Usuário</span>
+          </button>
+
+          <button class="gear-btn" id="btnConfiguracoes" type="button" aria-label="Abrir configurações">
+            <span class="icon-wrap" data-icon="settings"></span>
+          </button>
+        </div>
+      </header>
+
+      <!-- HERO -->
+      <section class="hero-band container" aria-hidden="true"></section>
+
+      <!-- CONTEÚDO -->
+      <section class="content-grid container">
+        <!-- COLUNA ESQUERDA -->
+        <aside class="profile-card card">
+          <div class="profile-avatar-wrap">
+            <div class="profile-avatar-ring">
+              <div class="profile-avatar" id="profileAvatarBox">
+                <img id="profileAvatar" alt="Foto de perfil" />
+                <span id="profileAvatarFallback">AA</span>
+              </div>
             </div>
 
-            <h2 id="perfil-nome">Carregando...</h2>
-            <p id="perfil-email-header">---</p>
+            <button class="avatar-camera-btn" type="button" id="btnUploadFoto" aria-label="Alterar foto">
+              <span class="icon-wrap icon-xs" data-icon="camera"></span>
+            </button>
+          </div>
 
-            <div class="perfil-rating" id="perfil-rating" style="display:none;">
-                <div class="stars-display" id="perfil-stars"></div>
-                <span class="rating-number" id="perfil-rating-num">0.0</span>
-                <span class="rating-count" id="perfil-rating-count">(0 avaliacoes)</span>
-            </div>
-        </div>
-    </div>
+          <input type="file" id="fotoInput" accept="image/*" hidden />
 
-    <!-- CONTENT -->
-    <div class="perfil-content" id="perfil-content">
-        <div class="empty-state">
-            <div class="empty-icon">&#9203;</div>
-            <p>Carregando...</p>
-        </div>
-    </div>
+          <h1 class="profile-name" id="profileName">Adriano Antônio</h1>
+          <span class="account-badge" id="accountBadge">PESSOA FÍSICA</span>
 
-</div>
+          <div class="info-stack" id="leftInfoStack">
+            <!-- preenchido via JS -->
+          </div>
 
-<!-- MODAL EDITAR -->
-<div class="modal-overlay" id="modal-editar" style="display:none;">
-    <div class="modal-card">
-        <div class="modal-header">
-            <h3>Editar Perfil</h3>
-            <button class="modal-close" onclick="fecharEditar()">&times;</button>
-        </div>
+          <div class="profile-actions">
+            <button class="btn btn-primary" id="btnEditarPerfil" type="button">
+              <span class="icon-wrap icon-xs" data-icon="edit"></span>
+              <span>Editar Perfil</span>
+            </button>
 
-        <div class="modal-body">
+            <button class="btn btn-secondary" id="btnAlterarSenha" type="button">
+              <span class="icon-wrap icon-xs" data-icon="lock"></span>
+              <span>Alterar Senha</span>
+            </button>
+          </div>
+        </aside>
 
-            <!-- FOTO -->
-            <label>Foto de Perfil</label>
-            <input type="file" id="edit-foto" accept="image/*">
-
-            <label>Nome</label>
-            <input type="text" id="edit-nome">
-
-            <label>Telefone</label>
-            <input type="tel" id="edit-telefone" oninput="mascaraTel(this)">
-
-            <label id="edit-cnpj-label">CNPJ</label>
-            <input type="text" id="edit-cnpj">
-
-            <label>Cidade</label>
-            <input type="text" id="edit-cidade" placeholder="Ex: Campinas, SP">
-
-            <label>Descricao / Bio</label>
-            <textarea id="edit-bio" rows="3" placeholder="Fale sobre voce ou sua empresa..."></textarea>
-
-            <div id="edit-empresa-fields" style="display:none;">
-                <label>Materiais aceitos</label>
-                <input type="text" id="edit-materiais" placeholder="Pneus, borracha, aco...">
-
-                <label>Capacidade mensal (toneladas)</label>
-                <input type="number" id="edit-capacidade" placeholder="Ex: 50">
+        <!-- COLUNA DIREITA -->
+        <div class="right-column">
+          <section class="summary-card card">
+            <div class="section-head">
+              <div>
+                <span class="eyebrow">VISÃO GERAL</span>
+                <h2>Resumo da conta</h2>
+              </div>
             </div>
 
-            <button class="btn-save" onclick="salvarPerfil()">Salvar Alteracoes</button>
+            <div class="summary-grid" id="summaryGrid">
+              <!-- preenchido via JS -->
+            </div>
+          </section>
 
+          <section class="activity-card card">
+            <div class="section-head section-head-space">
+              <div>
+                <span class="eyebrow">ATIVIDADE</span>
+                <h2>Histórico recente</h2>
+              </div>
+
+              <button class="link-action" id="btnVerTodas" type="button">Ver todas →</button>
+            </div>
+
+            <div class="activity-empty" id="activityArea">
+              <p>Nenhuma coleta registrada ainda.</p>
+            </div>
+          </section>
         </div>
+      </section>
+    </main>
+
+    <!-- DRAWER CONFIGURAÇÕES -->
+    <aside class="settings-drawer" id="settingsDrawer" aria-hidden="true">
+      <div class="drawer-head">
+        <div>
+          <span class="eyebrow">CONFIGURAÇÕES</span>
+          <h3>Sua conta</h3>
+        </div>
+
+        <button class="drawer-close" id="btnFecharDrawer" type="button" aria-label="Fechar painel">
+          <span class="icon-wrap icon-xs" data-icon="x"></span>
+        </button>
+      </div>
+
+      <nav class="drawer-menu">
+        <button class="drawer-item" type="button" data-action="foto">
+          <span class="drawer-item-icon green-soft" data-icon="camera"></span>
+          <span class="drawer-item-copy">
+            <strong>Alterar foto</strong>
+            <small>Upload local</small>
+          </span>
+        </button>
+
+        <button class="drawer-item" type="button" data-action="nome">
+          <span class="drawer-item-icon green-soft" data-icon="edit"></span>
+          <span class="drawer-item-copy">
+            <strong>Editar nome</strong>
+            <small>Como aparece no sistema</small>
+          </span>
+        </button>
+
+        <button class="drawer-item" type="button" data-action="telefone">
+          <span class="drawer-item-icon green-soft" data-icon="phone"></span>
+          <span class="drawer-item-copy">
+            <strong>Editar telefone</strong>
+            <small>Contato principal</small>
+          </span>
+        </button>
+
+        <button class="drawer-item" type="button" data-action="endereco">
+          <span class="drawer-item-icon green-soft" data-icon="map-pin"></span>
+          <span class="drawer-item-copy">
+            <strong>Editar endereço</strong>
+            <small>Local cadastrado</small>
+          </span>
+        </button>
+
+        <button class="drawer-item" type="button" data-action="senha">
+          <span class="drawer-item-icon green-soft" data-icon="lock"></span>
+          <span class="drawer-item-copy">
+            <strong>Alterar senha</strong>
+            <small>Mantenha sua conta segura</small>
+          </span>
+        </button>
+
+        <hr class="drawer-separator" />
+
+        <button class="drawer-item" type="button" data-action="logout">
+          <span class="drawer-item-icon warning-soft" data-icon="logout"></span>
+          <span class="drawer-item-copy">
+            <strong>Sair da conta</strong>
+            <small>Encerrar sessão</small>
+          </span>
+        </button>
+
+        <button class="drawer-item" type="button" data-action="delete">
+          <span class="drawer-item-icon danger-soft" data-icon="trash"></span>
+          <span class="drawer-item-copy">
+            <strong>Excluir conta</strong>
+            <small>Ação permanente</small>
+          </span>
+        </button>
+      </nav>
+    </aside>
+
+    <!-- MODAL DE EDIÇÃO -->
+    <div class="modal-backdrop" id="editModalBackdrop" aria-hidden="true">
+      <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="editModalTitle">
+        <div class="modal-head">
+          <div>
+            <span class="eyebrow">EDIÇÃO</span>
+            <h3 id="editModalTitle">Editar perfil</h3>
+          </div>
+          <button class="modal-close" id="btnFecharEditModal" type="button" aria-label="Fechar modal">
+            <span class="icon-wrap icon-xs" data-icon="x"></span>
+          </button>
+        </div>
+
+        <form id="editForm" class="form-grid">
+          <div class="field-group field-full">
+            <label for="inputNome">Nome</label>
+            <input type="text" id="inputNome" />
+          </div>
+
+          <div class="field-group field-full" id="groupRazaoSocial">
+            <label for="inputRazaoSocial">Razão social</label>
+            <input type="text" id="inputRazaoSocial" />
+          </div>
+
+          <div class="field-group">
+            <label for="inputEmail">E-mail</label>
+            <input type="email" id="inputEmail" />
+          </div>
+
+          <div class="field-group">
+            <label for="inputTelefone">Telefone</label>
+            <input type="text" id="inputTelefone" maxlength="15" />
+          </div>
+
+          <div class="field-group" id="groupDocumento">
+            <label for="inputDocumento">Documento</label>
+            <input type="text" id="inputDocumento" />
+          </div>
+
+          <div class="field-group" id="groupCompanyRole">
+            <label for="inputCompanyRole">Tipo da empresa</label>
+            <select id="inputCompanyRole">
+              <option value="Gerador">Gerador</option>
+              <option value="Transportadora">Transportadora</option>
+              <option value="Recicladora">Recicladora</option>
+            </select>
+          </div>
+
+          <div class="field-group field-full" id="groupEndereco">
+            <label for="inputEndereco">Endereço completo</label>
+            <input type="text" id="inputEndereco" />
+          </div>
+
+          <div class="field-group">
+            <label for="inputCidade">Cidade</label>
+            <input type="text" id="inputCidade" />
+          </div>
+
+          <div class="field-group">
+            <label for="inputUF">UF</label>
+            <input type="text" id="inputUF" maxlength="2" />
+          </div>
+
+          <div class="field-group">
+            <label for="inputCreatedAt">Data de criação</label>
+            <input type="date" id="inputCreatedAt" />
+          </div>
+
+          <div class="field-group">
+            <label for="inputNivel">Nível sustentável</label>
+            <select id="inputNivel">
+              <option value="Bronze">Bronze</option>
+              <option value="Prata">Prata</option>
+              <option value="Ouro">Ouro</option>
+              <option value="Diamante">Diamante</option>
+            </select>
+          </div>
+
+          <div class="field-group">
+            <label for="inputColetas">Coletas realizadas</label>
+            <input type="number" id="inputColetas" min="0" />
+          </div>
+
+          <div class="field-group">
+            <label for="inputUltimaColeta">Última coleta</label>
+            <input type="date" id="inputUltimaColeta" />
+          </div>
+
+          <div class="field-group field-full">
+            <label for="inputStatus">Status da conta</label>
+            <select id="inputStatus">
+              <option value="Ativa">Ativa</option>
+              <option value="Pendente">Pendente</option>
+              <option value="Inativa">Inativa</option>
+            </select>
+          </div>
+
+          <div class="modal-actions field-full">
+            <button class="btn btn-secondary" type="button" id="btnCancelarEdicao">Cancelar</button>
+            <button class="btn btn-primary" type="submit">Salvar alterações</button>
+          </div>
+        </form>
+      </div>
     </div>
-</div>
 
-<!-- Firebase -->
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
-<script src="firebase-config.js"></script>
-<script src="perfil.js"></script>
+    <!-- MODAL SENHA -->
+    <div class="modal-backdrop" id="passwordModalBackdrop" aria-hidden="true">
+      <div class="modal-card modal-card-sm" role="dialog" aria-modal="true" aria-labelledby="passwordModalTitle">
+        <div class="modal-head">
+          <div>
+            <span class="eyebrow">SEGURANÇA</span>
+            <h3 id="passwordModalTitle">Alterar senha</h3>
+          </div>
+          <button class="modal-close" id="btnFecharPasswordModal" type="button" aria-label="Fechar modal">
+            <span class="icon-wrap icon-xs" data-icon="x"></span>
+          </button>
+        </div>
 
+        <form id="passwordForm" class="form-grid">
+          <div class="field-group field-full">
+            <label for="inputSenhaAtual">Senha atual</label>
+            <input type="password" id="inputSenhaAtual" placeholder="Digite sua senha atual" />
+          </div>
+
+          <div class="field-group field-full">
+            <label for="inputNovaSenha">Nova senha</label>
+            <input type="password" id="inputNovaSenha" placeholder="Digite a nova senha" />
+          </div>
+
+          <div class="field-group field-full">
+            <label for="inputConfirmarSenha">Confirmar nova senha</label>
+            <input type="password" id="inputConfirmarSenha" placeholder="Confirme a nova senha" />
+          </div>
+
+          <div class="modal-actions field-full">
+            <button class="btn btn-secondary" type="button" id="btnCancelarSenha">Cancelar</button>
+            <button class="btn btn-primary" type="submit">Atualizar senha</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- MODAL CONFIRMAÇÃO -->
+    <div class="modal-backdrop" id="confirmModalBackdrop" aria-hidden="true">
+      <div class="modal-card modal-card-sm" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
+        <div class="modal-head">
+          <div>
+            <span class="eyebrow" id="confirmEyebrow">CONFIRMAÇÃO</span>
+            <h3 id="confirmTitle">Deseja continuar?</h3>
+          </div>
+          <button class="modal-close" id="btnFecharConfirmModal" type="button" aria-label="Fechar modal">
+            <span class="icon-wrap icon-xs" data-icon="x"></span>
+          </button>
+        </div>
+
+        <div class="confirm-body">
+          <p id="confirmText">Confirme esta ação.</p>
+
+          <div class="modal-actions">
+            <button class="btn btn-secondary" type="button" id="btnCancelConfirm">Cancelar</button>
+            <button class="btn btn-danger" type="button" id="btnProceedConfirm">Confirmar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TOAST -->
+    <div class="toast-stack" id="toastStack"></div>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
+  <script src="firebase-config.js"></script>
+  <script src="perfil.js"></script>
 </body>
 </html>

@@ -2,8 +2,11 @@
 // ECO PNEUS - Empresas (Página Nova)
 // ============================================================
 
-// --- DADOS MOCK DOS PARCEIROS ---
-const PARCEIROS = [
+// Fonte de verdade: coleção Firestore `parceiros` (seed automático se vazia).
+let PARCEIROS = [];
+
+// --- Seed inicial (gravado no Firestore apenas quando a coleção está vazia) ---
+const SEED_PARCEIROS = [
     {
         id: 'verde-brasil',
         nome: 'Verde Brasil Reciclagem',
@@ -201,16 +204,247 @@ const PARCEIROS = [
     }
 ];
 
+// Coordenadas aproximadas por parceiro (cartão no mapa + fallback se o Firestore não tiver lat/lng).
+const PARCEIRO_COORDS_FALLBACK = {
+    'verde-brasil': [-23.5629, -46.6544],
+    ecorotas: [-22.9056, -47.0603],
+    'ciclo-pampa': [-30.0346, -51.2177],
+    'ponto-verde': [-25.4244, -49.2654],
+    'reborracha-bh': [-19.9245, -43.9202],
+    'mar-azul': [-27.5954, -48.5487],
+    'rota-sul': [-25.48, -49.32],
+    'eco-coleta-rj': [-22.911, -43.1729]
+};
+
+/** Preencido em tempo de execução via geocode (endereço/cidade cadastrados). */
+const coordOverrides = {};
+const cidadeGeocodeCache = new Map();
+
+async function ensureParceirosFromFirestore() {
+    if (typeof db === 'undefined') {
+        PARCEIROS = SEED_PARCEIROS.map(function (p) { return Object.assign({}, p); });
+        return;
+    }
+    try {
+        var snap = await db.collection('parceiros').get();
+        if (!snap.empty) {
+            PARCEIROS = [];
+            snap.forEach(function (doc) {
+                var d = doc.data() || {};
+                PARCEIROS.push(Object.assign({ id: doc.id }, d));
+            });
+            return;
+        }
+
+        var batch = db.batch();
+        SEED_PARCEIROS.forEach(function (p) {
+            var ref = db.collection('parceiros').doc(p.id);
+            var copy = {};
+            Object.keys(p).forEach(function (k) {
+                if (k !== 'id') copy[k] = p[k];
+            });
+            var cord = PARCEIRO_COORDS_FALLBACK[p.id];
+            if (cord) {
+                copy.latitude = cord[0];
+                copy.longitude = cord[1];
+            }
+            batch.set(ref, copy);
+        });
+        await batch.commit();
+
+        var snap2 = await db.collection('parceiros').get();
+        PARCEIROS = [];
+        snap2.forEach(function (doc) {
+            var d = doc.data() || {};
+            PARCEIROS.push(Object.assign({ id: doc.id }, d));
+        });
+    } catch (e) {
+        console.warn('Parceiros Firestore:', e);
+        PARCEIROS = SEED_PARCEIROS.map(function (p) { return Object.assign({}, p); });
+    }
+}
+
+function parceiroLatLngFirestoreOrFallback(p) {
+    if (!p) return null;
+    const la = Number(p.latitude);
+    const lo = Number(p.longitude);
+    if (Number.isFinite(la) && Number.isFinite(lo)) return [la, lo];
+    const fb = PARCEIRO_COORDS_FALLBACK[p.id];
+    return fb || null;
+}
+
+function enderecoParceiroParaBusca(p) {
+    if (!p) return '';
+    const parts = [];
+    ['endereco', 'logradouro', 'rua', 'numero', 'bairro', 'cidade', 'municipio', 'estado', 'cep'].forEach(function (k) {
+        const v = p[k];
+        if (v !== undefined && v !== null && String(v).trim() !== '') {
+            parts.push(String(v).trim());
+        }
+    });
+    return parts.length ? parts.join(', ') + ', Brasil' : '';
+}
+
+function parceiroLatLng(p) {
+    if (!p) return null;
+    const ov = coordOverrides[p.id];
+    if (ov && Number.isFinite(ov[0]) && Number.isFinite(ov[1])) return ov;
+    return parceiroLatLngFirestoreOrFallback(p);
+}
+
 // --- ESTADO ---
 let activeCategory = 'todas';
 let activeSort = 'rating';
 let activeReviewCompanyId = null;
 let activeReviewStars = 0;
 let mapInstance = null;
+let partnerMarkersLayer = null;
+let geocodePartnerTimer = null;
+let geocodeQueueRunning = false;
+let partnersMapResizeBound = false;
+
+function scheduleRefreshMapMarkersDebounced() {
+    if (geocodePartnerTimer) clearTimeout(geocodePartnerTimer);
+    geocodePartnerTimer = setTimeout(function () {
+        refreshParceirosMapMarkers();
+        geocodePartnerTimer = null;
+    }, 380);
+}
+
+function schedulePartnersMapInvalidate() {
+    if (!mapInstance) return;
+    const run = function () {
+        try {
+            mapInstance.invalidateSize();
+            refreshParceirosMapMarkers();
+        } catch (e) {}
+    };
+    requestAnimationFrame(run);
+    setTimeout(run, 110);
+    setTimeout(run, 420);
+}
+
+function bindPartnersMapResizeOnce() {
+    if (partnersMapResizeBound) return;
+    partnersMapResizeBound = true;
+    window.addEventListener('resize', schedulePartnersMapInvalidate);
+    window.addEventListener('load', schedulePartnersMapInvalidate);
+    const mc = document.querySelector('.map-card');
+    if (mc && typeof ResizeObserver !== 'undefined') {
+        new ResizeObserver(schedulePartnersMapInvalidate).observe(mc);
+    }
+}
+
+async function geocodeEnderecoParceiro(query) {
+    if (!query || query.length < 3 || typeof fetch === 'undefined') return null;
+    const keyLower = query.toLowerCase();
+    if (cidadeGeocodeCache.has(keyLower)) return cidadeGeocodeCache.get(keyLower);
+
+    try {
+        const url =
+            'https://nominatim.openstreetmap.org/search?format=json&limit=1&q=' +
+            encodeURIComponent(query);
+        const res = await fetch(url, { headers: { 'Accept-Language': 'pt-BR,pt;q=0.9' } });
+        if (!res.ok) {
+            cidadeGeocodeCache.set(keyLower, null);
+            return null;
+        }
+        const json = await res.json();
+        if (!json || !json.length) {
+            cidadeGeocodeCache.set(keyLower, null);
+            return null;
+        }
+        const la = parseFloat(json[0].lat);
+        const lo = parseFloat(json[0].lon);
+        if (!Number.isFinite(la) || !Number.isFinite(lo)) {
+            cidadeGeocodeCache.set(keyLower, null);
+            return null;
+        }
+        const ll = [la, lo];
+        cidadeGeocodeCache.set(keyLower, ll);
+        return ll;
+    } catch (e) {
+        console.warn('Geocode parceiro:', e);
+        return null;
+    }
+}
+
+async function hydrateParceiroCoordsFromAddress() {
+    if (geocodeQueueRunning || typeof fetch === 'undefined') return;
+    geocodeQueueRunning = true;
+    try {
+        for (let i = 0; i < PARCEIROS.length; i++) {
+            const p = PARCEIROS[i];
+            if (!p || !p.id) continue;
+            if (coordOverrides[p.id]) continue;
+            if (parceiroLatLngFirestoreOrFallback(p)) continue;
+            const q = enderecoParceiroParaBusca(p);
+            if (!q) continue;
+
+            const keyLower = q.toLowerCase();
+            const hadCached = cidadeGeocodeCache.has(keyLower);
+            const ll = await geocodeEnderecoParceiro(q);
+            if (ll) {
+                coordOverrides[p.id] = ll;
+                scheduleRefreshMapMarkersDebounced();
+            }
+            if (!hadCached) {
+                await new Promise(function (r) {
+                    setTimeout(r, 1100);
+                });
+            }
+        }
+    } finally {
+        geocodeQueueRunning = false;
+        refreshParceirosMapMarkers();
+    }
+}
+
+function refreshParceirosMapMarkers() {
+    if (!mapInstance || !partnerMarkersLayer || typeof L === 'undefined') return;
+
+    partnerMarkersLayer.clearLayers();
+
+    const list = getFiltered();
+    const bounds = [];
+
+    list.forEach((p) => {
+        const ll = parceiroLatLng(p);
+        if (!ll) return;
+        bounds.push(ll);
+        const marker = L.marker(ll).bindPopup(
+            `<strong>${String(p.nome || '').replace(/</g, '&lt;')}</strong><br>${String(p.cidade || '').replace(/</g, '&lt;')}`
+        );
+        partnerMarkersLayer.addLayer(marker);
+    });
+
+    const legend = document.getElementById('legend-total');
+    if (legend) {
+        const n = bounds.length;
+        legend.textContent = `${n} parceiro${n !== 1 ? 's' : ''} no mapa`;
+    }
+
+    if (bounds.length === 0) {
+        mapInstance.setView([-14.235, -51.9253], 4);
+        return;
+    }
+
+    if (bounds.length === 1) {
+        mapInstance.setView(bounds[0], 11);
+        return;
+    }
+
+    try {
+        mapInstance.fitBounds(bounds, { padding: [40, 40], maxZoom: 12 });
+    } catch (e) {
+        mapInstance.setView(bounds[0], 6);
+    }
+}
 
 // --- INIT ---
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     lucide.createIcons();
+    await ensureParceirosFromFirestore();
     setupAuth();
     renderFeatured();
     renderCompanies();
@@ -227,14 +461,30 @@ document.addEventListener('DOMContentLoaded', () => {
 // --- AUTH ---
 function setupAuth() {
     if (typeof auth === 'undefined') return;
-    auth.onAuthStateChanged(user => {
+    auth.onAuthStateChanged(async (user) => {
         if (!user) return;
-        const name = user.displayName || 'Usuário';
-        const initials = name.split(' ').map(p => p[0]).slice(0, 2).join('').toUpperCase();
-        const nameEl = document.getElementById('user-name');
-        const avatarEl = document.getElementById('user-avatar');
-        if (nameEl) nameEl.textContent = name.split(' ')[0];
-        if (avatarEl) avatarEl.textContent = initials;
+        let dados = {};
+        try {
+            const snap = await db.collection('usuarios').doc(user.uid).get();
+            if (snap.exists) dados = snap.data() || {};
+        } catch (e) {
+            console.warn(e);
+        }
+        if (typeof ecoPneusAplicarHeaderPerfilFirebase === 'function') {
+            ecoPneusAplicarHeaderPerfilFirebase(user, dados);
+        } else {
+            const name = user.displayName || 'Usuário';
+            const initials = name
+                .split(' ')
+                .map((p) => p[0])
+                .slice(0, 2)
+                .join('')
+                .toUpperCase();
+            const nameEl = document.getElementById('user-name');
+            const avatarEl = document.getElementById('user-avatar');
+            if (nameEl) nameEl.textContent = name.split(' ')[0];
+            if (avatarEl) avatarEl.textContent = initials;
+        }
     });
 }
 
@@ -449,6 +699,7 @@ function renderCompanies() {
 
     lucide.createIcons();
     updatePartnersCount();
+    refreshParceirosMapMarkers();
 }
 
 function updatePartnersCount() {
@@ -651,46 +902,33 @@ function initMap() {
     const mapEl = document.getElementById('partners-map');
     if (!mapEl || typeof L === 'undefined') return;
 
+    const overlay = document.getElementById('fixed-markers-overlay');
+    if (overlay) {
+        overlay.innerHTML = '';
+        overlay.style.display = 'none';
+    }
+
     mapInstance = L.map('partners-map', {
         zoomControl: true,
         scrollWheelZoom: false
-    }).setView([-23.5505, -46.6333], 15);
+    }).setView([-14.235, -51.9253], 4);
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '© OpenStreetMap contributors',
         maxZoom: 19
     }).addTo(mapInstance);
 
-    renderFixedPins();
+    partnerMarkersLayer = L.layerGroup().addTo(mapInstance);
+    bindPartnersMapResizeOnce();
+    schedulePartnersMapInvalidate();
 
-    const legend = document.getElementById('legend-total');
-    if (legend) legend.textContent = `${PARCEIROS.length * 16} parceiros`;
-}
+    setTimeout(function () {
+        schedulePartnersMapInvalidate();
+    }, 220);
 
-function renderFixedPins() {
-    const overlay = document.getElementById('fixed-markers-overlay');
-    if (!overlay) return;
-
-    const positions = [
-        { top: '22%', left: '18%' },
-        { top: '34%', left: '32%' },
-        { top: '28%', left: '52%' },
-        { top: '46%', left: '42%' },
-        { top: '52%', left: '60%' },
-        { top: '38%', left: '72%' },
-        { top: '60%', left: '28%' },
-        { top: '68%', left: '48%' },
-        { top: '58%', left: '78%' },
-        { top: '72%', left: '64%' },
-        { top: '42%', left: '15%' },
-        { top: '30%', left: '85%' }
-    ];
-
-    overlay.innerHTML = positions.map((pos, i) => `
-        <div class="fixed-pin"
-             style="top:${pos.top};left:${pos.left};animation-delay:${i * 0.15}s;"
-             title="Parceiro ${i + 1}"></div>
-    `).join('');
+    setTimeout(function () {
+        hydrateParceiroCoordsFromAddress();
+    }, 500);
 }
 
 // ============================================================
