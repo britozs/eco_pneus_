@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Eco Pneus - Empresas</title>
+    <link rel="icon" href="https://i.postimg.cc/rp5Py0Rr/Eco-Pneus-2-removebg-preview.png" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Cormorant+Garamond:wght@600;700&display=swap" rel="stylesheet" />
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <link rel="stylesheet" href="global.css" />
+    <link
+        rel="stylesheet"
+        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-sA+e2H1LGGfI7kGStbV38DSHLVQQP4SRrped1IovnHg="
+        crossorigin=""
+    />
+    <link rel="stylesheet" href="empresas.css" />
+</head>
+<body>
+    <div class="empresas-page">
+        <!-- HERO -->
+        <header class="hero-section">
+            <div class="hero-bg"></div>
+            <div class="hero-overlay"></div>
+
+            <div class="hero-shell">
+                <div class="hero-topbar">
+                    <div class="brand-box">
+                        <div class="brand-logo">
+                            <img src="https://i.postimg.cc/Vkf6WnmM/Eco-Pneus-(1).png" alt="Eco Pneus" />
+                        </div>
+
+                        <div class="brand-copy">
+                            <h1>Eco Pneus</h1>
+                            <span>REDE DE PARCEIROS</span>
+                        </div>
+                    </div>
+
+                    <div class="search-pill">
+                        <i data-lucide="search"></i>
+                        <input
+                            type="text"
+                            id="search-input"
+                            placeholder="Buscar por nome, cidade, material ou tipo de parceiro..."
+                        />
+                        <span class="shortcut-pill">⌘K</span>
+                    </div>
+
+                    <div class="topbar-actions">
+                        <button class="icon-glass" id="btn-filter-top" title="Filtros">
+                            <i data-lucide="sliders-horizontal"></i>
+                        </button>
+
+                        <button class="icon-glass" id="btn-notification" title="Notificações">
+                            <i data-lucide="bell"></i>
+                        </button>
+
+                        <button class="profile-chip" onclick="window.location.href='perfil.html'">
+                            <div class="profile-avatar" id="user-avatar">MB</div>
+                            <div class="profile-meta">
+                                <strong id="user-name">Miguel</strong>
+                                <span id="user-role">Gestor logístico</span>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="hero-grid">
+                    <div class="hero-copy">
+                        <p class="eyebrow">Rede Eco Pneus • Parceiros verificados</p>
+
+                        <h2>
+                            Encontre quem transforma pneus em
+                            <span>matéria-prima do futuro.</span>
+                        </h2>
+
+                        <p class="hero-description">
+                            Conecte-se a recicladoras, transportadoras e pontos de coleta ao redor do Brasil.
+                            Cada parceiro é auditado, avaliado e rastreado para garantir uma logística reversa responsável.
+                        </p>
+
+                        <div class="hero-badges">
+                            <span><i data-lucide="shield-check"></i> Parceiros verificados</span>
+                            <span><i data-lucide="star"></i> Avaliados pela comunidade</span>
+                            <span><i data-lucide="map"></i> Cobertura nacional</span>
+                        </div>
+
+                        <div class="hero-actions">
+                            <button class="btn-primary-lime" id="btn-scroll-map">
+                                <i data-lucide="map-pinned"></i>
+                                Ver parceiros no mapa
+                            </button>
+
+                            <button class="btn-secondary-ghost" id="btn-open-indicar">
+                                <i data-lucide="plus-circle"></i>
+                                Indicar uma empresa
+                            </button>
+                        </div>
+                    </div>
+
+                    <aside class="numbers-card">
+                        <div class="numbers-head">
+                            <div>
+                                <small>REDE EM NÚMEROS</small>
+                            </div>
+                            <span class="live-badge">• Ao vivo</span>
+                        </div>
+
+                        <div class="number-item">
+                            <div class="number-icon"><i data-lucide="building-2"></i></div>
+                            <div>
+                                <strong id="hero-total-ativos">128 parceiros ativos</strong>
+                                <span>Em 21 estados</span>
+                            </div>
+                        </div>
+
+                        <div class="number-item">
+                            <div class="number-icon"><i data-lucide="recycle"></i></div>
+                            <div>
+                                <strong id="hero-total-reciclado">2.347 t recicladas</strong>
+                                <span>Acumulado em 2026</span>
+                            </div>
+                        </div>
+
+                        <div class="number-item">
+                            <div class="number-icon"><i data-lucide="badge-check"></i></div>
+                            <div>
+                                <strong id="hero-media-avaliacao">Avaliação média 4.8</strong>
+                                <span>9.2k avaliações da rede</span>
+                            </div>
+                        </div>
+                    </aside>
+                </div>
+            </div>
+        </header>
+
+        <!-- MAIN -->
+        <main class="main-content">
+            <section class="section-block directory-head">
+                <div class="section-title-row">
+                    <div>
+                        <p class="section-eyebrow">DIRETÓRIO</p>
+                        <h3>Empresas &amp; Recicladoras</h3>
+                        <p class="section-description">
+                            Filtre por tipo de parceiro ou por região. Toque em um card para ver detalhes e agendar contato.
+                        </p>
+                    </div>
+
+                    <div class="section-count">
+                        <span id="partners-count">8 parceiros</span>
+                    </div>
+                </div>
+
+                <div class="toolbar-row">
+                    <div class="toolbar-top-row">
+                        <div class="category-chips" id="category-chips">
+                            <button class="filter-chip active" data-category="todas">
+                                <i data-lucide="grid-2x2"></i>
+                                Todas
+                            </button>
+                            <button class="filter-chip" data-category="recicladora">
+                                <i data-lucide="recycle"></i>
+                                Recicladoras
+                            </button>
+                            <button class="filter-chip" data-category="transportadora">
+                                <i data-lucide="truck"></i>
+                                Transportadoras
+                            </button>
+                            <button class="filter-chip" data-category="ponto-coleta">
+                                <i data-lucide="map-pin"></i>
+                                Pontos de coleta
+                            </button>
+                            <button class="filter-chip" data-category="melhor-avaliadas">
+                                <i data-lucide="award"></i>
+                                Melhor avaliadas
+                            </button>
+                        </div>
+
+                        <div class="sort-pills" id="sort-pills">
+                            <button class="sort-pill active" data-sort="rating">
+                                <i data-lucide="arrow-up-down"></i>
+                                Melhores avaliados
+                            </button>
+                            <button class="sort-pill" data-sort="active">
+                                <i data-lucide="activity"></i>
+                                Mais ativos
+                            </button>
+                            <button class="sort-pill" data-sort="distance">
+                                <i data-lucide="navigation"></i>
+                                Mais próximos
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section-block featured-section">
+                <div class="section-title-row compact">
+                    <div>
+                        <p class="section-eyebrow">CURADORIA EDITORIAL</p>
+                        <h3>Em destaque esta semana</h3>
+                    </div>
+
+                    <button class="text-link-btn" id="btn-see-all">
+                        Ver todas
+                        <i data-lucide="arrow-right"></i>
+                    </button>
+                </div>
+
+                <div class="featured-grid" id="featured-grid"></div>
+            </section>
+
+            <section class="section-block map-section" id="mapa-parceiros">
+                <div class="section-title-row compact">
+                    <div>
+                        <p class="section-eyebrow">LOCALIZAÇÃO</p>
+                        <h3>Parceiros próximos a você</h3>
+                        <p class="section-description">
+                            Cobertura em tempo real nos principais eixos logísticos do Brasil.
+                        </p>
+                    </div>
+
+                    <div class="location-chip">
+                        <i data-lucide="locate-fixed"></i>
+                        São Paulo, SP
+                    </div>
+                </div>
+
+                <div class="map-toolbar" id="map-toolbar">
+                    <button class="map-sort-chip active" data-sort="rating">Melhores avaliados</button>
+                    <button class="map-sort-chip" data-sort="active">Ativos</button>
+                    <button class="map-sort-chip" data-sort="distance">Próximos</button>
+                </div>
+
+                <div class="map-card">
+                    <div id="partners-map"></div>
+
+                    <div class="fixed-markers-overlay" id="fixed-markers-overlay"></div>
+
+                    <div class="map-legend-card">
+                        <strong id="legend-total">128 parceiros</strong>
+                        <div class="legend-tags">
+                            <span><i></i> Ativos</span>
+                            <span><i></i> Aguardando</span>
+                            <span><i></i> Premium</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section-block list-section" id="lista-completa">
+                <div class="section-title-row compact">
+                    <div>
+                        <p class="section-eyebrow">DIRETÓRIO COMPLETO</p>
+                        <h3>Todos os parceiros</h3>
+                    </div>
+
+                    <div class="order-chip" id="order-chip">Ordem: Melhores avaliados</div>
+                </div>
+
+                <div class="companies-grid" id="companies-grid"></div>
+            </section>
+        </main>
+
+        <!-- BOTTOM NAV -->
+        <nav class="bottom-nav">
+            <button class="nav-item" onclick="window.location.href='dashboard.html'">
+                <i data-lucide="house"></i>
+                <span>Início</span>
+            </button>
+
+            <button class="nav-item" onclick="window.location.href='registrar.html'">
+                <i data-lucide="package-plus"></i>
+                <span>Registrar</span>
+            </button>
+
+            <button class="nav-item active" onclick="window.location.href='empresas.html'">
+                <i data-lucide="building-2"></i>
+                <span>Empresas</span>
+            </button>
+
+            <button class="nav-item" onclick="window.location.href='coleta.html'">
+                <i data-lucide="list-checks"></i>
+                <span>Coletas</span>
+            </button>
+
+            <button class="nav-item" onclick="window.location.href='perfil.html'">
+                <i data-lucide="user"></i>
+                <span>Perfil</span>
+            </button>
+        </nav>
+    </div>
+
+    <!-- MODAL INDICAR EMPRESA -->
+    <div class="modal-overlay" id="modal-indicar">
+        <div class="modal-card modal-indicar-card">
+            <div class="modal-header">
+                <h4>Indicar uma empresa</h4>
+                <button class="modal-close" data-close-modal="modal-indicar">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+
+            <div class="modal-body">
+                <p class="modal-helper">
+                    Ajude a expandir a rede Eco Pneus. Nossa equipe valida a empresa em até 72h.
+                </p>
+
+                <form id="indicar-form">
+                    <div class="form-group">
+                        <input type="text" id="indicar-nome" placeholder="Nome da empresa" required />
+                    </div>
+
+                    <div class="form-group">
+                        <input type="text" id="indicar-cidade" placeholder="Cidade / UF" required />
+                    </div>
+
+                    <div class="form-group">
+                        <input type="text" id="indicar-contato" placeholder="Contato (WhatsApp ou e-mail)" required />
+                    </div>
+
+                    <button type="submit" class="btn-primary-lime full">
+                        Enviar indicação
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL CONTATO -->
+    <div class="modal-overlay" id="modal-contato">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h4 id="contact-title">Contato</h4>
+                <button class="modal-close" data-close-modal="modal-contato">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+
+            <div class="modal-body" id="contact-body"></div>
+        </div>
+    </div>
+
+    <!-- MODAL AVALIAR -->
+    <div class="modal-overlay" id="modal-avaliar">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h4>Avaliar empresa</h4>
+                <button class="modal-close" data-close-modal="modal-avaliar">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+
+            <div class="modal-body">
+                <p class="modal-helper" id="review-company-name">Empresa</p>
+
+                <div class="review-stars" id="review-stars">
+                    <button type="button" class="star-btn" data-star="1">★</button>
+                    <button type="button" class="star-btn" data-star="2">★</button>
+                    <button type="button" class="star-btn" data-star="3">★</button>
+                    <button type="button" class="star-btn" data-star="4">★</button>
+                    <button type="button" class="star-btn" data-star="5">★</button>
+                </div>
+
+                <textarea
+                    id="review-comment"
+                    rows="4"
+                    placeholder="Deixe um comentário (opcional)"
+                ></textarea>
+
+                <button class="btn-primary-green full" id="submit-review-btn">
+                    Enviar avaliação
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOAST -->
+    <div class="toast-stack" id="toast-stack"></div>
+
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+
+    <script
+        src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-o9N1j7kGStpP0iM0jP4h6vM651c01rbPvvrL1jAU6R4="
+        crossorigin=""
+    ></script>
+
+    <script src="empresas.js"></script>
+</body>
+</html>

@@ -118,29 +118,44 @@ section[id] {
     gap: 22px;
 }
 
+/* ─── FIX: sublinhado verde para TODOS os nav-links ativos ─── */
 .nav-link {
     position: relative;
     font-size: 0.92rem;
     color: #475569;
     font-weight: 500;
-    transition: 0.25s ease;
+    transition: color 0.25s ease;
+    /* garante espaço para o underline não sobrepor itens abaixo */
+    padding-bottom: 4px;
 }
 
-.nav-link:hover,
+.nav-link:hover {
+    color: #0f172a;
+}
+
 .nav-link.active {
     color: #0f172a;
 }
 
-.nav-link.active::after {
+/* underline verde aparece em QUALQUER link com .active */
+.nav-link::after {
     content: "";
     position: absolute;
     left: 0;
-    bottom: -8px;
+    bottom: -10px;
     width: 100%;
     height: 2px;
     border-radius: 999px;
     background: var(--green);
+    /* começa invisível */
+    transform: scaleX(0);
+    transition: transform 0.25s ease;
 }
+
+.nav-link.active::after {
+    transform: scaleX(1);
+}
+/* ─────────────────────────────────────────────────────────── */
 
 .nav-btn {
     padding: 11px 16px;
@@ -524,6 +539,7 @@ section[id] {
         linear-gradient(180deg, #f6fcf7 0%, #eef9f2 100%);
 }
 
+/* Grid: 3 colunas nas primeiras 3 cards + card pf em largura total */
 .solutions-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -536,6 +552,66 @@ section[id] {
     padding: 30px 28px;
     box-shadow: var(--shadow-sm);
     min-height: 320px;
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.solution-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-md);
+}
+
+/* Card Pessoa Física ocupa as 3 colunas */
+.solution-card--pessoa-fisica {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    grid-template-rows: auto auto 1fr auto;
+    column-gap: 32px;
+    row-gap: 0;
+    background: white;
+    min-height: auto;
+    align-items: start;
+}
+
+.solution-card--pessoa-fisica .solution-icon {
+    grid-column: 1;
+    grid-row: 1;
+    align-self: start;
+    margin-top: 4px;
+}
+
+.solution-card--pessoa-fisica h3 {
+    grid-column: 2;
+    grid-row: 1;
+    margin-bottom: 2px;
+    align-self: end;
+}
+
+.solution-card--pessoa-fisica .solution-subtitle {
+    grid-column: 2;
+    grid-row: 2;
+    margin-bottom: 14px;
+}
+
+.solution-card--pessoa-fisica .solution-pf-desc {
+    grid-column: 2;
+    grid-row: 3;
+    color: #475569;
+    font-size: 0.96rem;
+    margin-bottom: 16px;
+    max-width: 480px;
+}
+
+.solution-card--pessoa-fisica .check-list {
+    grid-column: 3;
+    grid-row: 1 / 5;
+    align-self: center;
+    min-width: 240px;
+}
+
+.solution-card--pessoa-fisica .pf-badge {
+    grid-column: 2;
+    grid-row: 4;
 }
 
 .solution-icon {
@@ -547,6 +623,7 @@ section[id] {
     justify-content: center;
     margin-bottom: 18px;
     color: white;
+    flex-shrink: 0;
 }
 
 .solution-icon i {
@@ -554,9 +631,10 @@ section[id] {
     height: 20px;
 }
 
-.solution-icon.blue { background: #3b82f6; }
-.solution-icon.green { background: #22c55e; }
+.solution-icon.blue   { background: #3b82f6; }
+.solution-icon.green  { background: #22c55e; }
 .solution-icon.purple { background: #9333ea; }
+.solution-icon.teal   { background: #0d9488; }
 
 .solution-card h3 {
     font-size: 1.45rem;
@@ -568,6 +646,12 @@ section[id] {
     margin-bottom: 20px;
     color: #94a3b8;
     font-size: 0.92rem;
+}
+
+.solution-pf-desc {
+    color: #475569;
+    font-size: 0.96rem;
+    margin-bottom: 16px;
 }
 
 .check-list {
@@ -590,6 +674,24 @@ section[id] {
     top: -1px;
     color: var(--green);
     font-weight: 800;
+}
+
+/* Badge "Novidade" */
+.pf-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 999px;
+    background: #dcfce7;
+    color: var(--green-dark);
+    font-size: 0.82rem;
+    font-weight: 600;
+}
+
+.pf-badge i {
+    width: 14px;
+    height: 14px;
 }
 
 /* Impact */
@@ -641,25 +743,10 @@ section[id] {
     color: #64748b;
 }
 
-.soft-green {
-    background: #ecfbef;
-    color: #16a34a;
-}
-
-.soft-blue {
-    background: #eaf2ff;
-    color: #2563eb;
-}
-
-.soft-purple {
-    background: #f3ecff;
-    color: #7c3aed;
-}
-
-.soft-orange {
-    background: #fff3e6;
-    color: #f97316;
-}
+.soft-green  { background: #ecfbef; color: #16a34a; }
+.soft-blue   { background: #eaf2ff; color: #2563eb; }
+.soft-purple { background: #f3ecff; color: #7c3aed; }
+.soft-orange { background: #fff3e6; color: #f97316; }
 
 .impact-image {
     height: 500px;
@@ -788,7 +875,7 @@ section[id] {
     color: white;
 }
 
-/* Responsive */
+/* ─── Responsive ─── */
 @media (max-width: 1200px) {
     .how-grid {
         grid-template-columns: repeat(3, 1fr);
@@ -816,6 +903,44 @@ section[id] {
     .tech-grid,
     .footer-grid {
         grid-template-columns: repeat(2, 1fr);
+    }
+
+    /* No tablet, pf-card ocupa 2 colunas mas layout interno simplificado */
+    .solution-card--pessoa-fisica {
+        grid-column: 1 / -1;
+        grid-template-columns: auto 1fr;
+        grid-template-rows: auto auto auto auto auto;
+    }
+
+    .solution-card--pessoa-fisica .check-list {
+        grid-column: 1 / -1;
+        grid-row: 5;
+        min-width: unset;
+        margin-top: 14px;
+    }
+
+    .solution-card--pessoa-fisica .solution-pf-desc {
+        grid-row: 3;
+        max-width: 100%;
+    }
+
+    .solution-card--pessoa-fisica .pf-badge {
+        grid-row: 4;
+        grid-column: 1 / -1;
+    }
+
+    .solution-card--pessoa-fisica .solution-icon {
+        grid-row: 1;
+        margin-bottom: 0;
+    }
+
+    .solution-card--pessoa-fisica h3 {
+        grid-row: 1;
+    }
+
+    .solution-card--pessoa-fisica .solution-subtitle {
+        grid-column: 1 / -1;
+        grid-row: 2;
     }
 }
 
@@ -899,6 +1024,10 @@ section[id] {
     .tech-grid,
     .footer-grid {
         grid-template-columns: 1fr;
+    }
+
+    .solution-card--pessoa-fisica {
+        grid-column: 1;
     }
 }
 

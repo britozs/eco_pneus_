@@ -6,7 +6,6 @@
     <title>Eco Pneus - Logística Reversa de Pneus</title>
 
     <link rel="icon" href="https://i.postimg.cc/rp5Py0Rr/Eco-Pneus-2-removebg-preview.png" />
-    <link rel="stylesheet" href="global.css" />
     <link rel="stylesheet" href="home.css" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -22,7 +21,7 @@
             </a>
 
             <nav class="main-nav" aria-label="Navegação principal">
-                <a href="#inicio" class="nav-link active" data-scroll>Início</a>
+                <a href="#inicio" class="nav-link" data-scroll>Início</a>
                 <a href="#como-funciona" class="nav-link" data-scroll>Como Funciona</a>
                 <a href="#solucoes" class="nav-link" data-scroll>Soluções</a>
                 <a href="#impacto" class="nav-link" data-scroll>Impacto</a>
@@ -35,7 +34,7 @@
         </div>
 
         <div class="mobile-menu" id="mobileMenu">
-            <a href="#inicio" class="mobile-link active" data-scroll>Início</a>
+            <a href="#inicio" class="mobile-link" data-scroll>Início</a>
             <a href="#como-funciona" class="mobile-link" data-scroll>Como Funciona</a>
             <a href="#solucoes" class="mobile-link" data-scroll>Soluções</a>
             <a href="#impacto" class="mobile-link" data-scroll>Impacto</a>
@@ -134,66 +133,56 @@
             </div>
         </section>
 
-        <section class="how-section" id="como-funciona">
-            <div class="container">
-                <div class="section-heading center">
-                    <h2>Como Funciona a Plataforma</h2>
-                    <p>
-                        Um processo simples, transparente e tecnológico para garantir a destinação correta de pneus.
-                    </p>
+                <section class="how-section" id="como-funciona">
+                    <div class="container">
+                        <div class="section-heading center">
+                            <h2>Como Funciona a Plataforma</h2>
+                            <p>
+                                Um processo simples, transparente e tecnológico para garantir a destinação correta de pneus.
+                            </p>
+                        </div>
+
+                        <div class="how-grid">
+            <article class="info-card highlighted">
+                <div class="icon-box light-green">
+                    <i data-lucide="user-round-plus"></i>
                 </div>
+                <h3>1. Cadastro</h3>
+                <p>Geradores, transportadores e recicladores se cadastram na plataforma com dados verificados.</p>
+            </article>
 
-                <div class="how-grid">
-                    <article class="info-card">
-                        <div class="icon-box light-green">
-                            <i data-lucide="user-round-plus"></i>
-                        </div>
-                        <h3>1. Cadastro</h3>
-                        <p>
-                            Geradores, transportadores e recicladores se cadastram na plataforma com dados verificados.
-                        </p>
-                    </article>
-
-                    <article class="info-card">
-                        <div class="icon-box light-green">
-                            <i data-lucide="clipboard-list"></i>
-                        </div>
-                        <h3>2. Registro da Coleta</h3>
-                        <p>
-                            O gerador registra a quantidade de pneus e a localização da operação na plataforma.
-                        </p>
-                    </article>
-
-                    <article class="info-card">
-                        <div class="icon-box light-green">
-                            <i data-lucide="link-2"></i>
-                        </div>
-                        <h3>3. Conexão</h3>
-                        <p>
-                            Nossa inteligência conecta automaticamente geradores de resíduos com recicladores qualificados da região.
-                        </p>
-                    </article>
-
-                    <article class="info-card">
-                        <div class="icon-box light-green">
-                            <i data-lucide="map-pinned"></i>
-                        </div>
-                        <h3>4. Rastreamento</h3>
-                        <p>
-                            Sistema de validação bilateral com geolocalização e códigos únicos garante veracidade da operação.
-                        </p>
-                    </article>
-
-                    <article class="info-card highlighted">
-                        <div class="icon-box light-green">
-                            <i data-lucide="file-check-2"></i>
-                        </div>
-                        <h3>5. Certificação</h3>
-                        <p>
-                            Certificados digitais de destinação são emitidos automaticamente, comprovando conformidade legal.
-                        </p>
-                    </article>
+            <article class="info-card highlighted">
+                <div class="icon-box light-green">
+                    <i data-lucide="clipboard-list"></i>
                 </div>
+                <h3>2. Registro da Coleta</h3>
+                <p>O gerador registra a quantidade de pneus e a localização da operação na plataforma.</p>
+            </article>
+
+            <article class="info-card highlighted">
+                <div class="icon-box light-green">
+                    <i data-lucide="link-2"></i>
+                </div>
+                <h3>3. Conexão</h3>
+                <p>Nossa inteligência conecta automaticamente geradores de resíduos com recicladores qualificados da região.</p>
+            </article>
+
+            <article class="info-card highlighted">
+                <div class="icon-box light-green">
+                    <i data-lucide="map-pinned"></i>
+                </div>
+                <h3>4. Rastreamento</h3>
+                <p>Sistema de validação bilateral com geolocalização e códigos únicos garante veracidade da operação.</p>
+            </article>
+
+            <article class="info-card highlighted">
+                <div class="icon-box light-green">
+                    <i data-lucide="file-check-2"></i>
+                </div>
+                <h3>5. Certificação</h3>
+                <p>Certificados digitais de destinação são emitidos automaticamente, comprovando conformidade legal.</p>
+            </article>
+        </div>
             </div>
         </section>
 
@@ -250,6 +239,31 @@
                             <li>Fortalecimento ESG</li>
                             <li>Economia circular</li>
                         </ul>
+                    </article>
+
+                    <!-- NOVO CARD: Pessoa Física -->
+                    <article class="solution-card solution-card--pessoa-fisica">
+                        <div class="solution-icon teal">
+                            <i data-lucide="user-round"></i>
+                        </div>
+                        <h3>Pessoa Física</h3>
+                        <span class="solution-subtitle">Cidadãos conscientes</span>
+
+                        <p class="solution-pf-desc">
+                            Qualquer cidadão pode contribuir com a destinação correta de pneus. Agora a plataforma também aceita cadastro individual para quem quer fazer a diferença no meio ambiente.
+                        </p>
+
+                        <ul class="check-list">
+                            <li>Descarte responsável e gratuito</li>
+                            <li>Comprovante digital de destinação</li>
+                            <li>Contribuição para o meio ambiente</li>
+                            <li>Acesso fácil via app ou web</li>
+                        </ul>
+
+                        <div class="pf-badge">
+                            <i data-lucide="sparkles"></i>
+                            <span>Novidade na plataforma</span>
+                        </div>
                     </article>
                 </div>
             </div>

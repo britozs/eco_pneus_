@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nova Coleta - Eco Pneus</title>
+
+    <link rel="icon" href="https://i.postimg.cc/rp5Py0Rr/Eco-Pneus-2-removebg-preview.png">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Cormorant+Garamond:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Leaflet -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+
+    <!-- Page CSS -->
+    <link rel="stylesheet" href="coletac.css">
+</head>
+<body>
+
+<div class="coleta-shell">
+
+    <!-- HERO -->
+    <header class="hero">
+        <div class="hero-top">
+            <div class="brand">
+                <div class="brand-mark">
+                    <img src="https://i.postimg.cc/rp5Py0Rr/Eco-Pneus-2-removebg-preview.png" alt="Eco Pneus">
+                </div>
+
+                <div class="brand-copy">
+                    <strong>Eco Pneus</strong>
+                    <span>LOGÍSTICA REVERSA</span>
+                </div>
+            </div>
+
+            <button class="panel-back-btn" onclick="voltar()">
+                <span class="btn-icon">←</span>
+                <span>Voltar ao inicio</span>
+            </button>
+        </div>
+
+        <div class="hero-main">
+            <div class="hero-copy-col">
+                <div class="hero-eyebrow">NOVA OPERAÇÃO · COLETA INTELIGENTE</div>
+
+                <h1 class="hero-title">
+                    <span>Registrar uma</span>
+                    <em>nova coleta</em>
+                </h1>
+
+                <p class="hero-subtitle">
+                    Marque o local no mapa, descreva os pneus e confirme.
+                    A logística reversa começa aqui — cada pneu registrado vira impacto ambiental mensurável.
+                </p>
+            </div>
+
+            <div class="hero-side-badges">
+                <div class="hero-badge">
+                    <span class="badge-dot">✓</span>
+                    <span>Dados criptografados</span>
+                </div>
+                <div class="hero-badge">
+                    <span class="badge-dot">⏱</span>
+                    <span>Leva menos de 2 minutos</span>
+                </div>
+                <div class="hero-badge">
+                    <span class="badge-dot">🍃</span>
+                    <span>Cada pneu = ~2kg CO₂ evitados</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="stepper-wrap">
+            <div class="stepper" id="stepper">
+                <div class="step-item active" id="step-item-1">
+                    <div class="step-bullet">1</div>
+                    <div class="step-meta">
+                        <span class="step-mini">ETAPA 01</span>
+                        <strong>Local</strong>
+                    </div>
+                </div>
+
+                <div class="step-line"></div>
+
+                <div class="step-item" id="step-item-2">
+                    <div class="step-bullet">2</div>
+                    <div class="step-meta">
+                        <span class="step-mini">ETAPA 02</span>
+                        <strong>Dados</strong>
+                    </div>
+                </div>
+
+                <div class="step-line"></div>
+
+                <div class="step-item" id="step-item-3">
+                    <div class="step-bullet">3</div>
+                    <div class="step-meta">
+                        <span class="step-mini">ETAPA 03</span>
+                        <strong>Confirmar</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN -->
+    <main class="wizard">
+
+        <!-- STEP 1 -->
+        <section class="step-screen active" id="step-1">
+            <div class="panel-card">
+                <div class="panel-head">
+                    <div>
+                        <h2 class="panel-title">Onde está a coleta?</h2>
+                        <p class="panel-desc">
+                            Busque um endereço, use sua localização atual ou toque no mapa.
+                            O marcador é arrastável para precisão máxima.
+                        </p>
+                    </div>
+
+                    <div class="panel-badge">
+                        <span>📍</span>
+                        <span>PASSO 1 DE 3</span>
+                    </div>
+                </div>
+
+                <div class="search-row">
+                    <div class="search-box">
+                        <span class="search-icon">⌕</span>
+                        <input
+                            type="text"
+                            id="search-address"
+                            placeholder="Buscar endereço, bairro ou cidade..."
+                            autocomplete="off"
+                        >
+                    </div>
+
+                    <button class="btn btn-dark" id="geo-btn" type="button" onclick="useCurrentLocation()">
+                        <span>📍</span>
+                        <span>Usar minha localização atual</span>
+                    </button>
+                </div>
+
+                <div class="local-grid">
+                    <div class="map-card">
+                        <div id="map"></div>
+                    </div>
+
+                    <aside class="side-stack">
+                        <div class="side-card">
+                            <div class="side-card-head">
+                                <div class="side-icon">📍</div>
+                                <div>
+                                    <div class="side-label">LOCAL SELECIONADO</div>
+                                    <div class="selected-address" id="loc-text">Buscando localização...</div>
+                                </div>
+                            </div>
+                            <div class="selected-coords" id="loc-coords">--</div>
+                        </div>
+
+                        <div class="side-card tips-card">
+                            <div class="tips-title">💡 Dicas rápidas</div>
+                            <ul class="tips-list">
+                                <li>Use o GPS para capturar o local com precisão</li>
+                                <li>Dê zoom para ajustar o ponto exato</li>
+                                <li>Locais fechados? Marque a entrada principal</li>
+                            </ul>
+                        </div>
+                    </aside>
+                </div>
+
+                <div class="action-row action-row-between">
+                    <button class="btn btn-ghost" type="button" onclick="voltar()">✕ Cancelar</button>
+                    <button class="btn btn-lime" type="button" onclick="nextStep(2)">
+                        Próximo: Dados da Coleta
+                        <span>→</span>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- STEP 2 -->
+        <section class="step-screen" id="step-2">
+            <div class="panel-card">
+                <div class="panel-head">
+                    <div>
+                        <h2 class="panel-title">Conte sobre os pneus</h2>
+                        <p class="panel-desc">
+                            Tipo, quantidade estimada e urgência. Isso ajuda a despachar o veículo certo e priorizar a rota.
+                        </p>
+                    </div>
+
+                    <div class="panel-badge">
+                        <span>📄</span>
+                        <span>PASSO 2 DE 3</span>
+                    </div>
+                </div>
+
+                <div class="field-block">
+                    <label class="field-label">TIPO DE PNEU *</label>
+
+                    <div class="tipo-grid">
+                        <button class="tipo-chip" type="button" onclick="selTipo(this,'Passeio')">
+                            <span class="tipo-icon">🚗</span>
+                            <span>Passeio</span>
+                        </button>
+
+                        <button class="tipo-chip" type="button" onclick="selTipo(this,'Caminhão')">
+                            <span class="tipo-icon">🚚</span>
+                            <span>Caminhão</span>
+                        </button>
+
+                        <button class="tipo-chip" type="button" onclick="selTipo(this,'Moto')">
+                            <span class="tipo-icon">🏍</span>
+                            <span>Moto</span>
+                        </button>
+
+                        <button class="tipo-chip" type="button" onclick="selTipo(this,'Ônibus')">
+                            <span class="tipo-icon">🚌</span>
+                            <span>Ônibus</span>
+                        </button>
+
+                        <button class="tipo-chip" type="button" onclick="selTipo(this,'Agrícola')">
+                            <span class="tipo-icon">🌽</span>
+                            <span>Agrícola</span>
+                        </button>
+
+                        <button class="tipo-chip" type="button" onclick="selTipo(this,'Outro')">
+                            <span class="tipo-icon">◌</span>
+                            <span>Outro</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="two-fields">
+                    <div class="field-block">
+                        <label class="field-label" for="col-qtd">QUANTIDADE *</label>
+                        <input type="number" id="col-qtd" placeholder="Ex: 50" min="1">
+                    </div>
+
+                    <div class="field-block">
+                        <label class="field-label" for="col-peso">PESO ESTIMADO (KG)</label>
+                        <input type="number" id="col-peso" placeholder="Ex: 500" min="0">
+                    </div>
+                </div>
+
+                <div class="field-block">
+                    <label class="field-label">URGÊNCIA</label>
+
+                    <div class="urgencia-row">
+                        <button class="urg-chip" type="button" onclick="selUrg(this,'baixa','low')">
+                            <span class="urg-dot low"></span>
+                            <span>Baixa</span>
+                        </button>
+
+                        <button class="urg-chip active-med" type="button" onclick="selUrg(this,'normal','med')">
+                            <span class="urg-dot med"></span>
+                            <span>Normal</span>
+                        </button>
+
+                        <button class="urg-chip" type="button" onclick="selUrg(this,'alta','high')">
+                            <span class="urg-dot high"></span>
+                            <span>Alta</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="field-block">
+                    <label class="field-label" for="col-obs">OBSERVAÇÕES</label>
+                    <textarea id="col-obs" rows="4" placeholder="Estado dos pneus, acesso ao local, melhor horário para retirar..."></textarea>
+                </div>
+
+                <div class="action-row action-row-between">
+                    <button class="btn btn-ghost" type="button" onclick="nextStep(1)">← Voltar</button>
+                    <button class="btn btn-lime" type="button" onclick="nextStep(3)">
+                        Revisar
+                        <span>→</span>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- STEP 3 -->
+        <section class="step-screen" id="step-3">
+            <div class="panel-card">
+                <div class="panel-head">
+                    <div>
+                        <h2 class="panel-title">Revisar &amp; confirmar</h2>
+                        <p class="panel-desc">
+                            Confira os detalhes antes de enviar. Tudo certo? Um toque em confirmar e a coleta entra na fila de despacho.
+                        </p>
+                    </div>
+
+                    <div class="panel-badge">
+                        <span>✔</span>
+                        <span>PASSO 3 DE 3</span>
+                    </div>
+                </div>
+
+                <div class="confirm-grid">
+                    <div class="summary-list" id="summary"></div>
+
+                    <aside class="confirm-side">
+                        <div class="mini-map-card">
+                            <div id="review-map"></div>
+                        </div>
+
+                        <div class="impact-card">
+                            <div class="impact-label">IMPACTO ESTIMADO</div>
+                            <div class="impact-value" id="impact-value">0 kg CO₂</div>
+                            <div class="impact-note" id="impact-note">
+                                Equivalente a plantar ~0 árvore(s) ou 0 km de carro evitados.
+                            </div>
+                        </div>
+                    </aside>
+                </div>
+
+                <div class="action-row action-row-between">
+                    <button class="btn btn-ghost" type="button" onclick="nextStep(2)">← Voltar</button>
+                    <button class="btn btn-submit-dark" id="confirm-submit-btn" type="button" onclick="criarColeta()">
+                        <span>⦿</span>
+                        <span>Confirmar Coleta</span>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- SUCCESS -->
+        <section class="success-screen" id="success-screen">
+            <div class="success-card">
+                <div class="success-icon">✓</div>
+
+                <h2 class="success-title">
+                    Coleta <em>registrada!</em>
+                </h2>
+
+                <p class="success-text">
+                    Sua solicitação entrou na fila de despacho. Guarde o código de rastreamento para acompanhar o status em tempo real.
+                </p>
+
+                <div class="tracking-box">
+                    <span class="tracking-label">CÓDIGO DE RASTREAMENTO</span>
+                    <div class="tracking-code" id="result-codigo">----</div>
+
+                    <button class="copy-btn" type="button" onclick="copiarCodigo()">
+                        <span>📋</span>
+                        <span id="copy-btn-text">Copiar código</span>
+                    </button>
+                </div>
+
+                <div class="success-actions">
+                    <button class="btn btn-lime" type="button" onclick="window.location.href='dashboard.html'">
+                        ⌘ Voltar ao inicio
+                    </button>
+
+                    <button class="btn btn-outline-dark" type="button" onclick="reiniciarColeta()">
+                        ＋ Registrar outra
+                    </button>
+                </div>
+            </div>
+        </section>
+
+    </main>
+</div>
+
+<!-- Leaflet -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
+
+<!-- Page JS -->
+<script src="coletac.js"></script>
+</body>
+</html>

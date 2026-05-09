@@ -52,10 +52,36 @@ body {
     justify-content: center;
 }
 
+.btn-voltar {
+    position: absolute;
+    top: 20px;
+    left: 30px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: rgba(255, 255, 255, 0.85);
+    font-size: 0.88rem;
+    font-weight: 600;
+    text-decoration: none;
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    padding: 8px 16px;
+    border-radius: 20px;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    transition: 0.25s ease;
+    z-index: 2;
+}
+
+.btn-voltar:hover {
+    background: rgba(255, 255, 255, 0.22);
+    color: #ffffff;
+}
+
 .hero-logo {
     position: absolute;
-    top: 26px;
-    left: 30px;
+    top: 10px;
+    left: 59px;
     width: 170px;
     max-width: 42%;
     filter: brightness(0) invert(1);

@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eco Pneus - Registrar Coleta</title>
+    <link rel="icon" href="https://i.postimg.cc/rp5Py0Rr/Eco-Pneus-2-removebg-preview.png">
+
+    <!-- Fontes -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Cormorant+Garamond:wght@600;700&display=swap" rel="stylesheet">
+
+    <!-- Ícones -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="global.css">
+    <link rel="stylesheet" href="registrar.css">
+</head>
+<body class="registrar-body">
+
+    <div id="toast-container" class="toast-container"></div>
+
+    <div class="register-shell" id="register-shell">
+        <!-- Topbar -->
+        <header class="register-topbar">
+            <button class="topbar-link" onclick="window.location.href='dashboard.html'">
+                <i data-lucide="arrow-left"></i>
+                <span>Voltar ao inicio</span>
+            </button>
+
+            <div class="topbar-brand">
+                <div class="topbar-brand-icon">
+                    <img src="https://www.image2url.com/r2/default/images/1777093024202-b764b621-3e6f-4b89-b838-ca9fd5e06ab4.png" alt="Logo Eco Pneus">
+                </div>
+                <div class="topbar-brand-text">
+                    <strong>Eco Pneus</strong>
+                    <span>NOVA COLETA</span>
+                </div>
+            </div>
+
+            <button class="topbar-link topbar-link-right" id="btn-salvar-rascunho">
+                <i data-lucide="save"></i>
+                <span>Salvar rascunho</span>
+            </button>
+        </header>
+
+        <!-- Hero -->
+        <section class="hero-section">
+            <div class="hero-copy">
+                <p class="hero-kicker">
+                    <i data-lucide="sparkles"></i>
+                    <span>REGISTRO DE COLETA</span>
+                </p>
+
+                <h1>
+                    Vamos transformar pneus<br>
+                    em <span>impacto positivo.</span>
+                </h1>
+
+                <p class="hero-description">
+                    Em três passos simples você registra a coleta. A rota é otimizada
+                    automaticamente e seu parceiro recebe a confirmação na hora.
+                </p>
+            </div>
+
+            <div class="hero-protocol" id="protocol-pill">
+                <i data-lucide="hash"></i>
+                <span>Protocolo provisório: <strong id="protocol-preview">EC-0000</strong></span>
+            </div>
+        </section>
+
+        <!-- Steps -->
+        <section class="steps-nav">
+            <button class="step-pill active" data-step-nav="1" type="button">
+                <span class="step-badge"><i data-lucide="check"></i></span>
+                <span class="step-meta">
+                    <small>PASSO 1</small>
+                    <strong>Tipo & quantidade</strong>
+                </span>
+            </button>
+
+            <button class="step-pill" data-step-nav="2" type="button">
+                <span class="step-badge"><i data-lucide="map-pin"></i></span>
+                <span class="step-meta">
+                    <small>PASSO 2</small>
+                    <strong>Local & urgência</strong>
+                </span>
+            </button>
+
+            <button class="step-pill" data-step-nav="3" type="button">
+                <span class="step-badge"><i data-lucide="shield"></i></span>
+                <span class="step-meta">
+                    <small>PASSO 3</small>
+                    <strong>Contato & revisão</strong>
+                </span>
+            </button>
+        </section>
+
+        <!-- Main grid -->
+        <main class="register-grid">
+            <!-- Left / form -->
+            <section class="register-main">
+                <!-- ETAPA 1 -->
+                <article class="stage-card active" data-step="1">
+                    <div class="stage-head">
+                        <div>
+                            <span class="stage-label">ETAPA 01</span>
+                            <h2>Que tipo de pneu vamos coletar?</h2>
+                        </div>
+                        <button class="stage-head-icon" type="button" title="Atualizar valores sugeridos">
+                            <i data-lucide="refresh-cw"></i>
+                        </button>
+                    </div>
+
+                    <div class="tire-grid">
+                        <button class="tire-option active" type="button" data-type="Passeio" data-weight="8">
+                            <span class="tire-check"><i data-lucide="check"></i></span>
+                            <div class="tire-icon"><i data-lucide="car-front"></i></div>
+                            <strong>Passeio</strong>
+                            <small>Carros leves</small>
+                            <span>-8 KG/UN</span>
+                        </button>
+
+                        <button class="tire-option" type="button" data-type="Caminhão" data-weight="65">
+                            <span class="tire-check"><i data-lucide="check"></i></span>
+                            <div class="tire-icon"><i data-lucide="truck"></i></div>
+                            <strong>Caminhão</strong>
+                            <small>Cargas pesadas</small>
+                            <span>-65 KG/UN</span>
+                        </button>
+
+                        <button class="tire-option" type="button" data-type="Moto" data-weight="4">
+                            <span class="tire-check"><i data-lucide="check"></i></span>
+                            <div class="tire-icon"><i data-lucide="bike"></i></div>
+                            <strong>Moto</strong>
+                            <small>Duas rodas</small>
+                            <span>-4 KG/UN</span>
+                        </button>
+
+                        <button class="tire-option" type="button" data-type="Ônibus" data-weight="55">
+                            <span class="tire-check"><i data-lucide="check"></i></span>
+                            <div class="tire-icon"><i data-lucide="bus"></i></div>
+                            <strong>Ônibus</strong>
+                            <small>Transporte coletivo</small>
+                            <span>-55 KG/UN</span>
+                        </button>
+
+                        <button class="tire-option" type="button" data-type="Agrícola" data-weight="120">
+                            <span class="tire-check"><i data-lucide="check"></i></span>
+                            <div class="tire-icon"><i data-lucide="tractor"></i></div>
+                            <strong>Agrícola</strong>
+                            <small>Tratores / colheitadeiras</small>
+                            <span>-120 KG/UN</span>
+                        </button>
+
+                        <button class="tire-option" type="button" data-type="Outro" data-weight="10">
+                            <span class="tire-check"><i data-lucide="check"></i></span>
+                            <div class="tire-icon"><i data-lucide="circle"></i></div>
+                            <strong>Outro</strong>
+                            <small>Especificar nas observações</small>
+                            <span>-10 KG/UN</span>
+                        </button>
+                    </div>
+
+                    <div class="input-grid two-cols">
+                        <div class="field-wrap">
+                            <label># QUANTIDADE DE PNEUS *</label>
+                            <div class="quantity-box">
+                                <button type="button" class="qty-btn" id="btn-minus">
+                                    <i data-lucide="minus"></i>
+                                </button>
+                                <input id="quantidade" type="number" min="1" value="50">
+                                <button type="button" class="qty-btn" id="btn-plus">
+                                    <i data-lucide="plus"></i>
+                                </button>
+                            </div>
+
+                            <div class="qty-shortcuts">
+                                <button type="button" class="qty-chip" data-add="10">+10</button>
+                                <button type="button" class="qty-chip" data-add="25">+25</button>
+                                <button type="button" class="qty-chip active" data-add="50">+50</button>
+                                <button type="button" class="qty-chip" data-add="100">+100</button>
+                            </div>
+                        </div>
+
+                        <div class="field-wrap">
+                            <label><i data-lucide="scale"></i> PESO ESTIMADO (KG)</label>
+                            <div class="weight-box">
+                                <input id="pesoEstimado" type="number" min="0" placeholder="Sugestão automática">
+                                <span class="weight-suffix">KG</span>
+                            </div>
+                            <p class="field-hint">
+                                <i data-lucide="sparkles"></i>
+                                <span id="peso-sugerido-texto">Calculamos automaticamente se você deixar em branco.</span>
+                            </p>
+                        </div>
+                    </div>
+
+                    <label for="fotoInput" class="upload-box">
+                        <input type="file" id="fotoInput" accept=".png,.jpg,.jpeg,image/*" hidden>
+                        <div class="upload-icon">
+                            <i data-lucide="image-plus"></i>
+                        </div>
+                        <div class="upload-copy">
+                            <strong>Adicionar foto (opcional)</strong>
+                            <span>Ajuda a equipe a planejar o transporte. PNG, JPG até 10MB.</span>
+                            <small id="upload-filename">Nenhum arquivo selecionado</small>
+                        </div>
+                    </label>
+
+                    <div class="stage-footer">
+                        <button class="btn btn-ghost" type="button" onclick="window.location.href='dashboard.html'">
+                            <i data-lucide="arrow-left"></i>
+                            <span>Voltar</span>
+                        </button>
+
+                        <button class="btn btn-primary" type="button" id="btn-next-1">
+                            <span>Continuar</span>
+                            <i data-lucide="arrow-right"></i>
+                        </button>
+                    </div>
+                </article>
+
+                <!-- ETAPA 2 -->
+                <article class="stage-card" data-step="2">
+                    <div class="stage-head">
+                        <div>
+                            <span class="stage-label">ETAPA 02</span>
+                            <h2>Onde e quando coletamos?</h2>
+                        </div>
+                        <button class="stage-head-icon" type="button">
+                            <i data-lucide="map-pinned"></i>
+                        </button>
+                    </div>
+
+                    <div class="field-wrap">
+                        <label>ENDEREÇO COMPLETO *</label>
+                        <div class="input-icon-field">
+                            <i data-lucide="map-pin"></i>
+                            <input id="endereco" type="text" placeholder="Rua, número, bairro, cidade — UF">
+                        </div>
+                        <button class="inline-link" type="button" onclick="window.location.href='coleta.html'">
+                            <i data-lucide="map"></i>
+                            <span>ou escolher no mapa</span>
+                        </button>
+                    </div>
+
+                    <div class="field-wrap">
+                        <label>NÍVEL DE URGÊNCIA *</label>
+
+                        <div class="urgency-grid">
+                            <button class="urgency-card" type="button" data-urgency="baixa">
+                                <div class="urgency-icon low"><i data-lucide="clock-3"></i></div>
+                                <strong>Baixa</strong>
+                                <small>Em até 7 dias</small>
+                            </button>
+
+                            <button class="urgency-card active" type="button" data-urgency="normal">
+                                <div class="urgency-icon normal"><i data-lucide="zap"></i></div>
+                                <strong>Normal</strong>
+                                <small>Em até 72h</small>
+                            </button>
+
+                            <button class="urgency-card" type="button" data-urgency="alta">
+                                <div class="urgency-icon high"><i data-lucide="flame"></i></div>
+                                <strong>Alta</strong>
+                                <small>Em até 24h</small>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="field-wrap">
+                        <label>OBSERVAÇÕES</label>
+                        <textarea id="observacoes" rows="6" maxlength="300" placeholder="Estado dos pneus, acesso ao local, horários disponíveis..."></textarea>
+                        <div class="textarea-meta">
+                            <span>Opcional, mas ajuda na execução</span>
+                            <span id="obs-counter">0/300</span>
+                        </div>
+                    </div>
+
+                    <div class="stage-footer">
+                        <button class="btn btn-ghost" type="button" id="btn-prev-2">
+                            <i data-lucide="arrow-left"></i>
+                            <span>Voltar</span>
+                        </button>
+
+                        <button class="btn btn-primary" type="button" id="btn-next-2">
+                            <span>Continuar</span>
+                            <i data-lucide="arrow-right"></i>
+                        </button>
+                    </div>
+                </article>
+
+                <!-- ETAPA 3 -->
+                <article class="stage-card" data-step="3">
+                    <div class="stage-head">
+                        <div>
+                            <span class="stage-label">ETAPA 03</span>
+                            <h2>Quem está no local? Vamos confirmar.</h2>
+                        </div>
+                        <button class="stage-head-icon" type="button">
+                            <i data-lucide="shield-check"></i>
+                        </button>
+                    </div>
+
+                    <div class="input-grid two-cols">
+                        <div class="field-wrap">
+                            <label><i data-lucide="user"></i> NOME DO RESPONSÁVEL *</label>
+                            <div class="input-icon-field">
+                                <i data-lucide="user-round"></i>
+                                <input id="responsavel" type="text" placeholder="Nome de quem receberá a equipe">
+                            </div>
+                        </div>
+
+                        <div class="field-wrap">
+                            <label><i data-lucide="phone"></i> TELEFONE PARA CONTATO *</label>
+                            <div class="input-icon-field">
+                                <i data-lucide="phone-call"></i>
+                                <input id="telefone" type="tel" placeholder="(11) 99999-0000">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="review-card">
+                        <h3>REVISÃO FINAL</h3>
+
+                        <div class="review-list">
+                            <div class="review-item">
+                                <div class="review-item-label">
+                                    <i data-lucide="recycle"></i>
+                                    <span>TIPO DE PNEU</span>
+                                </div>
+                                <strong id="review-tipo">Passeio</strong>
+                            </div>
+
+                            <div class="review-item">
+                                <div class="review-item-label">
+                                    <i data-lucide="hash"></i>
+                                    <span>QUANTIDADE</span>
+                                </div>
+                                <strong id="review-quantidade">50 unidades</strong>
+                            </div>
+
+                            <div class="review-item">
+                                <div class="review-item-label">
+                                    <i data-lucide="weight"></i>
+                                    <span>PESO ESTIMADO</span>
+                                </div>
+                                <strong id="review-peso">400 kg</strong>
+                            </div>
+
+                            <div class="review-item">
+                                <div class="review-item-label">
+                                    <i data-lucide="map-pin"></i>
+                                    <span>ENDEREÇO</span>
+                                </div>
+                                <strong id="review-endereco">Pendente</strong>
+                            </div>
+
+                            <div class="review-item">
+                                <div class="review-item-label">
+                                    <i data-lucide="alert-triangle"></i>
+                                    <span>URGÊNCIA</span>
+                                </div>
+                                <strong id="review-urgencia">Normal</strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    <label class="confirm-box">
+                        <input type="checkbox" id="confirmacaoFinal">
+                        <span class="confirm-custom"></span>
+                        <span>
+                            Confirmo que as informações estão corretas e autorizo a equipe Eco Pneus
+                            a realizar a coleta no endereço informado, conforme CONAMA 416 e nossa
+                            política de logística reversa.
+                        </span>
+                    </label>
+
+                    <div class="stage-footer">
+                        <button class="btn btn-ghost" type="button" id="btn-prev-3">
+                            <i data-lucide="arrow-left"></i>
+                            <span>Voltar</span>
+                        </button>
+
+                        <button class="btn btn-confirm" type="button" id="btn-submit">
+                            <i data-lucide="check-circle-2"></i>
+                            <span>Confirmar coleta</span>
+                        </button>
+                    </div>
+                </article>
+            </section>
+
+            <!-- Right / sidebar -->
+            <aside class="register-sidebar">
+                <div class="summary-card">
+                    <div class="summary-top">
+                        <div>
+                            <span class="summary-label">RESUMO DA COLETA</span>
+                        </div>
+                        <span class="summary-live">
+                            <span class="live-dot"></span>
+                            ao vivo
+                        </span>
+                    </div>
+
+                    <div class="summary-main">
+                        <div class="summary-main-icon">
+                            <i data-lucide="car-front"></i>
+                        </div>
+                        <div>
+                            <h3 id="summary-tipo">Passeio</h3>
+                            <p id="summary-qtdpeso">50 unidades — 400 kg</p>
+                        </div>
+                    </div>
+
+                    <div class="summary-stats">
+                        <div class="summary-stat">
+                            <small>CO₂ EVITADO</small>
+                            <strong id="summary-co2">1.08 t</strong>
+                        </div>
+                        <div class="summary-stat">
+                            <small>URGÊNCIA</small>
+                            <strong id="summary-urgencia">Normal</strong>
+                        </div>
+                    </div>
+
+                    <div class="summary-meta">
+                        <div class="summary-meta-row">
+                            <span><i data-lucide="map-pin"></i> Endereço</span>
+                            <strong id="summary-endereco">Pendente</strong>
+                        </div>
+                        <div class="summary-meta-row">
+                            <span><i data-lucide="calendar-clock"></i> Janela</span>
+                            <strong id="summary-janela">Próximas 72h</strong>
+                        </div>
+                        <div class="summary-meta-row">
+                            <span><i data-lucide="user"></i> Responsável</span>
+                            <strong id="summary-responsavel">Pendente</strong>
+                        </div>
+                        <div class="summary-meta-row">
+                            <span><i data-lucide="phone"></i> Contato</span>
+                            <strong id="summary-contato">Pendente</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="info-card">
+                    <div class="info-title">
+                        <i data-lucide="sparkles"></i>
+                        <span>VOCÊ SABIA?</span>
+                    </div>
+                    <p>
+                        Cada pneu de passeio reciclado evita até <strong>8,5 kg de borracha</strong>
+                        indo para aterros e gera matéria-prima para asfalto-borracha, pisos
+                        esportivos e novos artefatos.
+                    </p>
+                </div>
+
+                <div class="recyclers-card">
+                    <div class="recyclers-head">
+                        <span>RECICLADORAS PRÓXIMAS</span>
+                        <i data-lucide="chevron-right"></i>
+                    </div>
+
+                    <div class="recyclers-list" id="recycler-list">
+                        <div class="recycler-item">
+                            <div class="recycler-icon"><i data-lucide="factory"></i></div>
+                            <div>
+                                <strong>Reciclar+ Pneus Ltda</strong>
+                                <small>Parceiro disponível</small>
+                            </div>
+                        </div>
+
+                        <div class="recycler-item">
+                            <div class="recycler-icon"><i data-lucide="factory"></i></div>
+                            <div>
+                                <strong>EcoBorracha Verde</strong>
+                                <small>Coleta regional</small>
+                            </div>
+                        </div>
+
+                        <div class="recycler-item">
+                            <div class="recycler-icon"><i data-lucide="factory"></i></div>
+                            <div>
+                                <strong>GreenTire Brasil</strong>
+                                <small>Destino homologado</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+        </main>
+    </div>
+
+    <!-- Tela de sucesso -->
+    <section class="success-screen hidden" id="success-screen">
+        <div class="success-content">
+            <div class="success-icon">
+                <i data-lucide="check"></i>
+            </div>
+
+            <h2>Coleta registrada!</h2>
+
+            <p>
+                Protocolo <strong id="success-protocol">#EC-0000</strong> criado.
+                Sua equipe foi notificada e a rota será otimizada automaticamente.
+            </p>
+
+            <span class="success-loading">
+                <span class="live-dot"></span>
+                Redirecionando para o painel...
+            </span>
+        </div>
+    </section>
+
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
+
+    <script src="firebase-config.js"></script>
+    <script src="registrar.js"></script>
+</body>
+</html>

@@ -5,137 +5,278 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Eco Pneus - Criar Conta</title>
     <link rel="icon" href="https://i.postimg.cc/rp5Py0Rr/Eco-Pneus-2-removebg-preview.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link rel="stylesheet" href="global.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="cria-conta.css">
 </head>
 <body>
 
 <div class="signup-page">
 
-    <div class="signup-header">
-        <img src="https://i.postimg.cc/rp5Py0Rr/Eco-Pneus-2-removebg-preview.png" alt="Eco Pneus">
-        <h1>Crie sua conta</h1>
-        <p>Sua jornada sustentavel comeca aqui</p>
-    </div>
+    <!-- HERO (igual ao login) -->
+    <section class="signup-hero">
+        <a href="index.html" class="btn-voltar">
+            <i class="fas fa-arrow-left"></i> Voltar para o início
+        </a>
 
-    <div class="signup-form-wrapper">
+        <img 
+            src="https://i.postimg.cc/rp5Py0Rr/Eco-Pneus-2-removebg-preview.png" 
+            alt="Eco Pneus" 
+            class="hero-logo"
+        >
+
+        <div class="hero-content">
+            <h1>
+                Sua gestão de pneus
+                <span>mais lucrativa e verde.</span>
+            </h1>
+
+            <ul class="benefits-list">
+                <li>
+                    <i class="fas fa-check-circle"></i>
+                    <span>Logística reversa <b>100% automatizada</b>.</span>
+                </li>
+                <li>
+                    <i class="fas fa-chart-line"></i>
+                    <span>Controle total de <b>coletas e certificados</b>.</span>
+                </li>
+                <li>
+                    <i class="fas fa-leaf"></i>
+                    <span>Sua empresa em conformidade <b>ambiental</b>.</span>
+                </li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- AUTH / CADASTRO -->
+    <section class="signup-auth">
         <div class="signup-card fade-up">
 
-            <h2>Cadastro</h2>
-            <p class="subtitle">Preencha seus dados para comecar</p>
+            <div class="mobile-logo">
+                <img src="https://i.postimg.cc/rp5Py0Rr/Eco-Pneus-2-removebg-preview.png" alt="Eco Pneus">
+                <h3>Eco Pneus</h3>
+            </div>
 
-            <div class="tipo-selector">
-                <div class="tipo-option active" data-tipo="empresa" onclick="selecionarTipo('empresa')">
-                    <span class="tipo-icon">&#127970;</span>
-                    Empresa
+            <h2>Criar Conta</h2>
+            <p class="subtitle">Preencha seus dados para começar.</p>
+
+            <!-- Tipo selector: Empresa / Pessoa Física -->
+            <div class="tipo-tabs">
+                <button class="tipo-tab active" data-tipo="empresa" onclick="selecionarTipo('empresa')">
+                    <i class="fas fa-building"></i> Empresa
+                </button>
+                <button class="tipo-tab" data-tipo="pessoa" onclick="selecionarTipo('pessoa')">
+                    <i class="fas fa-user"></i> Pessoa Física
+                </button>
+            </div>
+
+            <!-- ============== EMPRESA ============== -->
+            <div id="form-empresa" class="form-section">
+
+                <label class="section-label">Tipo de Empresa</label>
+                <div class="empresa-cards">
+                    <div class="empresa-card" data-empresa="geradores" onclick="selecionarEmpresa('geradores')">
+                        <div class="card-icon icon-blue"><i class="fas fa-truck"></i></div>
+                        <h4>Geradores</h4>
+                        <p>Borracharias, oficinas e frotas</p>
+                        <i class="fas fa-check check-mark"></i>
+                    </div>
+                    <div class="empresa-card" data-empresa="transportadores" onclick="selecionarEmpresa('transportadores')">
+                        <div class="card-icon icon-green"><i class="fas fa-truck-moving"></i></div>
+                        <h4>Transportadores</h4>
+                        <p>Operadores logísticos</p>
+                        <i class="fas fa-check check-mark"></i>
+                    </div>
+                    <div class="empresa-card active" data-empresa="recicladores" onclick="selecionarEmpresa('recicladores')">
+                        <div class="card-icon icon-purple"><i class="fas fa-recycle"></i></div>
+                        <h4>Recicladores</h4>
+                        <p>Empresas de destinação</p>
+                        <i class="fas fa-check check-mark"></i>
+                    </div>
                 </div>
-                <div class="tipo-option" data-tipo="pessoa" onclick="selecionarTipo('pessoa')">
-                    <span class="tipo-icon">&#128100;</span>
-                    Pessoa Fisica
-                </div>
-            </div>
 
-            <div class="form-group">
-                <label>Nome completo *</label>
-                <input type="text" id="nome" placeholder="Digite seu nome completo">
-            </div>
-
-            <div class="form-group">
-                <label>E-mail *</label>
-                <input type="email" id="email" placeholder="seu@email.com">
-            </div>
-
-            <div class="form-row">
                 <div class="form-group">
-                    <label>Telefone *</label>
-                    <input type="tel" id="telefone" placeholder="(11) 99999-0000" oninput="mascaraTelefone(this)">
+                    <label>Razão Social</label>
+                    <div class="input-wrapper">
+                        <i class="fas fa-user"></i>
+                        <input type="text" id="razao-social" placeholder="Nome da empresa">
+                    </div>
                 </div>
-                <div class="form-group" id="cnpj-group">
-                    <label id="cnpj-label">CNPJ *</label>
-                    <input type="text" id="cnpj" placeholder="00.000.000/0001-00" oninput="mascaraCNPJ(this)">
-                </div>
-            </div>
 
-            <div id="endereco-container">
                 <div class="form-group">
-                    <label>CEP *</label>
-                    <input type="text" id="cep" placeholder="00000-000" oninput="mascaraCEP(this)" onblur="buscarCEP(this.value)">
+                    <label>E-mail</label>
+                    <div class="input-wrapper">
+                        <i class="fas fa-envelope"></i>
+                        <input type="email" id="email-empresa" placeholder="seu@email.com">
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label>Endereço *</label>
-                    <input type="text" id="endereco" placeholder="Rua, número, bairro">
-                </div>
+
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Cidade *</label>
-                        <input type="text" id="cidade" placeholder="Cidade">
+                        <label>Telefone</label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-phone"></i>
+                            <input type="tel" id="telefone-empresa" placeholder="(11) 99999-0000" oninput="mascaraTelefone(this)">
+                        </div>
                     </div>
                     <div class="form-group">
-                        <label>UF *</label>
-                        <select id="uf">
-                            <option value="">UF</option>
-                            <option value="AC">AC</option><option value="AL">AL</option><option value="AP">AP</option>
-                            <option value="AM">AM</option><option value="BA">BA</option><option value="CE">CE</option>
-                            <option value="DF">DF</option><option value="ES">ES</option><option value="GO">GO</option>
-                            <option value="MA">MA</option><option value="MT">MT</option><option value="MS">MS</option>
-                            <option value="MG">MG</option><option value="PA">PA</option><option value="PB">PB</option>
-                            <option value="PR">PR</option><option value="PE">PE</option><option value="PI">PI</option>
-                            <option value="RJ">RJ</option><option value="RN">RN</option><option value="RS">RS</option>
-                            <option value="RO">RO</option><option value="RR">RR</option><option value="SC">SC</option>
-                            <option value="SP">SP</option><option value="SE">SE</option><option value="TO">TO</option>
-                        </select>
+                        <label>CNPJ</label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-id-card"></i>
+                            <input type="text" id="cnpj" placeholder="00.000.000/0001-00" oninput="mascaraCNPJ(this)">
+                        </div>
                     </div>
                 </div>
+
+                <div class="form-group">
+                    <label>CEP</label>
+                    <div class="input-wrapper">
+                        <i class="fas fa-map-marker-alt"></i>
+                        <input type="text" id="cep" placeholder="00000-000" oninput="mascaraCEP(this)" onblur="buscarCEP(this.value)">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Endereço</label>
+                    <div class="input-wrapper">
+                        <i class="fas fa-road"></i>
+                        <input type="text" id="endereco" placeholder="Rua, número, bairro">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Cidade</label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-city"></i>
+                            <input type="text" id="cidade" placeholder="Cidade">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>UF</label>
+                        <div class="input-wrapper">
+                            <select id="uf">
+                                <option value="">UF</option>
+                                <option value="AC">AC</option><option value="AL">AL</option><option value="AP">AP</option>
+                                <option value="AM">AM</option><option value="BA">BA</option><option value="CE">CE</option>
+                                <option value="DF">DF</option><option value="ES">ES</option><option value="GO">GO</option>
+                                <option value="MA">MA</option><option value="MT">MT</option><option value="MS">MS</option>
+                                <option value="MG">MG</option><option value="PA">PA</option><option value="PB">PB</option>
+                                <option value="PR">PR</option><option value="PE">PE</option><option value="PI">PI</option>
+                                <option value="RJ">RJ</option><option value="RN">RN</option><option value="RS">RS</option>
+                                <option value="RO">RO</option><option value="RR">RR</option><option value="SC">SC</option>
+                                <option value="SP">SP</option><option value="SE">SE</option><option value="TO">TO</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Senha</label>
+                    <div class="input-wrapper">
+                        <i class="fas fa-lock"></i>
+                        <input type="password" id="senha-empresa" placeholder="Mínimo 6 caracteres" oninput="checkPasswordStrength(this.value, 'empresa')">
+                        <i class="far fa-eye toggle-password" onclick="togglePassword('senha-empresa', this)"></i>
+                    </div>
+                    <div class="password-strength" id="strength-empresa">
+                        <div class="strength-bar"></div>
+                        <div class="strength-bar"></div>
+                        <div class="strength-bar"></div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Confirmar Senha</label>
+                    <div class="input-wrapper">
+                        <i class="fas fa-lock"></i>
+                        <input type="password" id="confirmar-senha-empresa" placeholder="Repita a senha">
+                        <i class="far fa-eye toggle-password" onclick="togglePassword('confirmar-senha-empresa', this)"></i>
+                    </div>
+                </div>
+
             </div>
 
-            <div class="form-group">
-                <label>Senha *</label>
-                <div class="password-wrapper">
-                    <input type="password" id="senha" placeholder="Minimo 6 caracteres" oninput="checkPasswordStrength(this.value)">
-                    <i class="far fa-eye toggle-password" onclick="togglePassword('senha', this)"></i>
-                </div>
-                <div class="password-strength">
-                    <div class="strength-bar"></div>
-                    <div class="strength-bar"></div>
-                    <div class="strength-bar"></div>
-                </div>
-            </div>
+            <!-- ============== PESSOA FÍSICA ============== -->
+            <div id="form-pessoa" class="form-section" style="display:none;">
 
-            <div class="form-group">
-                <label>Confirmar senha *</label>
-                <div class="password-wrapper">
-                    <input type="password" id="confirmar-senha" placeholder="Repita a senha">
-                    <i class="far fa-eye toggle-password" onclick="togglePassword('confirmar-senha', this)"></i>
+                <div class="form-group">
+                    <label>Nome Completo</label>
+                    <div class="input-wrapper">
+                        <i class="fas fa-user"></i>
+                        <input type="text" id="nome-pessoa" placeholder="Digite seu nome completo">
+                    </div>
                 </div>
+
+                <div class="form-group">
+                    <label>E-mail</label>
+                    <div class="input-wrapper">
+                        <i class="fas fa-envelope"></i>
+                        <input type="email" id="email-pessoa" placeholder="seu@email.com">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Telefone</label>
+                    <div class="input-wrapper">
+                        <i class="fas fa-phone"></i>
+                        <input type="tel" id="telefone-pessoa" placeholder="(11) 99999-0000" oninput="mascaraTelefone(this)">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Senha</label>
+                    <div class="input-wrapper">
+                        <i class="fas fa-lock"></i>
+                        <input type="password" id="senha-pessoa" placeholder="Mínimo 6 caracteres" oninput="checkPasswordStrength(this.value, 'pessoa')">
+                        <i class="far fa-eye toggle-password" onclick="togglePassword('senha-pessoa', this)"></i>
+                    </div>
+                    <div class="password-strength" id="strength-pessoa">
+                        <div class="strength-bar"></div>
+                        <div class="strength-bar"></div>
+                        <div class="strength-bar"></div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Confirmar Senha</label>
+                    <div class="input-wrapper">
+                        <i class="fas fa-lock"></i>
+                        <input type="password" id="confirmar-senha-pessoa" placeholder="Repita a senha">
+                        <i class="far fa-eye toggle-password" onclick="togglePassword('confirmar-senha-pessoa', this)"></i>
+                    </div>
+                </div>
+
             </div>
 
             <button class="btn-primary" onclick="criarConta()">
                 Criar Conta
             </button>
 
-            <div class="divider">ou</div>
+            <div class="divider">ou continue com</div>
 
             <button class="btn-google" onclick="googleLogin()">
                 <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
-                Continuar com Google
+                <span>Continuar com Google</span>
             </button>
 
             <p class="terms">
-                Ao criar sua conta, voce concorda com nossos<br>
-                <a href="#">Termos de Uso</a> e <a href="#">Politica de Privacidade</a>
+                Ao criar sua conta, você concorda com nossos
+                <a href="#">Termos de Uso</a> e <a href="#">Política de Privacidade</a>.
             </p>
 
             <p class="auth-footer">
-                Ja tem conta? <a href="login.html">Fazer login</a>
+                Já tem conta? <a href="login.html">Fazer login</a>
             </p>
 
+            <div class="copyright">© 2026 Eco Pneus. ♻️</div>
         </div>
-    </div>
+    </section>
 
 </div>
 
+<!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>

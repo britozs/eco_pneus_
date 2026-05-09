@@ -3,26 +3,32 @@
 // ============================================================
 
 let tipoSelecionado = 'empresa';
+let tipoEmpresa = 'recicladores';
 
-// Selecionar tipo de conta
+// Selecionar tipo de conta (Empresa / Pessoa Física)
 function selecionarTipo(tipo) {
     tipoSelecionado = tipo;
-    document.querySelectorAll('.tipo-option').forEach(el => el.classList.remove('active'));
-    document.querySelector(`[data-tipo="${tipo}"]`).classList.add('active');
 
-    // Mostrar/esconder campo CNPJ e Endereço
-    const cnpjGroup = document.getElementById('cnpj-group');
-    const enderecoContainer = document.getElementById('endereco-container');
-    
-    if (tipo === 'pessoa') {
-        cnpjGroup.style.display = 'none';
-        enderecoContainer.style.display = 'none';
+    document.querySelectorAll('.tipo-tab').forEach(el => el.classList.remove('active'));
+    document.querySelector(`.tipo-tab[data-tipo="${tipo}"]`).classList.add('active');
+
+    const formEmpresa = document.getElementById('form-empresa');
+    const formPessoa = document.getElementById('form-pessoa');
+
+    if (tipo === 'empresa') {
+        formEmpresa.style.display = 'block';
+        formPessoa.style.display = 'none';
     } else {
-        cnpjGroup.style.display = 'block';
-        enderecoContainer.style.display = 'block';
-        document.getElementById('cnpj-label').textContent = 'CNPJ *';
-        document.getElementById('cnpj').placeholder = '00.000.000/0001-00';
+        formEmpresa.style.display = 'none';
+        formPessoa.style.display = 'block';
     }
+}
+
+// Selecionar tipo de empresa (Geradores / Transportadores / Recicladores)
+function selecionarEmpresa(tipo) {
+    tipoEmpresa = tipo;
+    document.querySelectorAll('.empresa-card').forEach(el => el.classList.remove('active'));
+    document.querySelector(`.empresa-card[data-empresa="${tipo}"]`).classList.add('active');
 }
 
 // Alternar visibilidade da senha
@@ -47,7 +53,7 @@ async function buscarCEP(cep) {
         const data = await response.json();
 
         if (data.erro) {
-            showToast('CEP não encontrado', 'error');
+            if (typeof showToast === 'function') showToast('CEP não encontrado', 'error');
             return;
         }
 
@@ -59,35 +65,14 @@ async function buscarCEP(cep) {
     }
 }
 
-// Mascara CEP
+// Máscaras
 function mascaraCEP(input) {
     let v = input.value.replace(/\D/g, '');
     if (v.length > 8) v = v.slice(0, 8);
-    if (v.length > 5) {
-        v = `${v.slice(0, 5)}-${v.slice(5)}`;
-    }
+    if (v.length > 5) v = `${v.slice(0, 5)}-${v.slice(5)}`;
     input.value = v;
 }
 
-// Verificar forca da senha
-function checkPasswordStrength(password) {
-    const bars = document.querySelectorAll('.strength-bar');
-    bars.forEach(b => b.className = 'strength-bar');
-
-    if (password.length === 0) return;
-
-    let strength = 0;
-    if (password.length >= 6) strength++;
-    if (password.length >= 8 && /[A-Z]/.test(password)) strength++;
-    if (/[0-9]/.test(password) && /[^A-Za-z0-9]/.test(password)) strength++;
-
-    const levels = ['weak', 'medium', 'strong'];
-    for (let i = 0; i < strength; i++) {
-        bars[i].classList.add(levels[Math.min(i, 2)]);
-    }
-}
-
-// Mascara telefone
 function mascaraTelefone(input) {
     let v = input.value.replace(/\D/g, '');
     if (v.length > 11) v = v.slice(0, 11);
@@ -99,7 +84,6 @@ function mascaraTelefone(input) {
     input.value = v;
 }
 
-// Mascara CNPJ
 function mascaraCNPJ(input) {
     let v = input.value.replace(/\D/g, '');
     if (v.length > 14) v = v.slice(0, 14);
@@ -115,95 +99,169 @@ function mascaraCNPJ(input) {
     input.value = v;
 }
 
-// Criar conta
-async function criarConta() {
-    const nome = document.getElementById('nome').value.trim();
-    const email = document.getElementById('email').value.trim();
-    const telefone = document.getElementById('telefone').value.trim();
-    const cnpj = document.getElementById('cnpj') ? document.getElementById('cnpj').value.trim() : '';
-    const senha = document.getElementById('senha').value;
-    const confirmarSenha = document.getElementById('confirmar-senha').value;
-    
-    // Dados de endereço (apenas para empresa)
-    const cep = document.getElementById('cep').value.trim();
-    const endereco = document.getElementById('endereco').value.trim();
-    const cidade = document.getElementById('cidade').value.trim();
-    const uf = document.getElementById('uf').value;
+// Verificar força da senha
+function checkPasswordStrength(password, contexto) {
+    const container = contexto === 'empresa'
+        ? document.getElementById('strength-empresa')
+        : document.getElementById('strength-pessoa');
+    if (!container) return;
 
-    const btn = document.querySelector('.btn-primary');
+    const bars = container.querySelectorAll('.strength-bar');
+    bars.forEach(b => b.className = 'strength-bar');
 
-    // Validacoes basicas
-    if (!nome || !email || !telefone || !senha) {
-        showToast('Preencha todos os campos obrigatorios', 'error');
-        return;
-    }
+    if (password.length === 0) return;
 
-    if (tipoSelecionado === 'empresa') {
-        if (!cnpj || !cep || !endereco || !cidade || !uf) {
-            showToast('Preencha todos os dados da empresa', 'error');
-            return;
-        }
-    }
+    let strength = 0;
+    if (password.length >= 6) strength++;
+    if (password.length >= 8 && /[A-Z]/.test(password)) strength++;
+    if (/[0-9]/.test(password) && /[^A-Za-z0-9]/.test(password)) strength++;
 
-    if (senha.length < 6) {
-        showToast('A senha deve ter pelo menos 6 caracteres', 'error');
-        return;
-    }
-
-    if (senha !== confirmarSenha) {
-        showToast('As senhas nao coincidem', 'error');
-        return;
-    }
-
-    setLoading(btn, true);
-
-    try {
-        const cred = await firebase.auth().createUserWithEmailAndPassword(email, senha);
-        await cred.user.updateProfile({ displayName: nome });
-
-        const userData = {
-            nome: nome,
-            email: email,
-            telefone: telefone,
-            tipo: tipoSelecionado,
-            criadoEm: new Date()
-        };
-
-        if (tipoSelecionado === 'empresa') {
-            userData.cnpj = cnpj;
-            userData.endereco = {
-                cep, endereco, cidade, uf
-            };
-        }
-
-        await db.collection('usuarios').doc(cred.user.uid).set(userData);
-
-        showToast('Conta criada com sucesso!');
-        setTimeout(() => window.location.href = 'dashboard.html', 1000);
-
-    } catch (error) {
-        let msg = 'Erro ao criar conta';
-        if (error.code === 'auth/email-already-in-use') msg = 'Este email ja esta em uso';
-        if (error.code === 'auth/invalid-email') msg = 'Email invalido';
-        if (error.code === 'auth/weak-password') msg = 'Senha muito fraca';
-        showToast(msg, 'error');
-        setLoading(btn, false);
+    const levels = ['weak', 'medium', 'strong'];
+    for (let i = 0; i < strength; i++) {
+        bars[i].classList.add(levels[Math.min(i, 2)]);
     }
 }
 
-// Google login
+// Loading helper (caso showToast/setLoading não existam)
+function setLoadingLocal(btn, loading) {
+    if (!btn) return;
+    if (loading) {
+        btn.dataset.originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Criando...';
+        btn.disabled = true;
+    } else {
+        btn.innerHTML = btn.dataset.originalText || 'Criar Conta';
+        btn.disabled = false;
+    }
+}
+
+function toast(msg, type) {
+    if (typeof showToast === 'function') showToast(msg, type);
+    else alert(msg);
+}
+
+// Criar conta
+async function criarConta() {
+    const btn = document.querySelector('.btn-primary');
+
+    if (tipoSelecionado === 'empresa') {
+        const razaoSocial = document.getElementById('razao-social').value.trim();
+        const email = document.getElementById('email-empresa').value.trim();
+        const telefone = document.getElementById('telefone-empresa').value.trim();
+        const cnpj = document.getElementById('cnpj').value.trim();
+        const cep = document.getElementById('cep').value.trim();
+        const endereco = document.getElementById('endereco').value.trim();
+        const cidade = document.getElementById('cidade').value.trim();
+        const uf = document.getElementById('uf').value;
+        const senha = document.getElementById('senha-empresa').value;
+        const confirmar = document.getElementById('confirmar-senha-empresa').value;
+
+        if (!razaoSocial || !email || !telefone || !cnpj || !cep || !endereco || !cidade || !uf || !senha) {
+            toast('Preencha todos os campos da empresa', 'error');
+            return;
+        }
+        if (senha.length < 6) { toast('A senha deve ter pelo menos 6 caracteres', 'error'); return; }
+        if (senha !== confirmar) { toast('As senhas não coincidem', 'error'); return; }
+
+        setLoadingLocal(btn, true);
+
+        try {
+            const cred = await firebase.auth().createUserWithEmailAndPassword(email, senha);
+            await cred.user.updateProfile({ displayName: razaoSocial });
+
+            await firebase.firestore().collection('usuarios').doc(cred.user.uid).set({
+                tipo: 'empresa',
+                tipoEmpresa: tipoEmpresa,
+                razaoSocial,
+                email,
+                telefone,
+                cnpj,
+                endereco: { cep, endereco, cidade, uf },
+                criadoEm: new Date()
+            });
+
+            toast('Conta criada com sucesso!');
+            setTimeout(() => window.location.href = 'dashboard.html', 1000);
+        } catch (error) {
+            let msg = 'Erro ao criar conta';
+            if (error.code === 'auth/email-already-in-use') msg = 'Este email já está em uso';
+            if (error.code === 'auth/invalid-email') msg = 'Email inválido';
+            if (error.code === 'auth/weak-password') msg = 'Senha muito fraca';
+            toast(msg, 'error');
+            setLoadingLocal(btn, false);
+        }
+
+    } else {
+        // Pessoa Física: somente nome, email, telefone, senha
+        const nome = document.getElementById('nome-pessoa').value.trim();
+        const email = document.getElementById('email-pessoa').value.trim();
+        const telefone = document.getElementById('telefone-pessoa').value.trim();
+        const senha = document.getElementById('senha-pessoa').value;
+        const confirmar = document.getElementById('confirmar-senha-pessoa').value;
+
+        if (!nome || !email || !telefone || !senha) {
+            toast('Preencha todos os campos', 'error');
+            return;
+        }
+        if (senha.length < 6) { toast('A senha deve ter pelo menos 6 caracteres', 'error'); return; }
+        if (senha !== confirmar) { toast('As senhas não coincidem', 'error'); return; }
+
+        setLoadingLocal(btn, true);
+
+        try {
+            const cred = await firebase.auth().createUserWithEmailAndPassword(email, senha);
+            await cred.user.updateProfile({ displayName: nome });
+
+            await firebase.firestore().collection('usuarios').doc(cred.user.uid).set({
+                tipo: 'pessoa',
+                nome,
+                email,
+                telefone,
+                criadoEm: new Date()
+            });
+
+            toast('Conta criada com sucesso!');
+            setTimeout(() => window.location.href = 'dashboard.html', 1000);
+        } catch (error) {
+            let msg = 'Erro ao criar conta';
+            if (error.code === 'auth/email-already-in-use') msg = 'Este email já está em uso';
+            if (error.code === 'auth/invalid-email') msg = 'Email inválido';
+            if (error.code === 'auth/weak-password') msg = 'Senha muito fraca';
+            toast(msg, 'error');
+            setLoadingLocal(btn, false);
+        }
+    }
+}
+
+// Google login / cadastro
 async function googleLogin() {
     try {
         const provider = new firebase.auth.GoogleAuthProvider();
-        await firebase.auth().signInWithPopup(provider);
-        showToast('Conta criada com Google!');
+        const result = await firebase.auth().signInWithPopup(provider);
+
+        // Salva no Firestore se for primeiro acesso
+        const user = result.user;
+        const userRef = firebase.firestore().collection('usuarios').doc(user.uid);
+        const snap = await userRef.get();
+        if (!snap.exists) {
+            await userRef.set({
+                tipo: tipoSelecionado,
+                tipoEmpresa: tipoSelecionado === 'empresa' ? tipoEmpresa : null,
+                nome: user.displayName,
+                email: user.email,
+                criadoEm: new Date()
+            });
+        }
+
+        toast('Conta criada com Google!');
         setTimeout(() => window.location.href = 'dashboard.html', 800);
     } catch (e) {
-        showToast('Erro ao entrar com Google', 'error');
+        toast('Erro ao entrar com Google', 'error');
     }
 }
 
 // Init
 document.addEventListener('DOMContentLoaded', () => {
     selecionarTipo('empresa');
+    selecionarEmpresa('recicladores');
 });
