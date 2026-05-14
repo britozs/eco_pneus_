@@ -36,6 +36,11 @@ auth.onAuthStateChanged(async (user) => {
         setHeaderUser(user);
     }
 
+    if (typeof EcoPneusGlobalNotifs !== 'undefined') {
+        EcoPneusGlobalNotifs.start(user);
+        EcoPneusGlobalNotifs.registerBell(document.getElementById('btn-notif'));
+    }
+
     await renderDashboard();
 });
 
@@ -229,6 +234,10 @@ function escapeHtml(texto = '') {
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#039;');
+}
+
+function escapeAttribute(value = '') {
+    return String(value).replace(/"/g, '&quot;');
 }
 
 function replaceIcons() {
@@ -904,48 +913,34 @@ function renderAgendaDashboard(lista, totalPendentes) {
 // ============================================================
 async function carregarEmpresasDestaque() {
     try {
-        const snap = await db.collection('usuarios')
-            .where('tipo', '==', 'empresa')
-            .limit(4)
-            .get();
+        const snap = await db.collection('parceiros').limit(40).get();
+        const list = [];
+        snap.forEach((doc) => {
+            list.push(Object.assign({ id: doc.id }, doc.data() || {}));
+        });
+        list.sort((a, b) => (Number(b.rating) || 0) - (Number(a.rating) || 0));
+        const top = list.slice(0, 4);
 
         let html = '';
-
-        if (snap.empty) {
+        if (!top.length) {
             html = `
                 <div class="empty-state">
                     <div class="empty-icon">🏢</div>
-                    <h3>Nenhuma empresa cadastrada</h3>
-                    <p>As empresas cadastradas aparecerão aqui.</p>
+                    <h3>Nenhum parceiro cadastrado</h3>
+                    <p>Os parceiros da rede aparecerão aqui após o cadastro.</p>
                 </div>
             `;
         } else {
-            html = `<div class="empresas-grid">`;
-
-            for (const doc of snap.docs) {
-                if (currentUser && doc.id === currentUser.uid) continue;
-
-                const empresa = doc.data();
-                const rating = await calcularMedia(doc.id);
-                html += renderEmpresaCard(doc.id, empresa, rating);
+            html = `<div class="empresas-grid eco-card-lift">`;
+            for (const p of top) {
+                const rating = await calcularMediaParceiro(p.id);
+                html += renderParceiroDashboardCard(p, rating);
             }
-
             html += `</div>`;
-
-            if (html === `<div class="empresas-grid"></div>`) {
-                html = `
-                    <div class="empty-state">
-                        <div class="empty-icon">🏢</div>
-                        <h3>Nenhuma empresa encontrada</h3>
-                        <p>Não há empresas para exibir agora.</p>
-                    </div>
-                `;
-            }
         }
 
         setHTML('dash-empresas', html);
         replaceIcons();
-
     } catch (error) {
         console.warn(error);
         setHTML(
@@ -961,21 +956,36 @@ async function carregarEmpresasDestaque() {
     }
 }
 
-function renderEmpresaCard(id, e, rating) {
-    const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(e.nome || 'E')}&background=0b6b3a&color=fff&size=100`;
+function mapParceiroTipoLabel(p) {
+    const c = String(p.categoria || '').toLowerCase();
+    if (c === 'transportadora') return 'Transportadora';
+    if (c === 'ponto-coleta') return 'Geradora / Ponto de coleta';
+    return 'Recicladora';
+}
+
+function distanciaParceiroTexto(p) {
+    if (typeof p.distancia === 'number' && p.distancia >= 0) return `${p.distancia} km`;
+    return 'Rede nacional';
+}
+
+function renderParceiroDashboardCard(p, rating) {
+    const img =
+        p.imagem ||
+        `https://ui-avatars.com/api/?name=${encodeURIComponent(p.nome || 'EP')}&background=0b6b3a&color=fff&size=160`;
     const stars = renderStars(rating.media);
-    const materiais = ['Pneus', 'Borracha', 'Aço'];
+    const tipo = mapParceiroTipoLabel(p);
+    const coletasN = Number(p.coletas || 0);
 
     return `
         <div class="empresa-card">
             <div class="empresa-top">
-                <img class="empresa-avatar" src="${avatarUrl}" alt="${escapeHtml(e.nome || 'Empresa')}">
+                <img class="empresa-avatar" src="${escapeAttribute(img)}" alt="${escapeHtml(p.nome || 'Empresa')}">
                 <div>
                     <div class="empresa-name">
-                        ${escapeHtml(e.nome || 'Empresa')}
-                        <span class="verified-badge">✓ Verificado</span>
+                        ${escapeHtml(p.nome || 'Empresa')}
+                        ${p.verificado ? `<span class="verified-badge">✓ Verificado</span>` : ''}
                     </div>
-                    <span class="empresa-tipo">Recicladora</span>
+                    <span class="empresa-tipo">${escapeHtml(tipo)}</span>
                 </div>
             </div>
 
@@ -985,18 +995,22 @@ function renderEmpresaCard(id, e, rating) {
             </div>
 
             <div class="empresa-meta">
-                <span>📍 ${escapeHtml(e.cidade || 'Campinas, SP')}</span>
-                <span>📞 ${escapeHtml(e.telefone || '--')}</span>
+                <span>📍 ${escapeHtml(p.cidade || '—')}</span>
+                <span>🚛 ${formatNumberBR(coletasN)} coletas</span>
+                <span>📏 ${escapeHtml(distanciaParceiroTexto(p))}</span>
             </div>
 
             <div class="empresa-tags">
-                ${materiais.map(m => `<span class="empresa-tag">${m}</span>`).join('')}
+                ${(p.tags || ['Pneus', 'Logística reversa'])
+                    .slice(0, 3)
+                    .map((m) => `<span class="empresa-tag">${escapeHtml(m)}</span>`)
+                    .join('')}
             </div>
 
             <div class="empresa-actions">
-                <button class="btn-contact" type="button" onclick="abrirContato('${id}', '${escapeJsString(e.nome || '')}', '${escapeJsString(e.email || '')}', '${escapeJsString(e.telefone || '')}', '${escapeJsString(e.cnpj || '')}')">📞 Contato</button>
-                <button class="btn-whatsapp" type="button" onclick="abrirWhatsapp('${escapeJsString(e.telefone || '')}')">💬 WhatsApp</button>
-                <button class="btn-rate" type="button" onclick="abrirAvaliar('${id}', '${escapeJsString(e.nome || '')}')">⭐ Avaliar</button>
+                <button class="btn-contact" type="button" onclick="abrirContato('${escapeJsString(p.id)}', '${escapeJsString(p.nome || '')}', '${escapeJsString(p.email || '')}', '${escapeJsString(p.telefone || '')}', '${escapeJsString(p.cnpj || '')}')">📞 Contato</button>
+                <button class="btn-whatsapp" type="button" onclick="abrirWhatsapp('${escapeJsString(p.whatsapp || p.telefone || '')}')">💬 WhatsApp</button>
+                <button class="btn-rate" type="button" onclick="abrirAvaliar('${escapeJsString(p.id)}', '${escapeJsString(p.nome || '')}')">⭐ Avaliar</button>
             </div>
 
             ${
@@ -1004,7 +1018,10 @@ function renderEmpresaCard(id, e, rating) {
                     ? `
                 <div class="reviews-section">
                     <h4 style="font-size:0.82rem;font-weight:700;margin-top:14px;margin-bottom:8px;">Avaliações recentes</h4>
-                    ${rating.reviews.slice(0, 2).map(r => `
+                    ${rating.reviews
+                        .slice(0, 2)
+                        .map(
+                            (r) => `
                         <div class="review-item">
                             <div class="review-top">
                                 <span class="review-author">${escapeHtml(r.nomeAvaliador || 'Usuário')}</span>
@@ -1013,13 +1030,48 @@ function renderEmpresaCard(id, e, rating) {
                             ${r.comentario ? `<p class="review-text">${escapeHtml(r.comentario)}</p>` : ''}
                             <span class="review-date">${r.data && r.data.seconds ? new Date(r.data.seconds * 1000).toLocaleDateString('pt-BR') : ''}</span>
                         </div>
-                    `).join('')}
+                    `
+                        )
+                        .join('')}
                 </div>
             `
                     : ''
             }
         </div>
     `;
+}
+
+async function calcularMediaParceiro(parceiroId) {
+    try {
+        const snap = await db.collection('avaliacoes').where('parceiroId', '==', parceiroId).limit(40).get();
+
+        let soma = 0;
+        const reviews = [];
+
+        snap.forEach((doc) => {
+            const d = doc.data();
+            soma += Number(d.estrelas || 0);
+            reviews.push(d);
+        });
+
+        reviews.sort((a, b) => {
+            const ta = a.data && a.data.seconds ? a.data.seconds : 0;
+            const tb = b.data && b.data.seconds ? b.data.seconds : 0;
+            return tb - ta;
+        });
+
+        return {
+            media: snap.size > 0 ? soma / snap.size : 0,
+            total: snap.size,
+            reviews
+        };
+    } catch (error) {
+        return {
+            media: 0,
+            total: 0,
+            reviews: []
+        };
+    }
 }
 
 function renderStars(media = 0) {
@@ -1037,37 +1089,6 @@ function escapeJsString(str = '') {
         .replace(/"/g, '\\"')
         .replace(/\n/g, ' ')
         .replace(/\r/g, ' ');
-}
-
-async function calcularMedia(empresaId) {
-    try {
-        const snap = await db.collection('avaliacoes')
-            .where('empresaId', '==', empresaId)
-            .orderBy('data', 'desc')
-            .limit(10)
-            .get();
-
-        let soma = 0;
-        const reviews = [];
-
-        snap.forEach(doc => {
-            const d = doc.data();
-            soma += Number(d.estrelas || 0);
-            reviews.push(d);
-        });
-
-        return {
-            media: snap.size > 0 ? soma / snap.size : 0,
-            total: snap.size,
-            reviews
-        };
-    } catch (error) {
-        return {
-            media: 0,
-            total: 0,
-            reviews: []
-        };
-    }
 }
 
 // ============================================================
@@ -1198,16 +1219,23 @@ async function enviarAvaliacao() {
     setLoading(btn, true, 'Enviando...');
 
     try {
-        await db.collection('avaliacoes').add({
-            empresaId: avaliarEmpresaId,
-            avaliadorId: currentUser.uid,
-            nomeAvaliador: currentUser.displayName || 'Usuário',
-            estrelas: avaliarEstrelas,
-            comentario: comentario,
-            data: new Date()
-        });
+        if (typeof ecoPneusSalvarAvaliacaoParceiro === 'function') {
+            await ecoPneusSalvarAvaliacaoParceiro(avaliarEmpresaId, currentUser, avaliarEstrelas, comentario);
+        } else {
+            await db.collection('avaliacoes').doc(`${avaliarEmpresaId}_${currentUser.uid}`).set(
+                {
+                    parceiroId: avaliarEmpresaId,
+                    avaliadorId: currentUser.uid,
+                    nomeAvaliador: currentUser.displayName || 'Usuário',
+                    estrelas: avaliarEstrelas,
+                    comentario,
+                    data: firebase.firestore.FieldValue.serverTimestamp()
+                },
+                { merge: true }
+            );
+        }
 
-        showToast('Avaliação enviada com sucesso!');
+        showToast('Avaliação salva. Sua nota atualiza a média do parceiro.');
         fecharModalAvaliar();
         await carregarEmpresasDestaque();
 

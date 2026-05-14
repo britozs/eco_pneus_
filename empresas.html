@@ -12,6 +12,7 @@
 
     <script src="https://unpkg.com/lucide@latest"></script>
 
+    <link rel="stylesheet" href="eco-ui.css" />
     <link rel="stylesheet" href="global.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="empresas.css" />
@@ -51,7 +52,7 @@
                             <i data-lucide="sliders-horizontal"></i>
                         </button>
 
-                        <button class="icon-glass" id="btn-notification" title="Notificações">
+                        <button class="icon-glass" id="btn-notification" type="button" title="Notificações" style="position:relative;">
                             <i data-lucide="bell"></i>
                         </button>
 
@@ -126,7 +127,7 @@
                             <div class="number-icon"><i data-lucide="badge-check"></i></div>
                             <div>
                                 <strong id="hero-media-avaliacao">Avaliação média 4.8</strong>
-                                <span>9.2k avaliações da rede</span>
+                                <span id="hero-total-avaliacoes-rede">9.2k avaliações da rede</span>
                             </div>
                         </div>
                     </aside>
@@ -152,44 +153,35 @@
                 </div>
 
                 <div class="toolbar-row">
-                    <div class="toolbar-top-row">
-                        <div class="category-chips" id="category-chips">
-                            <button class="filter-chip active" data-category="todas">
+                    <div class="empresas-filter-line" id="empresas-filter-bar" role="tablist" aria-label="Filtros do diretório">
+                            <button class="filter-chip active" type="button" data-filter-mode="todas" role="tab" aria-selected="true">
                                 <i data-lucide="grid-2x2"></i>
                                 Todas
                             </button>
-                            <button class="filter-chip" data-category="recicladora">
+                            <button class="filter-chip" type="button" data-filter-mode="recicladora" role="tab" aria-selected="false">
                                 <i data-lucide="recycle"></i>
                                 Recicladoras
                             </button>
-                            <button class="filter-chip" data-category="transportadora">
+                            <button class="filter-chip" type="button" data-filter-mode="transportadora" role="tab" aria-selected="false">
                                 <i data-lucide="truck"></i>
                                 Transportadoras
                             </button>
-                            <button class="filter-chip" data-category="ponto-coleta">
+                            <button class="filter-chip" type="button" data-filter-mode="ponto-coleta" role="tab" aria-selected="false">
                                 <i data-lucide="map-pin"></i>
                                 Pontos de coleta
                             </button>
-                            <button class="filter-chip" data-category="melhor-avaliadas">
+                            <button class="filter-chip" type="button" data-filter-mode="melhor-avaliadas" role="tab" aria-selected="false">
                                 <i data-lucide="award"></i>
                                 Melhor avaliadas
                             </button>
-                        </div>
-
-                        <div class="sort-pills" id="sort-pills">
-                            <button class="sort-pill active" data-sort="rating">
-                                <i data-lucide="arrow-up-down"></i>
-                                Melhores avaliados
-                            </button>
-                            <button class="sort-pill" data-sort="active">
+                            <button class="filter-chip" type="button" data-filter-mode="mais-ativos" role="tab" aria-selected="false">
                                 <i data-lucide="activity"></i>
                                 Mais ativos
                             </button>
-                            <button class="sort-pill" data-sort="distance">
+                            <button class="filter-chip" type="button" data-filter-mode="mais-proximos" role="tab" aria-selected="false">
                                 <i data-lucide="navigation"></i>
                                 Mais próximos
                             </button>
-                        </div>
                     </div>
                 </div>
             </section>
@@ -226,7 +218,7 @@
                     </div>
                 </div>
 
-                <div class="map-toolbar" id="map-toolbar">
+                <div class="map-toolbar map-sort-row" id="map-toolbar">
                     <button class="map-sort-chip active" data-sort="rating">Melhores avaliados</button>
                     <button class="map-sort-chip" data-sort="active">Ativos</button>
                     <button class="map-sort-chip" data-sort="distance">Próximos</button>
@@ -383,6 +375,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
     <script src="firebase-config.js"></script>
+    <script src="eco-notifs.js"></script>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 

@@ -10,6 +10,7 @@
     href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=DM+Serif+Display&display=swap"
     rel="stylesheet"
   >
+  <link rel="stylesheet" href="eco-ui.css" />
   <link rel="stylesheet" href="perfil.css" />
 </head>
 <body>
@@ -77,18 +78,6 @@
           <div class="info-stack" id="leftInfoStack">
             <!-- preenchido via JS -->
           </div>
-
-          <div class="profile-actions">
-            <button class="btn btn-primary" id="btnEditarPerfil" type="button">
-              <span class="icon-wrap icon-xs" data-icon="edit"></span>
-              <span>Editar Perfil</span>
-            </button>
-
-            <button class="btn btn-secondary" id="btnAlterarSenha" type="button">
-              <span class="icon-wrap icon-xs" data-icon="lock"></span>
-              <span>Alterar Senha</span>
-            </button>
-          </div>
         </aside>
 
         <!-- COLUNA DIREITA -->
@@ -138,6 +127,14 @@
       </div>
 
       <nav class="drawer-menu">
+        <button class="drawer-item" type="button" data-action="editar-perfil-completo">
+          <span class="drawer-item-icon green-soft" data-icon="edit"></span>
+          <span class="drawer-item-copy">
+            <strong>Editar dados do perfil</strong>
+            <small>Nome, contato, endereço e CEP</small>
+          </span>
+        </button>
+
         <button class="drawer-item" type="button" data-action="foto">
           <span class="drawer-item-icon green-soft" data-icon="camera"></span>
           <span class="drawer-item-copy">
@@ -199,7 +196,7 @@
     </aside>
 
     <!-- MODAL DE EDIÇÃO -->
-    <div class="modal-backdrop" id="editModalBackdrop" aria-hidden="true">
+    <div class="modal-backdrop eco-modal-enhanced" id="editModalBackdrop" aria-hidden="true">
       <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="editModalTitle">
         <div class="modal-head">
           <div>
@@ -246,6 +243,15 @@
             </select>
           </div>
 
+          <div class="field-group">
+            <label for="inputCep">CEP</label>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <input type="text" id="inputCep" maxlength="9" placeholder="00000-000" style="flex:1;" />
+              <button type="button" class="btn btn-secondary" id="btnBuscarCep" style="white-space:nowrap;">Buscar</button>
+            </div>
+            <small id="cep-hint" style="display:block;margin-top:6px;color:#64748b;font-size:0.75rem;"></small>
+          </div>
+
           <div class="field-group field-full" id="groupEndereco">
             <label for="inputEndereco">Endereço completo</label>
             <input type="text" id="inputEndereco" />
@@ -263,30 +269,10 @@
 
           <div class="field-group">
             <label for="inputCreatedAt">Data de criação</label>
-            <input type="date" id="inputCreatedAt" />
+            <input type="date" id="inputCreatedAt" readonly class="input-readonly" />
           </div>
 
-          <div class="field-group">
-            <label for="inputNivel">Nível sustentável</label>
-            <select id="inputNivel">
-              <option value="Bronze">Bronze</option>
-              <option value="Prata">Prata</option>
-              <option value="Ouro">Ouro</option>
-              <option value="Diamante">Diamante</option>
-            </select>
-          </div>
-
-          <div class="field-group">
-            <label for="inputColetas">Coletas realizadas</label>
-            <input type="number" id="inputColetas" min="0" />
-          </div>
-
-          <div class="field-group">
-            <label for="inputUltimaColeta">Última coleta</label>
-            <input type="date" id="inputUltimaColeta" />
-          </div>
-
-          <div class="field-group field-full">
+          <div class="field-group field-full" id="groupStatusEmpresa">
             <label for="inputStatus">Status da conta</label>
             <select id="inputStatus">
               <option value="Ativa">Ativa</option>

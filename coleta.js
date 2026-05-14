@@ -18,7 +18,21 @@ const appState = {
     searchTerm: '',
     expandedIds: new Set(),
     currentModalCode: '',
-    unsubscribeColetas: null
+    unsubscribeColetas: null,
+    unsubscribeColetasEmpresa: null,
+    unsubscribeDisponiveis: null,
+    unsubscribeUsuarioDoc: null,
+    tipoConta: 'pessoa_fisica',
+    empresaRede: false,
+    disponiveisTimer: null,
+    empresaAceiteColetaId: null,
+    empresaCompleteColetaId: null,
+    /** Map id -> fingerprint (status|empresaUid) para diff em tempo real */
+    coletaFingerprints: {},
+    coletasRealtimePrimed: false,
+    disponiveisPrimed: false,
+    disponiveisIds: new Set(),
+    skipColetaDiffToasts: false
 };
 
 // ------------------------------------------------------------
@@ -26,6 +40,7 @@ const appState = {
 // ------------------------------------------------------------
 document.addEventListener('DOMContentLoaded', () => {
     bindStaticUI();
+    bindEmpresaRedeUI();
     safeCreateIcons();
     initAuth();
 });
@@ -41,14 +56,64 @@ function initAuth() {
 
     auth.onAuthStateChanged(async (user) => {
         if (!user) {
+            stopColetaListeners();
+            stopDisponiveisListener();
+            stopUsuarioDocListener();
+            if (typeof EcoPneusGlobalNotifs !== 'undefined') EcoPneusGlobalNotifs.stop();
+            if (appState.disponiveisTimer) {
+                clearInterval(appState.disponiveisTimer);
+                appState.disponiveisTimer = null;
+            }
             window.location.href = 'login.html';
             return;
         }
 
         appState.currentUser = user;
         await loadUserHeader(user);
+        startUsuarioDocListener(user);
+        if (typeof EcoPneusGlobalNotifs !== 'undefined') {
+            EcoPneusGlobalNotifs.start(user);
+            EcoPneusGlobalNotifs.registerBell(document.getElementById('notif-bell-btn'));
+        }
+        await initEmpresaRedeMode(user);
         startRealtimeColetasListener();
     });
+}
+
+function stopUsuarioDocListener() {
+    if (appState.unsubscribeUsuarioDoc) {
+        try {
+            appState.unsubscribeUsuarioDoc();
+        } catch (e) {}
+        appState.unsubscribeUsuarioDoc = null;
+    }
+}
+
+function startUsuarioDocListener(user) {
+    stopUsuarioDocListener();
+    if (!user || typeof db === 'undefined') return;
+    try {
+        appState.unsubscribeUsuarioDoc = db
+            .collection('usuarios')
+            .doc(user.uid)
+            .onSnapshot(
+                (snap) => {
+                    const d = snap.exists ? snap.data() || {} : {};
+                    appState.currentUserData = d;
+                    appState.tipoConta =
+                        typeof ecoPneusResolveTipoConta === 'function' ? ecoPneusResolveTipoConta(d) : 'pessoa_fisica';
+                    document.body.classList.toggle('coletas-pf', appState.tipoConta === 'pessoa_fisica');
+                    document.body.classList.toggle('coletas-logistica', appState.tipoConta !== 'pessoa_fisica');
+                    if (typeof ecoPneusAplicarHeaderPerfilFirebase === 'function') {
+                        ecoPneusAplicarHeaderPerfilFirebase(user, d);
+                    }
+                    initEmpresaRedeMode(user).then(() => renderAll());
+                },
+                () => {}
+            );
+    } catch (e) {
+        appState.unsubscribeUsuarioDoc = null;
+    }
 }
 
 async function loadUserHeader(user) {
@@ -77,44 +142,327 @@ async function loadUserHeader(user) {
         if (userNameEl) userNameEl.textContent = displayName.split(' ')[0];
         if (avatarEl) avatarEl.textContent = getInitials(displayName);
     }
+
+    if (extraData && typeof ecoPneusResolveTipoConta === 'function') {
+        appState.tipoConta = ecoPneusResolveTipoConta(extraData);
+        document.body.classList.toggle('coletas-pf', appState.tipoConta === 'pessoa_fisica');
+        document.body.classList.toggle('coletas-logistica', appState.tipoConta !== 'pessoa_fisica');
+    }
 }
 
 // ------------------------------------------------------------
-// FIRESTORE REALTIME
+// FIRESTORE REALTIME (criador + empresa responsável)
 // ------------------------------------------------------------
+const _mineDocs = new Map();
+const _empresaDocs = new Map();
+
+function stopColetaListeners() {
+    if (appState.unsubscribeColetas) {
+        try {
+            appState.unsubscribeColetas();
+        } catch (e) {}
+        appState.unsubscribeColetas = null;
+    }
+    if (appState.unsubscribeColetasEmpresa) {
+        try {
+            appState.unsubscribeColetasEmpresa();
+        } catch (e) {}
+        appState.unsubscribeColetasEmpresa = null;
+    }
+    _mineDocs.clear();
+    _empresaDocs.clear();
+}
+
+let _coletaMergeDebounceTimer = null;
+
+function mergeColetaDocMaps() {
+    if (_coletaMergeDebounceTimer) clearTimeout(_coletaMergeDebounceTimer);
+    _coletaMergeDebounceTimer = setTimeout(() => {
+        _coletaMergeDebounceTimer = null;
+        mergeColetaDocMapsImmediate();
+    }, 220);
+}
+
+function mergeColetaDocMapsImmediate() {
+    const merged = new Map();
+    _mineDocs.forEach((doc, id) => merged.set(id, doc));
+    _empresaDocs.forEach((doc, id) => merged.set(id, doc));
+    const prevList = appState.allColetas.slice();
+    const nextList = [];
+    merged.forEach((doc) => {
+        const n = normalizeColeta(doc);
+        if (n) nextList.push(n);
+    });
+
+    if (!appState.coletasRealtimePrimed) {
+        appState.allColetas = nextList;
+        appState.coletasRealtimePrimed = true;
+        renderAll();
+        setRefreshLoading(false);
+        touchUpdatedLabel();
+        return;
+    }
+
+    detectRealtimeColetaEvents(prevList, nextList);
+    appState.allColetas = nextList;
+    renderAll();
+    setRefreshLoading(false);
+    touchUpdatedLabel();
+}
+
 function startRealtimeColetasListener(showSuccessToast = false) {
     if (!appState.currentUser) return;
 
-    if (appState.unsubscribeColetas) {
-        appState.unsubscribeColetas();
-        appState.unsubscribeColetas = null;
-    }
+    stopColetaListeners();
+    appState.coletasRealtimePrimed = false;
 
     const refreshBtn = document.getElementById('refresh-btn');
     setRefreshLoading(true);
 
+    const uid = appState.currentUser.uid;
+    const onErr = (error) => {
+        console.error('Erro ao carregar coletas:', error);
+        setRefreshLoading(false);
+        showToast('Erro ao carregar as coletas.', 'error');
+    };
+
     appState.unsubscribeColetas = db
         .collection('coletas')
-        .where('uid', '==', appState.currentUser.uid)
+        .where('uid', '==', uid)
         .onSnapshot(
             (snapshot) => {
-                appState.allColetas = snapshot.docs
-                    .map((doc) => normalizeColeta(doc))
-                    .filter(Boolean);
-
-                renderAll();
-                setRefreshLoading(false);
-
+                _mineDocs.clear();
+                snapshot.forEach((doc) => _mineDocs.set(doc.id, doc));
+                mergeColetaDocMaps();
                 if (showSuccessToast) {
                     showToast('Coletas atualizadas com sucesso.');
                 }
             },
-            (error) => {
-                console.error('Erro ao carregar coletas:', error);
-                setRefreshLoading(false);
-                showToast('Erro ao carregar as coletas.', 'error');
+            onErr
+        );
+
+    appState.unsubscribeColetasEmpresa = db
+        .collection('coletas')
+        .where('empresaResponsavelUid', '==', uid)
+        .onSnapshot(
+            (snapshot) => {
+                _empresaDocs.clear();
+                snapshot.forEach((doc) => _empresaDocs.set(doc.id, doc));
+                mergeColetaDocMaps();
+            },
+            onErr
+        );
+
+    touchUpdatedLabel();
+}
+
+function stopDisponiveisListener() {
+    if (appState.unsubscribeDisponiveis) {
+        try {
+            appState.unsubscribeDisponiveis();
+        } catch (e) {}
+        appState.unsubscribeDisponiveis = null;
+    }
+    appState.disponiveisPrimed = false;
+    appState.disponiveisIds.clear();
+}
+
+function startDisponiveisRealtime() {
+    stopDisponiveisListener();
+    if (!appState.empresaRede || !appState.currentUser) return;
+
+    const host = document.getElementById('empresa-disponiveis-list');
+    if (!host) return;
+
+    const uid = appState.currentUser.uid;
+
+    appState.unsubscribeDisponiveis = db
+        .collection('coletas')
+        .where('status', '==', 'Pendente')
+        .limit(80)
+        .onSnapshot(
+            (snap) => {
+                const rows = [];
+                const nextIds = new Set();
+                snap.forEach((doc) => {
+                    const x = doc.data() || {};
+                    const criador = x.uid || x.criadorUid || '';
+                    const aberta = x.disponivelParaRede !== false;
+                    const jaTem = x.empresaResponsavelUid;
+                    if (!aberta || jaTem) return;
+                    if (criador === uid) return;
+                    nextIds.add(doc.id);
+                    rows.push({ id: doc.id, ...x });
+                });
+
+                if (appState.disponiveisPrimed) {
+                    nextIds.forEach((id) => {
+                        if (!appState.disponiveisIds.has(id)) {
+                            showToast('Nova coleta disponível na rede.');
+                            pushNotification({
+                                titulo: 'Nova coleta na rede',
+                                mensagem: 'Há uma nova solicitação compatível com sua operação.',
+                                tipo: 'rede',
+                                coletaId: id,
+                                protocolo: ''
+                            });
+                        }
+                    });
+                }
+                appState.disponiveisIds = nextIds;
+                appState.disponiveisPrimed = true;
+
+                rows.sort((a, b) => {
+                    const ta = parseFirestoreDateLoose(a.data || a.criadoEm)?.getTime() || 0;
+                    const tb = parseFirestoreDateLoose(b.data || b.criadoEm)?.getTime() || 0;
+                    return tb - ta;
+                });
+
+                if (!rows.length) {
+                    host.innerHTML =
+                        '<p class="empresa-disponiveis-empty">Nenhuma coleta disponível no momento.</p>';
+                    safeCreateIcons();
+                    return;
+                }
+
+                host.innerHTML = rows
+                    .slice(0, 16)
+                    .map((c) => {
+                        const end = escapeHtml(String(c.endereco || 'Endereço não informado').slice(0, 120));
+                        const tipo = escapeHtml(String(c.tipoPneu || c.tipo || 'Pneus'));
+                        const qtd = Number(c.quantidade || 0);
+                        const nomeCriador = escapeHtml(String(c.nomeUsuario || 'Usuário'));
+                        const when = parseFirestoreDateLoose(c.data || c.criadoEm);
+                        const whenStr = when
+                            ? when.toLocaleString('pt-BR', {
+                                  day: '2-digit',
+                                  month: '2-digit',
+                                  hour: '2-digit',
+                                  minute: '2-digit'
+                              })
+                            : '—';
+                        const proto = escapeHtml(String(c.protocolo || c.codigo || 'Coleta'));
+                        return `
+                    <div class="empresa-coleta-row eco-card-lift">
+                        <div>
+                            <strong>${proto}</strong>
+                            <small>${tipo} · ${qtd} un. · ${nomeCriador}</small>
+                            <small style="display:block;margin-top:4px;">${end}</small>
+                            <small style="display:block;opacity:.85;">${whenStr}</small>
+                        </div>
+                        <div class="empresa-coleta-actions">
+                            <button type="button" class="btn-eco-sm btn-eco-sm--lime" data-aceite-id="${escapeHtml(c.id)}">Aceitar</button>
+                        </div>
+                    </div>
+                `;
+                    })
+                    .join('');
+                safeCreateIcons();
+            },
+            (e) => {
+                console.warn(e);
+                host.innerHTML =
+                    '<p class="empresa-disponiveis-err">Não foi possível carregar a lista. Verifique a conexão.</p>';
             }
         );
+}
+
+function detectRealtimeColetaEvents(prevList, nextList) {
+    const uid = appState.currentUser?.uid;
+    if (!uid) return;
+
+    const prevMap = new Map(prevList.map((c) => [c.id, c]));
+
+    for (const cur of nextList) {
+        const prev = prevMap.get(cur.id);
+        const creatorUid = String(cur.criadorUid || cur.raw?.uid || cur.raw?.criadorUid || '');
+        const empUid = String(cur.empresaResponsavelUid || cur.raw?.empresaResponsavelUid || '');
+        const isCreator = creatorUid === uid;
+        const isAssignedEmpresa = empUid === uid;
+
+        if (!prev) {
+            if (isAssignedEmpresa) {
+                const proto = cur.protocolo || 'Coleta';
+                pushNotification({
+                    titulo: 'Coleta no seu painel',
+                    mensagem: `${proto} foi atribuída à sua empresa.`,
+                    tipo: 'atribuida',
+                    coletaId: cur.id,
+                    protocolo: proto
+                });
+                showToast(`Coleta ${proto} apareceu no seu histórico.`);
+            }
+            continue;
+        }
+
+        const statusChanged = prev.status !== cur.status;
+        const empChanged = (prev.empresaResponsavelUid || '') !== (cur.empresaResponsavelUid || '');
+
+        if (!statusChanged && !empChanged) continue;
+
+        if (isCreator) {
+            if (prev.status === 'pendente' && cur.status === 'em_rota') {
+                const nomeEmp = cur.empresaResponsavelNome || 'Uma empresa parceira';
+                const msg = `${nomeEmp} aceitou sua coleta ${cur.protocolo}.`;
+                showToast(msg);
+                pushNotification({
+                    titulo: 'Coleta aceita',
+                    mensagem: msg,
+                    tipo: 'coleta_aceita',
+                    coletaId: cur.id,
+                    protocolo: cur.protocolo
+                });
+            } else if (cur.status === 'concluida' && prev.status !== 'concluida') {
+                const msg = `Coleta ${cur.protocolo} foi concluída.`;
+                showToast(msg);
+                pushNotification({
+                    titulo: 'Coleta concluída',
+                    mensagem: msg,
+                    tipo: 'coleta_concluida',
+                    coletaId: cur.id,
+                    protocolo: cur.protocolo
+                });
+            } else if (statusChanged) {
+                showToast(`Status atualizado: ${cur.protocolo} → ${cur.statusLabel}.`);
+                pushNotification({
+                    titulo: 'Status da coleta',
+                    mensagem: `${cur.protocolo}: ${cur.statusLabel}.`,
+                    tipo: 'status',
+                    coletaId: cur.id,
+                    protocolo: cur.protocolo
+                });
+            }
+        } else if (isAssignedEmpresa && statusChanged && cur.status === 'concluida' && prev.status !== 'concluida') {
+            if (!appState.skipColetaDiffToasts) {
+                showToast(`Coleta ${cur.protocolo} sincronizada como concluída.`);
+            }
+        }
+    }
+}
+
+function touchUpdatedLabel() {
+    const el = document.getElementById('coletas-updated-label');
+    if (!el) return;
+    const t = new Intl.DateTimeFormat('pt-BR', {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+    }).format(new Date());
+    el.textContent = `Atualizado às ${t}`;
+}
+
+function pushNotification({ titulo, mensagem, tipo, coletaId, protocolo }) {
+    const uid = appState.currentUser?.uid;
+    if (uid && typeof ecoPneusCriarNotificacaoUsuario === 'function') {
+        ecoPneusCriarNotificacaoUsuario(uid, {
+            titulo: titulo || 'Eco Pneus',
+            mensagem: mensagem || '',
+            tipo: tipo || 'info',
+            coletaId: coletaId || null,
+            protocolo: protocolo || ''
+        }).catch(() => {});
+    }
+    if (typeof EcoPneusGlobalNotifs !== 'undefined') EcoPneusGlobalNotifs.refresh();
 }
 
 // ------------------------------------------------------------
@@ -177,6 +525,13 @@ function bindStaticUI() {
             if (coleta) openCodeModal(coleta);
             return;
         }
+
+        const completeBtn = e.target.closest('[data-action="complete"]');
+        if (completeBtn) {
+            const id = completeBtn.dataset.id;
+            openEmpresaCompleteModal(id);
+            return;
+        }
     });
 
     modalClose?.addEventListener('click', closeCodeModal);
@@ -213,7 +568,7 @@ function normalizeColeta(doc) {
     );
 
     const protocolo = getProtocolDisplay(data, doc.id);
-    const codigoConfirmacao = getConfirmationCode(data, doc.id, protocolo);
+    const codigoConfirmacao = getConfirmationCodeFromFirestore(data);
     const endereco = String(data.endereco || '').trim();
     const cidade = getCidadeFromEndereco(endereco);
 
@@ -279,7 +634,13 @@ function normalizeColeta(doc) {
 
         latitude: data.latitude ?? null,
         longitude: data.longitude ?? null,
-        fotoUrl: data.fotoUrl || ''
+        fotoUrl: data.fotoUrl || '',
+
+        empresaResponsavelUid: data.empresaResponsavelUid || null,
+        empresaResponsavelNome: String(data.empresaResponsavelNome || '').trim(),
+        disponivelParaRede: data.disponivelParaRede !== false,
+        criadorUid: data.criadorUid || data.uid || null,
+        codigoConfirmacaoCliente: data.codigoConfirmacaoCliente || ''
     };
 }
 
@@ -330,19 +691,18 @@ function getProtocolDisplay(data, docId) {
     return `EC-${shortId}`;
 }
 
-function getConfirmationCode(data, docId, protocolo) {
+function getConfirmationCodeFromFirestore(data) {
     const provided =
+        data.codigoConfirmacaoCliente ||
         data.confirmacaoCodigo ||
         data.codigoConfirmacao ||
         data.confirmationCode ||
         data.chaveConfirmacao ||
         '';
-
-    if (typeof provided === 'string' && /^[A-Z0-9]{3,4}-[A-Z0-9]{3,4}$/i.test(provided.trim())) {
+    if (typeof provided === 'string' && provided.trim().length >= 4) {
         return provided.trim().toUpperCase();
     }
-
-    return generateShortSecureCode(`${protocolo}-${docId}`);
+    return '';
 }
 
 function resolveImpactoCo2Kg(data, quantidade, peso) {
@@ -392,8 +752,10 @@ function buildSubtitle(tipo, urgencia) {
 // FILTRO / BUSCA / ORDENAÇÃO
 // ------------------------------------------------------------
 function renderAll() {
+    applyFilterTabVisibility();
     updateSummary();
     updateCounts();
+    updateColetaFlowUI();
 
     const filtered = applyFilterSearchSort(appState.allColetas);
     appState.visibleColetas = filtered;
@@ -403,6 +765,35 @@ function renderAll() {
     toggleEmptyState(filtered.length === 0);
     updateFilterTabsUI();
     safeCreateIcons();
+}
+
+function updateColetaFlowUI() {
+    const fill = document.getElementById('coletas-flow-fill');
+    const steps = document.querySelectorAll('.coletas-flow-step');
+    if (!fill || !steps.length) return;
+
+    const list = appState.allColetas;
+    const n = list.length;
+    let pct = 14;
+    let activeIdx = 0;
+
+    if (n > 0) {
+        const pend = list.filter((c) => c.status === 'pendente').length;
+        const rota = list.filter((c) => c.status === 'em_rota').length;
+        const ok = list.filter((c) => c.status === 'concluida').length;
+        pct = Math.round(((ok * 100 + rota * 66 + pend * 30) / n) * 0.9 + 10);
+
+        if (rota > 0) activeIdx = 1;
+        if (ok === n) activeIdx = 2;
+        else if (pend === 0 && rota === 0 && ok > 0) activeIdx = 2;
+    }
+
+    fill.style.width = `${Math.min(100, Math.max(10, pct))}%`;
+
+    steps.forEach((el, i) => {
+        el.classList.toggle('active', i === activeIdx);
+        el.classList.toggle('done', i < activeIdx);
+    });
 }
 
 function applyFilterSearchSort(items) {
@@ -480,12 +871,36 @@ function renderCards(items) {
     const grid = document.getElementById('cards-grid');
     if (!grid) return;
 
-    grid.innerHTML = items.map(item => {
+    grid.innerHTML = items.map((item, idx) => {
         const expanded = appState.expandedIds.has(item.id);
         const addressLine = item.endereco || 'Endereço não informado';
+        const uid = appState.currentUser?.uid || '';
+        const podeVerCodigo =
+            uid &&
+            typeof ecoPneusPodeVerCodigoConfirmacaoColeta === 'function' &&
+            ecoPneusPodeVerCodigoConfirmacaoColeta(uid, item.raw || {});
+        const podeConcluir =
+            appState.empresaRede &&
+            appState.currentUser &&
+            item.status === 'em_rota' &&
+            String(item.raw.empresaResponsavelUid || '') === appState.currentUser.uid;
+        const stDelay = Math.min(idx, 12) * 45;
+
+        const codeBtn = podeVerCodigo
+            ? `<button
+                            class="card-btn code"
+                            type="button"
+                            data-action="code"
+                            data-id="${escapeHtml(item.id)}"
+                            title="Ver código de confirmação"
+                            aria-label="Ver código de confirmação"
+                        >
+                            <i data-lucide="key-round"></i>
+                        </button>`
+            : '';
 
         return `
-            <article class="collection-card status-${item.status} ${expanded ? 'expanded' : ''}" data-id="${escapeHtml(item.id)}">
+            <article class="collection-card coleta-card-reveal status-${item.status} ${expanded ? 'expanded' : ''}" data-id="${escapeHtml(item.id)}" style="--coleta-reveal-delay:${stDelay}ms">
                 <div class="status-rail"></div>
 
                 <div class="card-inner">
@@ -563,16 +978,21 @@ function renderCards(items) {
                             <span>Detalhes</span>
                         </button>
 
-                        <button
-                            class="card-btn code"
+                        ${codeBtn}
+
+                        ${
+                            podeConcluir
+                                ? `<button
+                            class="card-btn track"
                             type="button"
-                            data-action="code"
+                            data-action="complete"
                             data-id="${escapeHtml(item.id)}"
-                            title="Ver código"
-                            aria-label="Ver código"
                         >
-                            <i data-lucide="key-round"></i>
-                        </button>
+                            <i data-lucide="circle-check"></i>
+                            <span>Concluir</span>
+                        </button>`
+                                : ''
+                        }
                     </div>
 
                     <div class="card-expand">
@@ -587,6 +1007,15 @@ function renderCards(items) {
                                     <small>Status</small>
                                     <strong>${escapeHtml(item.statusLabel)}</strong>
                                 </div>
+
+                                ${
+                                    item.empresaResponsavelNome
+                                        ? `<div class="expand-item expand-full">
+                                    <small>Empresa na rota</small>
+                                    <strong>${escapeHtml(item.empresaResponsavelNome)}</strong>
+                                </div>`
+                                        : ''
+                                }
 
                                 <div class="expand-item">
                                     <small>Tipo de pneu</small>
@@ -687,16 +1116,41 @@ function handleTrackAction(id) {
 // ------------------------------------------------------------
 // MODAL DO CÓDIGO
 // ------------------------------------------------------------
-function openCodeModal(coleta) {
+async function openCodeModal(coleta) {
     const backdrop = document.getElementById('code-modal-backdrop');
     const display = document.getElementById('code-display');
     const subtitle = document.getElementById('code-modal-subtitle');
 
     if (!backdrop || !display || !subtitle || !coleta) return;
 
-    appState.currentModalCode = coleta.codigoConfirmacao || '--- ---';
+    const uid = appState.currentUser?.uid;
+    if (
+        typeof ecoPneusPodeVerCodigoConfirmacaoColeta === 'function' &&
+        !ecoPneusPodeVerCodigoConfirmacaoColeta(uid, coleta.raw || {})
+    ) {
+        showToast('Apenas quem registrou a coleta pode visualizar o código salvo no sistema.', 'info');
+        return;
+    }
 
-    display.textContent = appState.currentModalCode;
+    let code = getConfirmationCodeFromFirestore(coleta.raw || {});
+    if (!code && coleta.id && typeof db !== 'undefined') {
+        try {
+            const snap = await db.collection('coletas').doc(coleta.id).get();
+            const d = snap.exists ? snap.data() || {} : {};
+            code = getConfirmationCodeFromFirestore(d);
+        } catch (e) {
+            console.warn(e);
+        }
+    }
+
+    if (!code) {
+        showToast('Código ainda não disponível no Firebase para esta coleta.', 'info');
+        return;
+    }
+
+    appState.currentModalCode = code;
+
+    display.textContent = code;
     subtitle.textContent = `Coleta ${coleta.protocolo} • ${coleta.title}`;
 
     backdrop.classList.remove('hidden');
@@ -762,6 +1216,16 @@ function updateCounts() {
 
 function updateResultsCount(totalVisible) {
     setText('results-count', `${formatCompactNumber(totalVisible)} coleta${totalVisible === 1 ? '' : 's'}`);
+}
+
+function applyFilterTabVisibility() {
+    const tab = document.querySelector('.filter-tab[data-filter="em_rota"]');
+    if (!tab) return;
+    const hide = appState.tipoConta === 'pessoa_fisica';
+    tab.classList.toggle('hidden', hide);
+    if (hide && appState.activeFilter === 'em_rota') {
+        appState.activeFilter = 'all';
+    }
 }
 
 function updateFilterTabsUI() {
@@ -1019,4 +1483,242 @@ function escapeHtml(value) {
 
 function escapeAttribute(value) {
     return String(value ?? '').replace(/"/g, '&quot;');
+}
+
+// ------------------------------------------------------------
+// EMPRESA — coletas disponíveis / aceite / conclusão com código
+// ------------------------------------------------------------
+async function initEmpresaRedeMode(user) {
+    appState.empresaRede = false;
+    if (appState.disponiveisTimer) {
+        clearInterval(appState.disponiveisTimer);
+        appState.disponiveisTimer = null;
+    }
+    stopDisponiveisListener();
+
+    const panel = document.getElementById('empresa-rede-panel');
+    const bar = document.getElementById('coleta-wizard-bar');
+
+    if (!user || typeof db === 'undefined') {
+        if (panel) {
+            panel.classList.add('hidden');
+            panel.setAttribute('hidden', 'true');
+        }
+        if (bar) bar.classList.add('hidden');
+        return;
+    }
+
+    let pode = false;
+    try {
+        const snap = await db.collection('usuarios').doc(user.uid).get();
+        const d = snap.exists ? snap.data() || {} : {};
+        appState.currentUserData = d;
+        appState.tipoConta =
+            typeof ecoPneusResolveTipoConta === 'function' ? ecoPneusResolveTipoConta(d) : 'pessoa_fisica';
+        pode =
+            typeof ecoPneusPodeOperarLogistica === 'function'
+                ? ecoPneusPodeOperarLogistica(appState.tipoConta)
+                : false;
+    } catch (e) {
+        console.warn(e);
+    }
+
+    appState.empresaRede = pode;
+
+    if (!pode) {
+        if (panel) {
+            panel.classList.add('hidden');
+            panel.setAttribute('hidden', 'true');
+        }
+        if (bar) bar.classList.add('hidden');
+        if (appState.activeFilter === 'em_rota') appState.activeFilter = 'all';
+        return;
+    }
+
+    if (panel) {
+        panel.classList.remove('hidden');
+        panel.removeAttribute('hidden');
+    }
+    if (bar) bar.classList.remove('hidden');
+    startDisponiveisRealtime();
+}
+
+function parseFirestoreDateLoose(v) {
+    if (!v) return null;
+    if (v.seconds) return new Date(v.seconds * 1000);
+    const d = new Date(v);
+    return Number.isNaN(d.getTime()) ? null : d;
+}
+
+function bindEmpresaRedeUI() {
+    const list = document.getElementById('empresa-disponiveis-list');
+    const bdAceite = document.getElementById('empresa-aceite-backdrop');
+    const bdComplete = document.getElementById('empresa-complete-backdrop');
+
+    list?.addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-aceite-id]');
+        if (!btn) return;
+        const id = btn.getAttribute('data-aceite-id');
+        if (!id) return;
+        appState.empresaAceiteColetaId = id;
+        const sub = document.getElementById('empresa-aceite-sub');
+        if (sub) sub.textContent = `Coleta ${id.slice(0, 8)}… — confirme se sua equipe pode assumir esta rota.`;
+        bdAceite?.classList.remove('hidden');
+        safeCreateIcons();
+    });
+
+    document.getElementById('empresa-aceite-close')?.addEventListener('click', () => closeEmpresaAceite());
+    document.getElementById('empresa-aceite-cancel')?.addEventListener('click', () => closeEmpresaAceite());
+    bdAceite?.addEventListener('click', (e) => {
+        if (e.target === bdAceite) closeEmpresaAceite();
+    });
+
+    document.getElementById('empresa-aceite-ok')?.addEventListener('click', async () => {
+        const id = appState.empresaAceiteColetaId;
+        if (!id || !appState.currentUser) return;
+        try {
+            const ref = db.collection('coletas').doc(id);
+            const snap = await ref.get();
+            const d0 = snap.exists ? snap.data() || {} : {};
+            const criadorUid = String(d0.uid || d0.criadorUid || '').trim();
+            const protocolo = String(d0.protocolo || d0.codigo || id.slice(0, 8)).trim();
+            const nomeEmpresa =
+                appState.currentUserData?.razaoSocial ||
+                appState.currentUserData?.nome ||
+                appState.currentUser.displayName ||
+                'Parceiro Eco Pneus';
+
+            await ref.update({
+                empresaResponsavelUid: appState.currentUser.uid,
+                empresaResponsavelNome: nomeEmpresa,
+                status: 'Em rota',
+                empresaAceitaEm: firebase.firestore.FieldValue.serverTimestamp()
+            });
+
+            if (criadorUid && typeof ecoPneusCriarNotificacaoUsuario === 'function') {
+                await ecoPneusCriarNotificacaoUsuario(criadorUid, {
+                    tipo: 'coleta_aceita',
+                    titulo: 'Sua coleta foi aceita',
+                    mensagem: `${nomeEmpresa} aceitou a coleta ${protocolo}.`,
+                    coletaId: id,
+                    protocolo
+                });
+            }
+
+            showToast('Coleta aceita. O cliente verá o status em tempo real.');
+            pushNotification({
+                titulo: 'Coleta aceita por você',
+                mensagem: `Você assumiu a coleta ${protocolo}.`,
+                tipo: 'coleta_aceita_empresa',
+                coletaId: id,
+                protocolo
+            });
+            closeEmpresaAceite();
+        } catch (err) {
+            console.error(err);
+            showToast('Não foi possível aceitar. Tente novamente.', 'error');
+        }
+    });
+
+    document.getElementById('empresa-complete-close')?.addEventListener('click', () => closeEmpresaComplete());
+    bdComplete?.addEventListener('click', (e) => {
+        if (e.target === bdComplete) closeEmpresaComplete();
+    });
+
+    document.getElementById('empresa-complete-submit')?.addEventListener('click', async () => {
+        const id = appState.empresaCompleteColetaId;
+        const inp = document.getElementById('empresa-complete-input');
+        if (!id || !inp) return;
+        const typed = String(inp.value || '').trim();
+        const coleta = appState.allColetas.find((c) => c.id === id);
+        if (!coleta) {
+            showToast('Coleta não encontrada.', 'error');
+            return;
+        }
+        const ref = db.collection('coletas').doc(id);
+        let esperado = '';
+        try {
+            const snap = await ref.get();
+            const d0 = snap.exists ? snap.data() || {} : {};
+            esperado = getConfirmationCodeFromFirestore(d0);
+        } catch (e1) {
+            showToast('Erro ao validar código no servidor.', 'error');
+            return;
+        }
+        const norm = (s) => s.replace(/\s+/g, '').toUpperCase();
+        if (!typed || !esperado || norm(typed) !== norm(esperado)) {
+            showToast('Código inválido. Confira com quem registrou a coleta.', 'error');
+            pushNotification({
+                titulo: 'Código inválido',
+                mensagem: `O código informado para ${coleta.protocolo} não confere.`,
+                tipo: 'erro',
+                coletaId: id,
+                protocolo: coleta.protocolo
+            });
+            return;
+        }
+        const criadorUid = String(coleta.criadorUid || coleta.raw?.uid || '').trim();
+        try {
+            appState.skipColetaDiffToasts = true;
+            setTimeout(() => {
+                appState.skipColetaDiffToasts = false;
+            }, 4000);
+
+            await ref.update({
+                status: 'Concluída',
+                concluidaEm: firebase.firestore.FieldValue.serverTimestamp(),
+                concluidaPorUid: appState.currentUser.uid,
+                codigoConfirmacaoValidadoEm: firebase.firestore.FieldValue.serverTimestamp()
+            });
+
+            if (criadorUid && typeof ecoPneusCriarNotificacaoUsuario === 'function') {
+                await ecoPneusCriarNotificacaoUsuario(criadorUid, {
+                    tipo: 'coleta_concluida',
+                    titulo: 'Coleta concluída',
+                    mensagem: `A coleta ${coleta.protocolo} foi concluída com código validado.`,
+                    coletaId: id,
+                    protocolo: coleta.protocolo
+                });
+            }
+
+            showToast('Código validado. Coleta concluída com sucesso.');
+            pushNotification({
+                titulo: 'Código confirmado',
+                mensagem: `Coleta ${coleta.protocolo} finalizada e sincronizada.`,
+                tipo: 'codigo_ok',
+                coletaId: id,
+                protocolo: coleta.protocolo
+            });
+            closeEmpresaComplete();
+        } catch (err) {
+            console.error(err);
+            appState.skipColetaDiffToasts = false;
+            showToast('Erro ao concluir.', 'error');
+        }
+    });
+}
+
+function closeEmpresaAceite() {
+    document.getElementById('empresa-aceite-backdrop')?.classList.add('hidden');
+    appState.empresaAceiteColetaId = null;
+}
+
+function closeEmpresaComplete() {
+    document.getElementById('empresa-complete-backdrop')?.classList.add('hidden');
+    appState.empresaCompleteColetaId = null;
+    const inp = document.getElementById('empresa-complete-input');
+    if (inp) inp.value = '';
+}
+
+function openEmpresaCompleteModal(id) {
+    appState.empresaCompleteColetaId = id;
+    const bd = document.getElementById('empresa-complete-backdrop');
+    const sub = document.getElementById('empresa-complete-sub');
+    const coleta = appState.allColetas.find((c) => c.id === id);
+    if (sub && coleta) {
+        sub.textContent = `Coleta ${coleta.protocolo} — digite o código informado pelo cliente (ele não aparece na sua tela).`;
+    }
+    bd?.classList.remove('hidden');
+    safeCreateIcons();
+    document.getElementById('empresa-complete-input')?.focus();
 }

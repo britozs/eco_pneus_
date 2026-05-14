@@ -17,8 +17,16 @@ const formState = {
     urgencia: 'normal',
     observacoes: '',
     responsavel: '',
-    telefone: ''
+    telefone: '',
+    latitude: null,
+    longitude: null,
+    clientConfirmCode: ''
 };
+
+let regMap = null;
+let regMarker = null;
+let mapPickLat = -14.235;
+let mapPickLng = -51.9253;
 
 // Protocolo provisório (preview)
 const protocoloProvisorio = 'EC-' + Math.floor(1000 + Math.random() * 9000);
@@ -73,6 +81,7 @@ async function initRegistrar() {
     bindConfirmCheckbox();
     bindNavigationButtons();
     bindRascunho();
+    bindRegistrarMapModals();
     await carregarRascunhoFirestore();
 
     // Inicializa cálculo de peso e summary
@@ -132,7 +141,17 @@ function irParaStep(step) {
         else if (n < step) pill.classList.add('completed');
     });
 
-    if (step === 3) atualizarReview();
+    if (step === 3) {
+        atualizarReview();
+        if (!formState.clientConfirmCode) {
+            formState.clientConfirmCode =
+                typeof ecoPneusGerarCodigoConfirmacaoCliente === 'function'
+                    ? ecoPneusGerarCodigoConfirmacaoCliente()
+                    : `EC-${Math.random().toString(36).slice(2, 6).toUpperCase()}-${Date.now().toString().slice(-4)}`;
+        }
+        const el = document.getElementById('codigo-cliente-valor');
+        if (el) el.textContent = formState.clientConfirmCode;
+    }
 
     window.scrollTo({ top: 0, behavior: 'smooth' });
     setTimeout(() => lucide.createIcons(), 50);
@@ -438,11 +457,14 @@ async function registrarColeta() {
 
         await db.collection('coletas').add({
             uid: currentUser.uid,
+            criadorUid: currentUser.uid,
             nomeUsuario: currentUser.displayName || 'Usuario',
             tipoPneu: formState.tipoPneu,
             quantidade: Number(formState.quantidade),
             pesoEstimado: getPesoFinal(),
             endereco: formState.endereco,
+            latitude: formState.latitude,
+            longitude: formState.longitude,
             urgencia: formState.urgencia,
             observacoes: formState.observacoes || '',
             responsavel: formState.responsavel,
@@ -450,13 +472,16 @@ async function registrarColeta() {
             fotoUrl: fotoUrl,
             codigo: codigo,
             protocolo: protocoloFinal,
+            codigoConfirmacaoCliente: formState.clientConfirmCode,
+            disponivelParaRede: true,
+            empresaResponsavelUid: null,
             status: 'Pendente',
             data: new Date()
         });
 
         await limparRascunhoFirestore();
 
-        mostrarSucesso(protocoloFinal);
+        mostrarSucesso(protocoloFinal, formState.clientConfirmCode);
     } catch (e) {
         console.error(e);
         showToast('Erro ao registrar coleta. Tente novamente.', 'error');
@@ -466,9 +491,11 @@ async function registrarColeta() {
     }
 }
 
-function mostrarSucesso(protocolo) {
+function mostrarSucesso(protocolo, codigoCliente) {
     document.getElementById('register-shell').style.display = 'none';
     document.getElementById('success-protocol').textContent = '#' + protocolo;
+    const cEl = document.getElementById('success-codigo-cliente');
+    if (cEl) cEl.textContent = codigoCliente || '—';
     document.getElementById('success-screen').classList.remove('hidden');
     lucide.createIcons();
 
@@ -627,6 +654,132 @@ function showToast(message, type = 'success') {
         toast.classList.add('toast-out');
         setTimeout(() => toast.remove(), 300);
     }, 3000);
+}
+
+// ============================================================
+// MAPA (modal) + confirmação de endereço
+// ============================================================
+function bindRegistrarMapModals() {
+    const openBtn = document.getElementById('btn-open-map-modal');
+    const backdrop = document.getElementById('registrar-map-backdrop');
+    const closeBtn = document.getElementById('registrar-map-close');
+    const cancelBtn = document.getElementById('registrar-map-cancel');
+    const confirmBtn = document.getElementById('registrar-map-confirm');
+    const addrBd = document.getElementById('registrar-address-backdrop');
+    const addrClose = document.getElementById('registrar-address-close');
+    const addrBack = document.getElementById('registrar-address-back');
+    const addrOk = document.getElementById('registrar-address-ok');
+    const preview = document.getElementById('registrar-address-preview');
+    const loading = document.getElementById('registrar-address-loading');
+    const copyBtn = document.getElementById('btn-copy-codigo-cliente');
+
+    function openMap() {
+        backdrop?.classList.add('active');
+        setTimeout(() => {
+            if (typeof L === 'undefined') {
+                showToast('Mapa indisponível. Recarregue a página.', 'error');
+                return;
+            }
+            if (!regMap) {
+                regMap = L.map('registrar-leaflet-map', { zoomControl: true }).setView([mapPickLat, mapPickLng], 5);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    maxZoom: 19,
+                    attribution: '© OSM'
+                }).addTo(regMap);
+                regMarker = L.marker([mapPickLat, mapPickLng], { draggable: true }).addTo(regMap);
+                regMarker.on('dragend', () => {
+                    const ll = regMarker.getLatLng();
+                    mapPickLat = ll.lat;
+                    mapPickLng = ll.lng;
+                });
+                regMap.on('click', (e) => {
+                    mapPickLat = e.latlng.lat;
+                    mapPickLng = e.latlng.lng;
+                    regMarker.setLatLng(e.latlng);
+                });
+            } else {
+                regMap.invalidateSize();
+                regMarker.setLatLng([mapPickLat, mapPickLng]);
+            }
+        }, 120);
+        lucide.createIcons();
+    }
+
+    function closeMap() {
+        backdrop?.classList.remove('active');
+    }
+
+    openBtn?.addEventListener('click', () => openMap());
+    closeBtn?.addEventListener('click', closeMap);
+    cancelBtn?.addEventListener('click', closeMap);
+    backdrop?.addEventListener('click', (e) => {
+        if (e.target === backdrop) closeMap();
+    });
+
+    confirmBtn?.addEventListener('click', async () => {
+        if (regMarker) {
+            const ll = regMarker.getLatLng();
+            mapPickLat = ll.lat;
+            mapPickLng = ll.lng;
+        }
+        closeMap();
+        addrBd?.classList.add('active');
+        if (preview) preview.textContent = 'Buscando endereço…';
+        if (loading) loading.style.display = 'block';
+        let texto = `${mapPickLat.toFixed(5)}, ${mapPickLng.toFixed(5)}`;
+        try {
+            const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${mapPickLat}&lon=${mapPickLng}`;
+            const res = await fetch(url, { headers: { 'Accept-Language': 'pt-BR,pt;q=0.9' } });
+            const j = await res.json();
+            const a = j.address || {};
+            const parts = [
+                [a.road, a.house_number].filter(Boolean).join(' '),
+                a.suburb || a.neighbourhood,
+                a.city || a.town || a.village,
+                a.state,
+                'Brasil'
+            ].filter(Boolean);
+            if (parts.length) texto = parts.join(' — ');
+            else if (j.display_name) texto = j.display_name;
+        } catch (err) {
+            console.warn(err);
+        }
+        if (loading) loading.style.display = 'none';
+        if (preview) preview.textContent = texto;
+        lucide.createIcons();
+    });
+
+    addrClose?.addEventListener('click', () => addrBd?.classList.remove('active'));
+    addrBack?.addEventListener('click', () => {
+        addrBd?.classList.remove('active');
+        openMap();
+    });
+    addrBd?.addEventListener('click', (e) => {
+        if (e.target === addrBd) addrBd.classList.remove('active');
+    });
+
+    addrOk?.addEventListener('click', () => {
+        const txt = preview?.textContent?.trim() || '';
+        formState.endereco = txt;
+        formState.latitude = mapPickLat;
+        formState.longitude = mapPickLng;
+        const inp = document.getElementById('endereco');
+        if (inp) inp.value = txt;
+        atualizarSummary();
+        addrBd?.classList.remove('active');
+        showToast('Endereço aplicado ao formulário.');
+    });
+
+    copyBtn?.addEventListener('click', async () => {
+        const v = formState.clientConfirmCode || document.getElementById('codigo-cliente-valor')?.textContent;
+        if (!v) return;
+        try {
+            await navigator.clipboard.writeText(v);
+            showToast('Código copiado.');
+        } catch (e) {
+            showToast('Não foi possível copiar.', 'error');
+        }
+    });
 }
 
 // ============================================================

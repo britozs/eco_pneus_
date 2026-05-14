@@ -9,6 +9,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="eco-ui.css">
     <link rel="stylesheet" href="dashboard.css">
 </head>
 <body data-page="dashboard">
@@ -38,7 +39,7 @@
                         <i data-lucide="settings-2"></i>
                     </button>
 
-                    <button class="icon-btn" type="button" id="btn-notif" title="Notificações">
+                    <button class="icon-btn" type="button" id="btn-notif" title="Notificações" style="position:relative;">
                         <i data-lucide="bell"></i>
                     </button>
 
@@ -210,6 +211,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
     <script src="firebase-config.js"></script>
+    <script src="eco-notifs.js"></script>
     <script src="dashboard.js"></script>
 </body>
 </html>

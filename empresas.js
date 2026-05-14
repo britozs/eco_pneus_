@@ -233,6 +233,10 @@ async function ensureParceirosFromFirestore() {
                 var d = doc.data() || {};
                 PARCEIROS.push(Object.assign({ id: doc.id }, d));
             });
+            PARCEIROS.forEach(function (p) {
+                p.rating = Number.isFinite(Number(p.rating)) ? Number(p.rating) : 0;
+                p.avaliacoes = Number.isFinite(Number(p.avaliacoes)) ? Number(p.avaliacoes) : 0;
+            });
             return;
         }
 
@@ -257,6 +261,10 @@ async function ensureParceirosFromFirestore() {
         snap2.forEach(function (doc) {
             var d = doc.data() || {};
             PARCEIROS.push(Object.assign({ id: doc.id }, d));
+        });
+        PARCEIROS.forEach(function (p) {
+            p.rating = Number.isFinite(Number(p.rating)) ? Number(p.rating) : 0;
+            p.avaliacoes = Number.isFinite(Number(p.avaliacoes)) ? Number(p.avaliacoes) : 0;
         });
     } catch (e) {
         console.warn('Parceiros Firestore:', e);
@@ -293,8 +301,7 @@ function parceiroLatLng(p) {
 }
 
 // --- ESTADO ---
-let activeCategory = 'todas';
-let activeSort = 'rating';
+let activeFilterMode = 'todas';
 let activeReviewCompanyId = null;
 let activeReviewStars = 0;
 let mapInstance = null;
@@ -302,6 +309,11 @@ let partnerMarkersLayer = null;
 let geocodePartnerTimer = null;
 let geocodeQueueRunning = false;
 let partnersMapResizeBound = false;
+let unsubParceirosFs = null;
+let unsubUsuariosEmpFs = null;
+let PARCEIROS_EXTRA = [];
+let userGeoLat = null;
+let userGeoLng = null;
 
 function scheduleRefreshMapMarkersDebounced() {
     if (geocodePartnerTimer) clearTimeout(geocodePartnerTimer);
@@ -412,9 +424,50 @@ function refreshParceirosMapMarkers() {
         const ll = parceiroLatLng(p);
         if (!ll) return;
         bounds.push(ll);
-        const marker = L.marker(ll).bindPopup(
-            `<strong>${String(p.nome || '').replace(/</g, '&lt;')}</strong><br>${String(p.cidade || '').replace(/</g, '&lt;')}`
-        );
+        const cat = String(p.categoria || '').toLowerCase();
+        const pinClass =
+            cat === 'transportadora'
+                ? 'eco-pin eco-pin--transport'
+                : cat === 'ponto-coleta'
+                  ? 'eco-pin eco-pin--gerador'
+                  : 'eco-pin eco-pin--recicla';
+        const icon = L.divIcon({
+            className: 'eco-marker-wrap',
+            html: `<div class="${pinClass}" title="${String(p.nome || '').replace(/"/g, '&quot;')}"></div>`,
+            iconSize: [34, 34],
+            iconAnchor: [17, 34],
+            popupAnchor: [0, -30]
+        });
+        const tipoTxt =
+            cat === 'transportadora'
+                ? 'Transportadora'
+                : cat === 'ponto-coleta'
+                  ? 'Geradora / Ponto de coleta'
+                  : 'Recicladora';
+        const stars = Number(p.rating || 0).toFixed(1);
+        const popupHtml = `
+            <div class="eco-map-popup">
+                <strong>${String(p.nome || '').replace(/</g, '&lt;')}</strong>
+                <div class="eco-map-popup-meta">${tipoTxt} · ⭐ ${stars}</div>
+                <div class="eco-map-popup-addr">${String(p.cidade || '').replace(/</g, '&lt;')}</div>
+                <button type="button" class="eco-map-popup-btn" data-parceiro-scroll="${String(p.id).replace(/"/g, '')}">Ver no diretório</button>
+            </div>
+        `;
+        const marker = L.marker(ll, { icon }).bindPopup(popupHtml, { maxWidth: 260 });
+        marker.on('popupopen', () => {
+            const b = marker.getPopup().getElement()?.querySelector('[data-parceiro-scroll]');
+            if (b) {
+                b.onclick = () => {
+                    document.getElementById('lista-completa')?.scrollIntoView({ behavior: 'smooth' });
+                    const inp = document.getElementById('search-input');
+                    if (inp) {
+                        inp.value = p.nome || '';
+                        inp.dispatchEvent(new Event('input', { bubbles: true }));
+                    }
+                    mapInstance.closePopup();
+                };
+            }
+        });
         partnerMarkersLayer.addLayer(marker);
     });
 
@@ -445,20 +498,191 @@ function refreshParceirosMapMarkers() {
 document.addEventListener('DOMContentLoaded', async () => {
     lucide.createIcons();
     await ensureParceirosFromFirestore();
+    if (typeof navigator !== 'undefined' && navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            function (pos) {
+                userGeoLat = pos.coords.latitude;
+                userGeoLng = pos.coords.longitude;
+                renderCompanies();
+                scheduleRefreshMapMarkersDebounced();
+            },
+            function () {},
+            { enableHighAccuracy: false, maximumAge: 120000, timeout: 8000 }
+        );
+    }
     setupAuth();
+    startParceirosAndUsuariosRealtime();
     renderFeatured();
     renderCompanies();
-    setupCategoryChips();
-    setupSortPills();
+    setupUnifiedFilters();
     setupMapToolbar();
     setupModals();
     setupHeroButtons();
     setupSearch();
     setupReviewStars();
     initMap();
+    atualizarHeroResumoNumeros();
 });
 
-// --- AUTH ---
+function haversineKm(lat1, lon1, lat2, lon2) {
+    const R = 6371;
+    const dLat = ((lat2 - lat1) * Math.PI) / 180;
+    const dLon = ((lon2 - lon1) * Math.PI) / 180;
+    const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+}
+
+function usuarioEmpresaToParceiro(uid, d) {
+    const doc = d || {};
+    const te = String(doc.tipoEmpresa || '').toLowerCase();
+    let categoria = 'recicladora';
+    let tipoLabel = 'RECICLADORA';
+    if (te === 'transportadores') {
+        categoria = 'transportadora';
+        tipoLabel = 'TRANSPORTADORA';
+    } else if (te === 'geradores') {
+        categoria = 'ponto-coleta';
+        tipoLabel = 'PONTO DE COLETA';
+    }
+    const end = doc.endereco && typeof doc.endereco === 'object' ? doc.endereco : {};
+    const cidade = [end.cidade, end.uf].filter(Boolean).join(', ') || String(doc.cidade || 'Brasil');
+    const nome = doc.razaoSocial || doc.nome || 'Empresa';
+    const la = Number(end.latitude || doc.latitude);
+    const lo = Number(end.longitude || doc.longitude);
+    let dist = Number(doc.distanciaKm || doc.distancia || 999);
+    if (Number.isFinite(userGeoLat) && Number.isFinite(userGeoLng) && Number.isFinite(la) && Number.isFinite(lo)) {
+        dist = Math.round(haversineKm(userGeoLat, userGeoLng, la, lo));
+    }
+    return {
+        id: 'usr_' + uid,
+        nome,
+        sigla: String(nome).trim().slice(0, 2).toUpperCase(),
+        categoria,
+        tipoLabel,
+        cidade,
+        distancia: dist,
+        rating: Number.isFinite(Number(doc.rating)) ? Number(doc.rating) : 0,
+        avaliacoes: Number.isFinite(Number(doc.avaliacoes)) ? Number(doc.avaliacoes) : 0,
+        telefone: doc.telefone || '—',
+        whatsapp: String(doc.telefone || '').replace(/\D/g, ''),
+        email: doc.email || '',
+        cnpj: doc.cnpj || '—',
+        descricao: doc.descricaoEmpresa || 'Cadastro Eco Pneus.',
+        tags: ['Cadastro verificado'],
+        imagem: doc.fotoPerfilUrl || doc.imagem || 'https://images.unsplash.com/photo-1611284446314-60a58ac0deb9?auto=format&fit=crop&w=900&q=80',
+        badge: '',
+        verificado: true,
+        ativo: (doc.statusConta || doc.status || 'Ativa') === 'Ativa',
+        coletas: Number(doc.totalColetasInformado || doc.coletas || 0),
+        reciclado: Number(doc.recicladoT || 0),
+        co2Evitado: Number(doc.co2Evitado || 0),
+        destaque: false,
+        latitude: Number.isFinite(la) ? la : NaN,
+        longitude: Number.isFinite(lo) ? lo : NaN
+    };
+}
+
+function stopParceirosAndUsuariosRealtime() {
+    if (unsubParceirosFs) {
+        try {
+            unsubParceirosFs();
+        } catch (e) {}
+        unsubParceirosFs = null;
+    }
+    if (unsubUsuariosEmpFs) {
+        try {
+            unsubUsuariosEmpFs();
+        } catch (e2) {}
+        unsubUsuariosEmpFs = null;
+    }
+}
+
+function startParceirosAndUsuariosRealtime() {
+    if (typeof db === 'undefined') return;
+    stopParceirosAndUsuariosRealtime();
+    try {
+        unsubParceirosFs = db.collection('parceiros').onSnapshot(
+            function (snap) {
+                PARCEIROS = [];
+                snap.forEach(function (doc) {
+                    var d = doc.data() || {};
+                    PARCEIROS.push(Object.assign({ id: doc.id }, d));
+                });
+                PARCEIROS.forEach(function (p) {
+                    p.rating = Number.isFinite(Number(p.rating)) ? Number(p.rating) : 0;
+                    p.avaliacoes = Number.isFinite(Number(p.avaliacoes)) ? Number(p.avaliacoes) : 0;
+                });
+                renderFeatured();
+                renderCompanies();
+                atualizarHeroResumoNumeros();
+                scheduleRefreshMapMarkersDebounced();
+            },
+            function () {}
+        );
+    } catch (e) {
+        unsubParceirosFs = null;
+    }
+    try {
+        unsubUsuariosEmpFs = db
+            .collection('usuarios')
+            .where('tipo', '==', 'empresa')
+            .limit(80)
+            .onSnapshot(
+                function (snap) {
+                    PARCEIROS_EXTRA = [];
+                    snap.forEach(function (doc) {
+                        PARCEIROS_EXTRA.push(usuarioEmpresaToParceiro(doc.id, doc.data() || {}));
+                    });
+                    renderFeatured();
+                    renderCompanies();
+                    atualizarHeroResumoNumeros();
+                    scheduleRefreshMapMarkersDebounced();
+                },
+                function () {}
+            );
+    } catch (e2) {
+        unsubUsuariosEmpFs = null;
+    }
+}
+
+function atualizarHeroResumoNumeros() {
+    const merged = PARCEIROS.slice();
+    PARCEIROS_EXTRA.forEach(function (p) {
+        if (!merged.some(function (x) { return x.id === p.id; })) merged.push(p);
+    });
+    const ativos = merged.filter(function (p) {
+        return p.ativo !== false;
+    }).length;
+    const el1 = document.getElementById('hero-total-ativos');
+    if (el1) el1.textContent = ativos + ' parceiro' + (ativos === 1 ? '' : 's') + ' ativos';
+    let somaR = 0;
+    let nR = 0;
+    merged.forEach(function (p) {
+        if (Number(p.rating) > 0) {
+            somaR += Number(p.rating);
+            nR++;
+        }
+    });
+    const media = nR ? (somaR / nR).toFixed(1) : '—';
+    const el3 = document.getElementById('hero-media-avaliacao');
+    if (el3) el3.textContent = 'Avaliação média ' + media;
+    let totAval = 0;
+    merged.forEach(function (p) {
+        totAval += Number(p.avaliacoes || 0);
+    });
+    const elAval = document.getElementById('hero-total-avaliacoes-rede');
+    if (elAval) elAval.textContent = totAval.toLocaleString('pt-BR') + ' avaliações da rede';
+    let totRec = 0;
+    merged.forEach(function (p) {
+        totRec += Number(p.reciclado || 0);
+    });
+    const el2 = document.getElementById('hero-total-reciclado');
+    if (el2) el2.textContent = totRec.toLocaleString('pt-BR') + ' t recicladas';
+}
+
 function setupAuth() {
     if (typeof auth === 'undefined') return;
     auth.onAuthStateChanged(async (user) => {
@@ -485,22 +709,47 @@ function setupAuth() {
             if (nameEl) nameEl.textContent = name.split(' ')[0];
             if (avatarEl) avatarEl.textContent = initials;
         }
+        if (typeof EcoPneusGlobalNotifs !== 'undefined') {
+            EcoPneusGlobalNotifs.start(user);
+            EcoPneusGlobalNotifs.registerBell(document.getElementById('btn-notification'));
+        }
     });
 }
 
 // ============================================================
 // FEATURED
 // ============================================================
+function getMergedParceiros() {
+    const out = PARCEIROS.slice();
+    PARCEIROS_EXTRA.forEach(function (p) {
+        if (!out.some(function (x) {
+            return x.id === p.id;
+        }))
+            out.push(p);
+    });
+    return out;
+}
+
 function renderFeatured() {
     const grid = document.getElementById('featured-grid');
     if (!grid) return;
-    const destaques = PARCEIROS.filter(p => p.destaque);
+    const merged = getMergedParceiros();
+    let destaques = merged.filter(function (p) {
+        return p.destaque;
+    });
+    if (!destaques.length) {
+        destaques = merged
+            .filter(function (p) {
+                return Number(p.rating || 0) >= 4.5;
+            })
+            .slice(0, 4);
+    }
     grid.innerHTML = destaques.map(p => `
         <article class="featured-card" data-id="${p.id}">
             <div class="featured-image">
                 <img src="${p.imagem}" alt="${p.nome}" loading="lazy">
                 ${p.badge ? `<span class="featured-badge">${badgeIcon(p.badge)} ${p.badge}</span>` : ''}
-                <span class="featured-rating">${p.rating.toFixed(1)}</span>
+                <span class="featured-rating">${Number(p.rating || 0).toFixed(1)}</span>
             </div>
             <div class="featured-body">
                 <h4>${p.nome} ${p.verificado ? '<span class="verified-tag"><i data-lucide="badge-check"></i> Verificado</span>' : ''}</h4>
@@ -510,7 +759,7 @@ function renderFeatured() {
                 </div>
                 <p class="featured-desc">${p.descricao}</p>
                 <div class="featured-tags">
-                    ${p.tags.map(t => `<span class="featured-tag">${t}</span>`).join('')}
+                    ${(p.tags || []).map(t => `<span class="featured-tag">${t}</span>`).join('')}
                 </div>
             </div>
         </article>
@@ -519,7 +768,7 @@ function renderFeatured() {
     grid.querySelectorAll('.featured-card').forEach(card => {
         card.addEventListener('click', () => {
             const id = card.dataset.id;
-            const parceiro = PARCEIROS.find(p => p.id === id);
+            const parceiro = getMergedParceiros().find(p => p.id === id);
             if (parceiro) abrirContato(parceiro);
         });
     });
@@ -533,49 +782,68 @@ function badgeIcon(label) {
 }
 
 // ============================================================
-// CATEGORY CHIPS
+// FILTROS (linha única)
 // ============================================================
-function setupCategoryChips() {
-    document.querySelectorAll('#category-chips .filter-chip').forEach(chip => {
-        chip.addEventListener('click', () => {
-            document.querySelectorAll('#category-chips .filter-chip').forEach(c => c.classList.remove('active'));
+function setupUnifiedFilters() {
+    const bar = document.getElementById('empresas-filter-bar');
+    if (!bar) return;
+    bar.querySelectorAll('.filter-chip[data-filter-mode]').forEach(function (chip) {
+        chip.addEventListener('click', function () {
+            bar.querySelectorAll('.filter-chip').forEach(function (c) {
+                c.classList.remove('active');
+                c.setAttribute('aria-selected', 'false');
+            });
             chip.classList.add('active');
-            activeCategory = chip.dataset.category;
+            chip.setAttribute('aria-selected', 'true');
+            activeFilterMode = chip.dataset.filterMode || 'todas';
+            syncMapToolbarChips();
             renderCompanies();
             updatePartnersCount();
+            updateOrderChip();
+            atualizarHeroResumoNumeros();
         });
     });
 }
 
-// ============================================================
-// SORT PILLS
-// ============================================================
-function setupSortPills() {
-    document.querySelectorAll('#sort-pills .sort-pill').forEach(pill => {
-        pill.addEventListener('click', () => {
-            document.querySelectorAll('#sort-pills .sort-pill').forEach(p => p.classList.remove('active'));
-            pill.classList.add('active');
-            activeSort = pill.dataset.sort;
-            updateOrderChip();
-            renderCompanies();
-        });
+function syncMapToolbarChips() {
+    const mode = activeFilterMode;
+    const mapToSort = {
+        todas: 'rating',
+        recicladora: 'rating',
+        transportadora: 'rating',
+        'ponto-coleta': 'rating',
+        'melhor-avaliadas': 'rating',
+        'mais-ativos': 'active',
+        'mais-proximos': 'distance'
+    };
+    const sort = mapToSort[mode] || 'rating';
+    document.querySelectorAll('#map-toolbar .map-sort-chip').forEach(function (p) {
+        p.classList.toggle('active', p.dataset.sort === sort);
     });
 }
 
 function setupMapToolbar() {
-    document.querySelectorAll('#map-toolbar .map-sort-chip').forEach(pill => {
-        pill.addEventListener('click', () => {
-            document.querySelectorAll('#map-toolbar .map-sort-chip').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('#map-toolbar .map-sort-chip').forEach(function (pill) {
+        pill.addEventListener('click', function () {
+            document.querySelectorAll('#map-toolbar .map-sort-chip').forEach(function (p) {
+                p.classList.remove('active');
+            });
             pill.classList.add('active');
             const sort = pill.dataset.sort;
-            const main = document.querySelector(`#sort-pills [data-sort="${sort}"]`);
-            if (main) {
-                document.querySelectorAll('#sort-pills .sort-pill').forEach(p => p.classList.remove('active'));
-                main.classList.add('active');
-                activeSort = sort;
-                updateOrderChip();
-                renderCompanies();
-            }
+            const bar = document.getElementById('empresas-filter-bar');
+            if (!bar) return;
+            var mode = 'todas';
+            if (sort === 'active') mode = 'mais-ativos';
+            else if (sort === 'distance') mode = 'mais-proximos';
+            else mode = 'todas';
+            activeFilterMode = mode;
+            bar.querySelectorAll('.filter-chip').forEach(function (c) {
+                c.classList.toggle('active', c.dataset.filterMode === mode);
+                c.setAttribute('aria-selected', c.dataset.filterMode === mode ? 'true' : 'false');
+            });
+            renderCompanies();
+            updatePartnersCount();
+            updateOrderChip();
         });
     });
 }
@@ -584,46 +852,60 @@ function updateOrderChip() {
     const chip = document.getElementById('order-chip');
     if (!chip) return;
     const labels = {
-        rating: 'Ordem: Melhores avaliados',
-        active: 'Ordem: Mais ativos',
-        distance: 'Ordem: Mais próximos'
+        todas: 'Ordem: melhores avaliados',
+        recicladora: 'Filtro: Recicladoras',
+        transportadora: 'Filtro: Transportadoras',
+        'ponto-coleta': 'Filtro: Pontos de coleta',
+        'melhor-avaliadas': 'Filtro: Melhor avaliadas',
+        'mais-ativos': 'Filtro: Mais ativos',
+        'mais-proximos': 'Filtro: Mais próximos'
     };
-    chip.textContent = labels[activeSort] || 'Ordem: Melhores avaliados';
+    chip.textContent = labels[activeFilterMode] || labels.todas;
 }
 
 // ============================================================
 // COMPANIES GRID
 // ============================================================
 function getFiltered() {
-    let list = [...PARCEIROS];
+    let list = getMergedParceiros();
 
-    // FILTRO POR CATEGORIA
-    if (activeCategory === 'recicladora') list = list.filter(p => p.categoria === 'recicladora');
-    else if (activeCategory === 'transportadora') list = list.filter(p => p.categoria === 'transportadora');
-    else if (activeCategory === 'ponto-coleta') list = list.filter(p => p.categoria === 'ponto-coleta');
-    else if (activeCategory === 'melhor-avaliadas') list = list.filter(p => p.rating >= 4.7);
+    const mode = activeFilterMode;
+    if (mode === 'recicladora') list = list.filter((p) => p.categoria === 'recicladora');
+    else if (mode === 'transportadora') list = list.filter((p) => p.categoria === 'transportadora');
+    else if (mode === 'ponto-coleta') list = list.filter((p) => p.categoria === 'ponto-coleta');
+    else if (mode === 'melhor-avaliadas') list = list.filter((p) => Number(p.rating || 0) >= 4.5);
 
-    // FILTRO POR BUSCA
     const term = (document.getElementById('search-input')?.value || '').toLowerCase().trim();
     if (term) {
-        list = list.filter(p =>
-            p.nome.toLowerCase().includes(term) ||
-            p.cidade.toLowerCase().includes(term) ||
-            p.tipoLabel.toLowerCase().includes(term) ||
-            p.tags.some(t => t.toLowerCase().includes(term))
+        list = list.filter(
+            (p) =>
+                String(p.nome || '')
+                    .toLowerCase()
+                    .includes(term) ||
+                String(p.cidade || '')
+                    .toLowerCase()
+                    .includes(term) ||
+                String(p.tipoLabel || '')
+                    .toLowerCase()
+                    .includes(term) ||
+                (p.tags && p.tags.some((t) => String(t).toLowerCase().includes(term)))
         );
     }
 
-    // ORDENAÇÃO
-    if (activeSort === 'rating') {
-        // Melhores avaliados: maior rating primeiro
-        list.sort((a, b) => b.rating - a.rating);
-    } else if (activeSort === 'active') {
-        // Mais ativos: maior número de coletas primeiro
-        list.sort((a, b) => b.coletas - a.coletas);
-    } else if (activeSort === 'distance') {
-        // Mais próximos: menor distância primeiro
-        list.sort((a, b) => a.distancia - b.distancia);
+    if (mode === 'mais-ativos') {
+        list.sort((a, b) => Number(b.coletas || 0) - Number(a.coletas || 0));
+    } else if (mode === 'mais-proximos') {
+        list.forEach((p) => {
+            const ll = parceiroLatLng(p);
+            if (Number.isFinite(userGeoLat) && Number.isFinite(userGeoLng) && ll) {
+                p._distDyn = haversineKm(userGeoLat, userGeoLng, ll[0], ll[1]);
+            } else {
+                p._distDyn = Number(p.distancia || 9999);
+            }
+        });
+        list.sort((a, b) => (a._distDyn || 9999) - (b._distDyn || 9999));
+    } else {
+        list.sort((a, b) => Number(b.rating || 0) - Number(a.rating || 0));
     }
 
     return list;
@@ -656,14 +938,14 @@ function renderCompanies() {
             </div>
             <div class="company-rating">
                 <span class="stars">${'★'.repeat(Math.round(p.rating))}${'☆'.repeat(5 - Math.round(p.rating))}</span>
-                ${p.rating.toFixed(1)} (${p.avaliacoes} avaliações)
+                ${Number(p.rating || 0).toFixed(1)} (${p.avaliacoes} avaliações)
             </div>
             <div class="company-meta">
                 <span><i data-lucide="map-pin"></i> ${p.cidade} • ${p.distancia} km</span>
                 <span><i data-lucide="phone"></i> ${p.telefone}</span>
             </div>
             <div class="company-tags">
-                ${p.tags.map(t => `<span class="company-tag">${t}</span>`).join('')}
+                ${(p.tags || []).map(t => `<span class="company-tag">${t}</span>`).join('')}
             </div>
             <div class="company-stats">
                 <div class="company-stat"><strong>${p.coletas.toLocaleString('pt-BR')}</strong><span>Coletas</span></div>
@@ -688,7 +970,7 @@ function renderCompanies() {
         btn.addEventListener('click', e => {
             e.stopPropagation();
             const id = btn.dataset.id;
-            const parceiro = PARCEIROS.find(p => p.id === id);
+            const parceiro = getMergedParceiros().find(p => p.id === id);
             if (!parceiro) return;
             const action = btn.dataset.action;
             if (action === 'contact') abrirContato(parceiro);
@@ -873,22 +1155,75 @@ function abrirAvaliar(p) {
     openModal('modal-avaliar');
 }
 
-async function enviarAvaliacao() {
-    if (activeReviewStars === 0) { showToast('Selecione pelo menos 1 estrela', 'error'); return; }
-    const comentario = document.getElementById('review-comment').value.trim();
+async function atualizarRatingParceiroNaLista(parceiroId) {
+    const idx = PARCEIROS.findIndex((x) => x && x.id === parceiroId);
+    const idx2 = PARCEIROS_EXTRA.findIndex((x) => x && x.id === parceiroId);
+    if (idx < 0 && idx2 < 0) return;
+    if (typeof db === 'undefined') return;
     try {
-        if (typeof db !== 'undefined' && typeof auth !== 'undefined' && auth.currentUser) {
-            await db.collection('avaliacoes').add({
-                empresaId: activeReviewCompanyId,
-                avaliadorId: auth.currentUser.uid,
-                nomeAvaliador: auth.currentUser.displayName || 'Usuário',
-                estrelas: activeReviewStars,
-                comentario,
-                data: new Date()
-            });
+        const snap = await db.collection('avaliacoes').where('parceiroId', '==', parceiroId).get();
+        let soma = 0;
+        snap.forEach((doc) => {
+            soma += Number(doc.data().estrelas || 0);
+        });
+        const rating = snap.size > 0 ? soma / snap.size : 0;
+        const n = snap.size;
+        if (idx >= 0) {
+            PARCEIROS[idx].rating = rating;
+            PARCEIROS[idx].avaliacoes = n;
+        }
+        if (idx2 >= 0) {
+            PARCEIROS_EXTRA[idx2].rating = rating;
+            PARCEIROS_EXTRA[idx2].avaliacoes = n;
+        }
+    } catch (e) {
+        console.warn('atualizarRatingParceiroNaLista', e);
+    }
+    renderFeatured();
+    renderCompanies();
+    scheduleRefreshMapMarkersDebounced();
+}
+
+async function enviarAvaliacao() {
+    if (activeReviewStars === 0) {
+        showToast('Selecione pelo menos 1 estrela', 'error');
+        return;
+    }
+    const comentario = document.getElementById('review-comment').value.trim();
+    if (!activeReviewCompanyId) {
+        showToast('Parceiro inválido', 'error');
+        return;
+    }
+    try {
+        if (typeof auth === 'undefined' || !auth.currentUser) {
+            showToast('Faça login para avaliar', 'error');
+            return;
+        }
+        if (typeof ecoPneusSalvarAvaliacaoParceiro === 'function') {
+            await ecoPneusSalvarAvaliacaoParceiro(
+                activeReviewCompanyId,
+                auth.currentUser,
+                activeReviewStars,
+                comentario
+            );
+        } else if (typeof db !== 'undefined') {
+            const docId = `${String(activeReviewCompanyId).replace(/\//g, '_')}_${auth.currentUser.uid}`;
+            await db.collection('avaliacoes').doc(docId).set(
+                {
+                    parceiroId: String(activeReviewCompanyId),
+                    empresaId: null,
+                    avaliadorId: auth.currentUser.uid,
+                    nomeAvaliador: auth.currentUser.displayName || 'Usuário',
+                    estrelas: Math.min(5, Math.max(1, Number(activeReviewStars) || 0)),
+                    comentario,
+                    data: firebase.firestore.FieldValue.serverTimestamp()
+                },
+                { merge: true }
+            );
         }
         showToast('Avaliação enviada com sucesso!');
         closeModal('modal-avaliar');
+        await atualizarRatingParceiroNaLista(activeReviewCompanyId);
     } catch (e) {
         console.error(e);
         showToast('Erro ao enviar avaliação', 'error');

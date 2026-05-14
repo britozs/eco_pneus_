@@ -15,6 +15,8 @@
     <script src="https://unpkg.com/lucide@latest"></script>
 
     <!-- CSS -->
+    <link rel="stylesheet" href="eco-ui.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     <link rel="stylesheet" href="global.css">
     <link rel="stylesheet" href="registrar.css">
 </head>
@@ -241,7 +243,7 @@
                             <i data-lucide="map-pin"></i>
                             <input id="endereco" type="text" placeholder="Rua, número, bairro, cidade — UF">
                         </div>
-                        <button class="inline-link" type="button" onclick="window.location.href='coletac.html'">
+                        <button class="inline-link" type="button" id="btn-open-map-modal">
                             <i data-lucide="map"></i>
                             <span>ou escolher no mapa</span>
                         </button>
@@ -325,6 +327,16 @@
 
                     <div class="review-card">
                         <h3>REVISÃO FINAL</h3>
+
+                        <div class="codigo-destaque-box" id="codigo-cliente-box" aria-live="polite">
+                            <div class="codigo-label">Código de confirmação (para a empresa concluir)</div>
+                            <div class="codigo-valor" id="codigo-cliente-valor">—</div>
+                            <button type="button" class="btn btn-secondary" id="btn-copy-codigo-cliente" style="margin-top:12px;">
+                                <i data-lucide="copy"></i>
+                                <span>Copiar código</span>
+                            </button>
+                            <p class="codigo-hint">Guarde este código. Ele será solicitado pela transportadora ou recicladora ao finalizar a coleta.</p>
+                        </div>
 
                         <div class="review-list">
                             <div class="review-item">
@@ -506,6 +518,9 @@
 
             <p>
                 Protocolo <strong id="success-protocol">#EC-0000</strong> criado.
+                <br><br>
+                Código de confirmação: <strong id="success-codigo-cliente" style="font-size:1.1rem;letter-spacing:0.06em;">—</strong>
+                <br><br>
                 Sua equipe foi notificada e a rota será otimizada automaticamente.
             </p>
 
@@ -516,7 +531,48 @@
         </div>
     </section>
 
+    <!-- Modal mapa -->
+    <div class="registrar-map-backdrop" id="registrar-map-backdrop" aria-hidden="true">
+        <div class="registrar-map-dialog" role="dialog" aria-modal="true" aria-labelledby="registrar-map-title">
+            <div class="registrar-map-head">
+                <h3 id="registrar-map-title">Escolher no mapa</h3>
+                <button type="button" class="modal-close" id="registrar-map-close" style="border:none;background:transparent;cursor:pointer;padding:8px;">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div class="registrar-map-body">
+                <div id="registrar-leaflet-map"></div>
+            </div>
+            <div class="registrar-map-foot">
+                <button type="button" class="btn btn-ghost" id="registrar-map-cancel">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="registrar-map-confirm">Confirmar local</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal confirmar endereço (reverse geocode) -->
+    <div class="registrar-map-backdrop" id="registrar-address-backdrop" aria-hidden="true">
+        <div class="registrar-map-dialog" style="max-width:480px;">
+            <div class="registrar-map-head">
+                <h3>Confirmar endereço</h3>
+                <button type="button" class="modal-close" id="registrar-address-close" style="border:none;background:transparent;cursor:pointer;padding:8px;">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div style="padding:18px 20px;">
+                <p style="margin:0 0 12px;color:#475569;font-size:0.9rem;line-height:1.5;">O endereço abaixo será preenchido no formulário. Você pode ajustar depois no campo de texto.</p>
+                <div id="registrar-address-preview" style="padding:14px;border-radius:14px;background:#f8faf8;border:1px solid rgba(11,107,58,0.15);font-weight:600;color:#0f2419;"></div>
+                <div id="registrar-address-loading" class="eco-skeleton" style="height:48px;margin-top:12px;display:none;"></div>
+            </div>
+            <div class="registrar-map-foot">
+                <button type="button" class="btn btn-ghost" id="registrar-address-back">Voltar ao mapa</button>
+                <button type="button" class="btn btn-primary" id="registrar-address-ok">Usar este endereço</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Firebase -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>

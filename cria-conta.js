@@ -172,12 +172,13 @@ async function criarConta() {
             await firebase.firestore().collection('usuarios').doc(cred.user.uid).set({
                 tipo: 'empresa',
                 tipoEmpresa: tipoEmpresa,
+                tipoConta: typeof ecoPneusTipoContaFromTipoEmpresa === 'function' ? ecoPneusTipoContaFromTipoEmpresa(tipoEmpresa) : 'empresa',
                 razaoSocial,
                 email,
                 telefone,
                 cnpj,
                 endereco: { cep, endereco, cidade, uf },
-                criadoEm: new Date()
+                criadoEm: firebase.firestore.FieldValue.serverTimestamp()
             });
 
             toast('Conta criada com sucesso!');
@@ -214,10 +215,11 @@ async function criarConta() {
 
             await firebase.firestore().collection('usuarios').doc(cred.user.uid).set({
                 tipo: 'pessoa',
+                tipoConta: 'pessoa_fisica',
                 nome,
                 email,
                 telefone,
-                criadoEm: new Date()
+                criadoEm: firebase.firestore.FieldValue.serverTimestamp()
             });
 
             toast('Conta criada com sucesso!');
@@ -247,9 +249,15 @@ async function googleLogin() {
             await userRef.set({
                 tipo: tipoSelecionado,
                 tipoEmpresa: tipoSelecionado === 'empresa' ? tipoEmpresa : null,
+                tipoConta:
+                    tipoSelecionado === 'empresa'
+                        ? typeof ecoPneusTipoContaFromTipoEmpresa === 'function'
+                            ? ecoPneusTipoContaFromTipoEmpresa(tipoEmpresa)
+                            : 'empresa'
+                        : 'pessoa_fisica',
                 nome: user.displayName,
                 email: user.email,
-                criadoEm: new Date()
+                criadoEm: firebase.firestore.FieldValue.serverTimestamp()
             });
         }
 

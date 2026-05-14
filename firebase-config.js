@@ -85,7 +85,11 @@ function ecoPneusCargoChipFirebase(d) {
     const doc = d || {};
     if (typeof doc.cargoTitulo === 'string' && doc.cargoTitulo.trim()) return doc.cargoTitulo.trim();
 
-    if (doc.tipo === 'pessoa') return 'Cliente Eco Pneus';
+    const tc = ecoPneusResolveTipoConta(doc);
+    if (tc === 'pessoa_fisica') return 'Cliente Eco Pneus';
+    if (tc === 'transportadora') return 'Gestor logístico';
+    if (tc === 'recicladora') return 'Gestor da reciclagem';
+    if (tc === 'empresa') return 'Gestor ambiental';
     if (doc.tipo === 'empresa') {
         const te = String(doc.tipoEmpresa || '').toLowerCase();
         if (te === 'transportadores') return 'Gestor logístico';
@@ -148,4 +152,131 @@ function ecoPneusAplicarHeaderPerfilFirebase(user, userDocData) {
         const el = document.getElementById(id);
         if (el) el.textContent = cargo;
     });
+}
+
+// --- Código de confirmação (registrar / empresas) ---
+function ecoPneusGerarCodigoConfirmacaoCliente() {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let part = '';
+    for (let i = 0; i < 4; i++) {
+        part += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    const part2 = Math.floor(1000 + Math.random() * 9000);
+    return `EC-${part}-${part2}`;
+}
+
+// --- ViaCEP (perfil / endereço) ---
+function ecoPneusBuscarCepBrasil(cepDigits) {
+    const c = String(cepDigits || '').replace(/\D/g, '');
+    if (c.length !== 8) {
+        return Promise.reject(new Error('CEP deve ter 8 dígitos.'));
+    }
+    return fetch(`https://viacep.com.br/ws/${c}/json/`)
+        .then((r) => r.json())
+        .then((j) => {
+            if (j.erro) throw new Error('CEP não encontrado.');
+            return {
+                cep: c,
+                logradouro: j.logradouro || '',
+                bairro: j.bairro || '',
+                cidade: j.localidade || '',
+                uf: (j.uf || '').toUpperCase()
+            };
+        });
+}
+
+/**
+ * Salva ou atualiza avaliação de parceiro (uma por usuário).
+ * Usa id de documento estável: parceiroId_avaliadorUid
+ */
+function ecoPneusSalvarAvaliacaoParceiro(parceiroId, user, estrelas, comentario) {
+    if (!db || !parceiroId || !user || !user.uid) return Promise.reject(new Error('Dados inválidos'));
+    const docId = `${String(parceiroId).replace(/\//g, '_')}_${user.uid}`;
+    const ref = db.collection('avaliacoes').doc(docId);
+    return ref.set(
+        {
+            parceiroId: String(parceiroId),
+            empresaId: null,
+            avaliadorId: user.uid,
+            nomeAvaliador: user.displayName || 'Usuário',
+            estrelas: Math.min(5, Math.max(1, Number(estrelas) || 0)),
+            comentario: String(comentario || '').trim(),
+            data: firebase.firestore.FieldValue.serverTimestamp()
+        },
+        { merge: true }
+    );
+}
+
+/**
+ * Normaliza tipo de conta usado nas permissões do app.
+ * Valores: pessoa_fisica | empresa | transportadora | recicladora
+ */
+function ecoPneusResolveTipoConta(d) {
+    const doc = d || {};
+    const raw = String(doc.tipoConta || '').toLowerCase().trim();
+    if (raw === 'pessoa_fisica' || raw === 'pessoa') return 'pessoa_fisica';
+    if (raw === 'transportadora') return 'transportadora';
+    if (raw === 'recicladora') return 'recicladora';
+    if (raw === 'empresa') return 'empresa';
+
+    if (doc.tipo === 'empresa' || doc.tipo === 'empresa_pf') {
+        const te = String(doc.tipoEmpresa || '').toLowerCase();
+        if (te === 'transportadores') return 'transportadora';
+        if (te === 'recicladores') return 'recicladora';
+        if (te === 'geradores') return 'empresa';
+        return 'empresa';
+    }
+    if (doc.tipo === 'pessoa' || doc.tipo === 'pessoa_fisica') return 'pessoa_fisica';
+    return 'pessoa_fisica';
+}
+
+/** Conta que pode aceitar coletas da rede, entrar em rota e finalizar (não pessoa física). */
+function ecoPneusPodeOperarLogistica(tipoConta) {
+    const t = String(tipoConta || '');
+    return t === 'empresa' || t === 'transportadora' || t === 'recicladora';
+}
+
+/** Apenas o criador da coleta (uid) pode ver o código salvo no Firestore. */
+function ecoPneusPodeVerCodigoConfirmacaoColeta(viewerUid, coletaData) {
+    const uid = String(viewerUid || '').trim();
+    if (!uid || !coletaData) return false;
+    const criador = String(coletaData.uid || coletaData.criadorUid || '').trim();
+    return criador === uid;
+}
+
+/** Conta de empresa que pode operar rede (recicladora / transportadora / geradora). */
+function ecoPneusContaEmpresaRede(d) {
+    return ecoPneusPodeOperarLogistica(ecoPneusResolveTipoConta(d));
+}
+
+/** tipoConta + tipoEmpresa gravados no Firestore ao cadastrar/editar empresa. */
+function ecoPneusTipoContaFromTipoEmpresa(tipoEmpresaSlug) {
+    const te = String(tipoEmpresaSlug || '').toLowerCase();
+    if (te === 'transportadores') return 'transportadora';
+    if (te === 'recicladores') return 'recicladora';
+    if (te === 'geradores') return 'empresa';
+    return 'empresa';
+}
+
+/**
+ * Notificação in-app (subcoleção do usuário). Requer regras Firestore que permitam escrita/leitura.
+ * Falha silenciosa se as regras bloquearem — a página Coletas também usa diff local + toasts.
+ */
+function ecoPneusCriarNotificacaoUsuario(toUid, payload) {
+    if (!db || !toUid) return Promise.resolve(null);
+    const ref = db.collection('usuarios').doc(toUid).collection('notificacoes').doc();
+    return ref
+        .set({
+            tipo: String(payload.tipo || 'info'),
+            titulo: String(payload.titulo || 'Eco Pneus'),
+            mensagem: String(payload.mensagem || ''),
+            coletaId: payload.coletaId || null,
+            protocolo: String(payload.protocolo || ''),
+            lida: false,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        })
+        .then(() => ref.id)
+        .catch(function () {
+            return null;
+        });
 }

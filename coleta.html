@@ -15,9 +15,10 @@
     <script src="https://unpkg.com/lucide@latest"></script>
 
     <!-- CSS -->
+    <link rel="stylesheet" href="eco-ui.css">
     <link rel="stylesheet" href="coleta.css">
 </head>
-<body>
+<body class="coletas-body">
     <div class="coletas-page">
 
         <!-- HERO -->
@@ -55,9 +56,12 @@
                         <i data-lucide="refresh-cw"></i>
                     </button>
 
-                    <button class="icon-glass" type="button" title="Notificações">
+                    <div class="notif-wrap">
+                    <button class="icon-glass icon-glass--notif" type="button" title="Notificações" id="notif-bell-btn" aria-expanded="false" aria-haspopup="true">
                         <i data-lucide="bell"></i>
+                        <span class="notif-badge eco-global-notif-badge hidden" id="notif-badge" aria-live="polite">0</span>
                     </button>
+                    </div>
 
                     <button class="profile-chip" type="button" onclick="window.location.href='perfil.html'">
                         <div class="profile-avatar" id="user-avatar">EP</div>
@@ -147,9 +151,72 @@
             </div>
         </header>
 
+        <div class="container" style="margin-top:-12px;margin-bottom:8px;">
+            <div class="coleta-wizard-bar hidden" id="coleta-wizard-bar" aria-hidden="true">
+                <div class="coleta-wizard-steps">
+                    <div class="coleta-wizard-step done" data-wz="1">Histórico</div>
+                    <div class="coleta-wizard-step active" data-wz="2">Operação</div>
+                </div>
+                <div class="coleta-wizard-track"><span id="coleta-wizard-fill" style="width:100%"></span></div>
+            </div>
+        </div>
+
+        <div class="container coletas-flow-wrap">
+            <section class="coletas-flow-strip" aria-label="Fluxo da coleta">
+                <div class="coletas-flow-track"><span class="coletas-flow-track-fill" id="coletas-flow-fill"></span></div>
+                <div class="coletas-flow-steps">
+                    <div class="coletas-flow-step">
+                        <span class="coletas-flow-badge"><i data-lucide="clipboard-list"></i></span>
+                        <span class="coletas-flow-meta">
+                            <small>Etapa 1</small>
+                            <strong>Registrada</strong>
+                        </span>
+                    </div>
+                    <div class="coletas-flow-step">
+                        <span class="coletas-flow-badge"><i data-lucide="truck"></i></span>
+                        <span class="coletas-flow-meta">
+                            <small>Etapa 2</small>
+                            <strong>Em rota</strong>
+                        </span>
+                    </div>
+                    <div class="coletas-flow-step">
+                        <span class="coletas-flow-badge"><i data-lucide="badge-check"></i></span>
+                        <span class="coletas-flow-meta">
+                            <small>Etapa 3</small>
+                            <strong>Concluída</strong>
+                        </span>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <section class="empresa-coletas-panel hidden" id="empresa-rede-panel" aria-live="polite">
+            <div class="container">
+                <div class="coletas-stage-card empresa-rede-card">
+                    <div class="coletas-stage-head">
+                        <div>
+                            <span class="coletas-stage-label">OPERAÇÃO REDE</span>
+                            <h3>Coletas disponíveis</h3>
+                            <p class="coletas-stage-desc">Abertas de outros usuários. Aceite para assumir a rota. Para concluir, valide o código gerado no registro da coleta.</p>
+                        </div>
+                        <span class="coletas-stage-icon" title="Sincronizado em tempo real"><i data-lucide="radio"></i></span>
+                    </div>
+                    <div id="empresa-disponiveis-list"></div>
+                </div>
+            </div>
+        </section>
+
         <!-- TOOLBAR -->
         <section class="toolbar-wrap">
             <div class="container">
+                <div class="coletas-stage-card coletas-toolbar-stage">
+                    <div class="coletas-stage-head coletas-toolbar-stage-head">
+                        <div>
+                            <span class="coletas-stage-label">FILTROS RÁPIDOS</span>
+                            <h3 class="coletas-toolbar-title">Organize seu histórico</h3>
+                        </div>
+                    </div>
+                    <div class="toolbar-card-inner">
                 <div class="toolbar-card">
                     <div class="toolbar-filters" id="filter-tabs">
                         <button class="filter-tab active" type="button" data-filter="all">
@@ -187,25 +254,28 @@
                         </div>
                     </div>
                 </div>
+                    </div>
+                </div>
             </div>
         </section>
 
         <!-- CONTENT -->
         <main class="coletas-content">
             <div class="container">
-                <div class="section-head">
-                    <div>
-                        <div class="section-kicker">DIRETÓRIO • COLETAS</div>
-                        <h2 class="section-title">
-                            Histórico <em>operacional</em>
-                        </h2>
-                    </div>
+                <div class="coletas-stage-card coletas-list-stage">
+                    <div class="section-head coletas-section-head">
+                        <div>
+                            <div class="section-kicker">DIRETÓRIO • COLETAS</div>
+                            <h2 class="section-title">
+                                Histórico <em>operacional</em>
+                            </h2>
+                        </div>
 
-                    <div class="section-meta">
-                        <strong id="results-count">0 coletas</strong>
-                        <span>atualizado agora</span>
+                        <div class="section-meta">
+                            <strong id="results-count">0 coletas</strong>
+                            <span id="coletas-updated-label">sincronizando…</span>
+                        </div>
                     </div>
-                </div>
 
                 <section class="cards-grid" id="cards-grid"></section>
 
@@ -222,6 +292,7 @@
                         <span>Registrar coleta</span>
                     </button>
                 </section>
+                </div>
             </div>
         </main>
 
@@ -252,6 +323,35 @@
                 <span>Perfil</span>
             </button>
         </nav>
+
+        <!-- MODAL CONFIRMAR ACEITE -->
+        <div class="code-modal-backdrop hidden" id="empresa-aceite-backdrop">
+            <div class="code-modal" role="dialog" aria-modal="true">
+                <button class="code-modal-close" type="button" id="empresa-aceite-close" aria-label="Fechar">
+                    <i data-lucide="x"></i>
+                </button>
+                <h3>Aceitar coleta?</h3>
+                <p class="code-modal-subtitle" id="empresa-aceite-sub">—</p>
+                <div class="modal-actions" style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px;">
+                    <button type="button" class="empty-cta" id="empresa-aceite-cancel" style="background:#f4f4f4;color:#333;">Cancelar</button>
+                    <button type="button" class="empty-cta" id="empresa-aceite-ok">Confirmar aceite</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODAL CONCLUIR COM CÓDIGO -->
+        <div class="code-modal-backdrop hidden" id="empresa-complete-backdrop">
+            <div class="code-modal" role="dialog" aria-modal="true">
+                <button class="code-modal-close" type="button" id="empresa-complete-close" aria-label="Fechar">
+                    <i data-lucide="x"></i>
+                </button>
+                <div class="code-modal-icon"><i data-lucide="shield-check"></i></div>
+                <h3>Concluir coleta</h3>
+                <p class="code-modal-subtitle" id="empresa-complete-sub">Digite o código de confirmação do cliente.</p>
+                <input type="text" id="empresa-complete-input" class="hero-search" style="width:100%;margin:12px 0;color:#1a1a1a;border-radius:14px;padding:12px 14px;" placeholder="Ex: EC-AB12-5678" autocomplete="off" />
+                <button class="copy-code-btn" type="button" id="empresa-complete-submit">Validar e concluir</button>
+            </div>
+        </div>
 
         <!-- MODAL CÓDIGO -->
         <div class="code-modal-backdrop hidden" id="code-modal-backdrop">
@@ -291,6 +391,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
     <script src="firebase-config.js"></script>
+    <script src="eco-notifs.js"></script>
 
     <!-- Page JS -->
     <script src="coleta.js"></script>

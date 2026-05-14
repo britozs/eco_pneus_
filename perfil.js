@@ -35,6 +35,7 @@
   applyIcons();
 
   var firebaseUser = null;
+  var unsubUsuarioPerfil = null;
 
   /** @type {firebase.firestore.DocumentSnapshot | firebase.firestore.QueryDocumentSnapshot | null} último snapshot */
   var cachedUserSnap = null;
@@ -65,8 +66,6 @@
     leftInfoStack: document.getElementById('leftInfoStack'),
     summaryGrid: document.getElementById('summaryGrid'),
     activityArea: document.getElementById('activityArea'),
-    btnEditarPerfil: document.getElementById('btnEditarPerfil'),
-    btnAlterarSenha: document.getElementById('btnAlterarSenha'),
     btnVerTodas: document.getElementById('btnVerTodas'),
     editModalBackdrop: document.getElementById('editModalBackdrop'),
     passwordModalBackdrop: document.getElementById('passwordModalBackdrop'),
@@ -93,9 +92,10 @@
     inputCidade: document.getElementById('inputCidade'),
     inputUF: document.getElementById('inputUF'),
     inputCreatedAt: document.getElementById('inputCreatedAt'),
-    inputNivel: document.getElementById('inputNivel'),
-    inputColetas: document.getElementById('inputColetas'),
-    inputUltimaColeta: document.getElementById('inputUltimaColeta'),
+    inputCep: document.getElementById('inputCep'),
+    btnBuscarCep: document.getElementById('btnBuscarCep'),
+    cepHint: document.getElementById('cep-hint'),
+    groupStatusEmpresa: document.getElementById('groupStatusEmpresa'),
     inputStatus: document.getElementById('inputStatus'),
     groupRazaoSocial: document.getElementById('groupRazaoSocial'),
     groupDocumento: document.getElementById('groupDocumento'),
@@ -106,6 +106,23 @@
     inputConfirmarSenha: document.getElementById('inputConfirmarSenha'),
     toastStack: document.getElementById('toastStack')
   };
+
+  function computeNivelSustentavel(totalColetas, isEmpresa) {
+    var n = parseInt(totalColetas, 10) || 0;
+    var score = n * 2 + (isEmpresa ? 8 : 0);
+    if (score < 6) return 'Bronze';
+    if (score < 18) return 'Prata';
+    if (score < 40) return 'Ouro';
+    return 'Platina';
+  }
+
+  function nivelBadgeClass(level) {
+    var k = String(level || 'Bronze').toLowerCase();
+    if (k === 'prata') return 'nivel-badge nivel-badge--prata';
+    if (k === 'ouro') return 'nivel-badge nivel-badge--ouro';
+    if (k === 'platina' || k === 'diamante') return 'nivel-badge nivel-badge--platina';
+    return 'nivel-badge nivel-badge--bronze';
+  }
 
   function mapTipoEmpresaToRole(te) {
     if (!te) return 'Gerador';
@@ -144,6 +161,15 @@
     });
   }
 
+  function authAccountCreatedYmd(user) {
+    if (!user || !user.metadata || !user.metadata.creationTime) return '';
+    try {
+      return new Date(user.metadata.creationTime).toISOString().slice(0, 10);
+    } catch (e) {
+      return '';
+    }
+  }
+
   function buildCurrentUserFromFirebase(user, snap) {
     var d = snap && snap.exists ? snap.data() : {};
     cachedUserSnap = snap;
@@ -172,10 +198,21 @@
     var googlePhoto = '';
     if (!photo && user.photoURL) googlePhoto = user.photoURL;
 
+    var firestoreYmd =
+      typeof d.createdAt === 'string' && d.createdAt.length >= 10
+        ? d.createdAt.slice(0, 10)
+        : createdAtToYMD(d.criadoEm) || '';
+    var authYmd = authAccountCreatedYmd(user);
+    var createdYmd = authYmd || firestoreYmd;
+
+    var tipoConta =
+      typeof ecoPneusResolveTipoConta === 'function' ? ecoPneusResolveTipoConta(d) : isEmpresa ? 'empresa' : 'pessoa_fisica';
+
     return {
       id: user.uid,
       loginType: isGoogleOnlyAccount(user) && !hasEmailPassword(user) ? 'google' : 'normal',
       accountType: isEmpresa ? 'empresa' : 'pessoa_fisica',
+      tipoConta: tipoConta,
       name: name,
       email: user.email || d.email || '',
       phone: formatPhoneDigits(d.telefone || ''),
@@ -188,15 +225,15 @@
       address: address || (typeof d.address === 'string' ? d.address : ''),
       city: city || (typeof d.city === 'string' ? d.city : ''),
       state: state || (typeof d.state === 'string' ? d.state : ''),
-      createdAt:
-        typeof d.createdAt === 'string' && d.createdAt.length >= 10
-          ? d.createdAt.slice(0, 10)
-          : createdAtToYMD(d.criadoEm) || '',
+      createdAt: createdYmd,
       sustainableLevel: d.nivelSustentavel || d.sustainableLevel || 'Bronze',
       totalCollections:
         typeof d.totalColetasInformado === 'number' ? d.totalColetasInformado : parseInt(d.totalColetasInformado, 10) || 0,
       lastCollection: typeof d.ultimaColetaInformada === 'string' ? d.ultimaColetaInformada : '',
-      password: ''
+      password: '',
+      cep: String(enderecoObj.cep || '')
+        .replace(/\D/g, '')
+        .slice(0, 8)
     };
   }
 
@@ -248,41 +285,56 @@
     var u = currentUser;
     if (!firebaseUser || !u) return;
 
-    var cep =
-      cachedUserSnap && cachedUserSnap.exists && cachedUserSnap.data().endereco
-        ? cachedUserSnap.data().endereco.cep || ''
-        : '';
+    var cepDigits =
+      String(u.cep || '')
+        .replace(/\D/g, '')
+        .slice(0, 8) ||
+      (cachedUserSnap && cachedUserSnap.exists && cachedUserSnap.data().endereco
+        ? String(cachedUserSnap.data().endereco.cep || '').replace(/\D/g, '').slice(0, 8)
+        : '');
 
     /** @type {Record<string, unknown>} */
     var payload = {};
 
+    var nColetas = parseInt(u.totalCollections, 10) || 0;
+    var isEmp = u.accountType === 'empresa';
+    var nivelAuto = computeNivelSustentavel(nColetas, isEmp);
+
     payload.email = u.email || '';
     payload.telefone = u.phone || '';
-    payload.nivelSustentavel = u.sustainableLevel || 'Bronze';
-    payload.statusConta = u.status || 'Ativa';
-    payload.totalColetasInformado = parseInt(u.totalCollections, 10) || 0;
+    payload.nivelSustentavel = nivelAuto;
+    payload.statusConta = isEmp ? u.status || 'Ativa' : 'Ativa';
+    payload.totalColetasInformado = nColetas;
     payload.ultimaColetaInformada = u.lastCollection || '';
 
     if (u.accountType === 'empresa') {
       payload.tipo = 'empresa';
+      payload.tipoConta =
+        typeof ecoPneusTipoContaFromTipoEmpresa === 'function'
+          ? ecoPneusTipoContaFromTipoEmpresa(mapRoleToTipoEmpresa(u.companyRole || 'Gerador'))
+          : 'empresa';
       payload.razaoSocial = u.companyName || u.name;
       payload.nome = u.companyName || u.name;
       payload.cnpj = u.cnpj || '';
       payload.tipoEmpresa = mapRoleToTipoEmpresa(u.companyRole || 'Gerador');
+      payload.cpf = firebase.firestore.FieldValue.delete();
       payload.endereco = {
         endereco: u.address || '',
         cidade: u.city || '',
         uf: (u.state || '').toUpperCase(),
-        cep: cep
+        cep: cepDigits
       };
     } else {
       payload.tipo = 'pessoa';
+      payload.tipoConta = 'pessoa_fisica';
       payload.nome = u.name;
+      payload.cpf = u.cpf || '';
+      payload.cnpj = firebase.firestore.FieldValue.delete();
       payload.endereco = {
         endereco: u.address || '',
         cidade: u.city || '',
         uf: (u.state || '').toUpperCase(),
-        cep: cep
+        cep: cepDigits
       };
     }
 
@@ -299,14 +351,11 @@
       } catch (_) {}
     }
 
-    if (u.createdAt) {
-      payload.createdAt = String(u.createdAt).slice(0, 10);
-    }
-
     await db.collection('usuarios').doc(firebaseUser.uid).set(payload, { merge: true });
 
     var readBack = await db.collection('usuarios').doc(firebaseUser.uid).get();
     mergeCurrentFromDoc(readBack, firebaseUser);
+    await syncColetasStats();
   }
 
   function formatDateBR(dateStr) {
@@ -412,12 +461,14 @@
     if (u.accountType === 'empresa') {
       if (u.cnpj) html += buildInfoMiniCard('CNPJ', u.cnpj);
       if (u.companyRole) html += buildInfoMiniCard('TIPO DE EMPRESA', u.companyRole);
+    } else if (u.cpf) {
+      html += buildInfoMiniCard('CPF', u.cpf);
     }
 
     html += buildInfoMiniCard('E-MAIL', u.email);
     html += buildInfoMiniCard('TELEFONE', u.phone || '—');
 
-    if (u.accountType === 'empresa' && u.address) {
+    if (u.address) {
       var fullAddr = u.address;
       if (u.city) fullAddr += ' — ' + u.city;
       if (u.state) fullAddr += '/' + u.state;
@@ -447,17 +498,45 @@
 
   function renderSummary() {
     var u = currentUser;
-    var tipoLabel = u.accountType === 'empresa' ? u.companyRole || 'Empresa' : 'Pessoa Física';
+    var tipoLabel =
+      u.tipoConta === 'transportadora'
+        ? 'Transportadora'
+        : u.tipoConta === 'recicladora'
+          ? 'Recicladora'
+          : u.accountType === 'empresa'
+            ? u.companyRole || 'Empresa'
+            : 'Pessoa Física';
 
     var totalCol = String(u.totalCollections || 0);
     var ultimaCol = u.lastCollection ? formatDateBR(u.lastCollection) : '—';
+    var nivel = u.sustainableLevel || 'Bronze';
+    var nivelHtml = '<span class="' + nivelBadgeClass(nivel) + '">' + sanitize(nivel) + '</span>';
+
+    var statusHtml =
+      u.accountType === 'empresa'
+        ? sanitize(u.status || 'Ativa')
+        : '<span class="status-badge-readonly">Ativo</span>';
 
     var html = '';
     html += buildSummaryItem('user', 'TIPO DA CONTA', tipoLabel);
     html += buildSummaryItem('box', 'COLETAS REALIZADAS', totalCol);
     html += buildSummaryItem('clock', 'ÚLTIMA COLETA', ultimaCol);
-    html += buildSummaryItem('check-circle', 'STATUS DA CONTA', u.status || 'Ativa');
-    html += buildSummaryItem('leaf', 'NÍVEL SUSTENTÁVEL', u.sustainableLevel || 'Bronze');
+    html +=
+      '<div class="summary-item">' +
+      '<div class="summary-icon" data-icon="check-circle"></div>' +
+      '<span class="summary-label">STATUS DA CONTA</span>' +
+      '<div class="summary-value">' +
+      statusHtml +
+      '</div>' +
+      '</div>';
+    html +=
+      '<div class="summary-item">' +
+      '<div class="summary-icon" data-icon="leaf"></div>' +
+      '<span class="summary-label">NÍVEL SUSTENTÁVEL</span>' +
+      '<div class="summary-value">' +
+      nivelHtml +
+      '</div>' +
+      '</div>';
 
     refs.summaryGrid.innerHTML = html;
 
@@ -488,7 +567,16 @@
     refs.profileName.textContent = displayName;
 
     if (u.accountType === 'empresa') refs.accountBadge.textContent = (u.companyRole || 'EMPRESA').toUpperCase();
-    else refs.accountBadge.textContent = 'PESSOA FÍSICA';
+    else {
+      var tc = u.tipoConta || 'pessoa_fisica';
+      var mapa = {
+        pessoa_fisica: 'PESSOA FÍSICA',
+        empresa: 'EMPRESA',
+        transportadora: 'TRANSPORTADORA',
+        recicladora: 'RECICLADORA'
+      };
+      refs.accountBadge.textContent = mapa[tc] || 'PESSOA FÍSICA';
+    }
 
     renderLeftInfo();
     renderSummary();
@@ -511,6 +599,38 @@
       return new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' }).format(dt);
     } catch (e) {
       return '—';
+    }
+  }
+
+  async function syncColetasStats() {
+    if (!firebaseUser || typeof db === 'undefined' || !currentUser) return;
+    try {
+      var snap = await db.collection('coletas').where('uid', '==', firebaseUser.uid).get();
+      var n = snap.size;
+      var lastYmd = '';
+      var best = 0;
+      snap.forEach(function (doc) {
+        var row = doc.data() || {};
+        var t = coletaTimestampMillis(row);
+        if (t > best) {
+          best = t;
+          var d = new Date(t);
+          if (!isNaN(d.getTime())) {
+            lastYmd =
+              d.getFullYear() +
+              '-' +
+              String(d.getMonth() + 1).padStart(2, '0') +
+              '-' +
+              String(d.getDate()).padStart(2, '0');
+          }
+        }
+      });
+      currentUser.totalCollections = n;
+      currentUser.lastCollection = lastYmd;
+      var isEmp = currentUser.accountType === 'empresa';
+      currentUser.sustainableLevel = computeNivelSustentavel(n, isEmp);
+    } catch (e2) {
+      console.warn(e2);
     }
   }
 
@@ -573,18 +693,31 @@
     refs.inputCidade.value = u.city || '';
     refs.inputUF.value = u.state || '';
     refs.inputCreatedAt.value = u.createdAt || '';
-    refs.inputNivel.value = u.sustainableLevel || 'Bronze';
-    refs.inputColetas.value = u.totalCollections || 0;
-    refs.inputUltimaColeta.value = u.lastCollection || '';
-    refs.inputStatus.value = u.status || 'Ativa';
+    if (refs.inputCep) {
+      var cepRaw =
+        cachedUserSnap && cachedUserSnap.exists && cachedUserSnap.data().endereco
+          ? cachedUserSnap.data().endereco.cep || ''
+          : '';
+      refs.inputCep.value = formatCepDisplay(cepRaw);
+    }
+    if (refs.cepHint) refs.cepHint.textContent = '';
+
+    if (refs.inputStatus) refs.inputStatus.value = u.status || 'Ativa';
 
     refs.groupRazaoSocial.style.display = isEmpresa ? '' : 'none';
-    refs.groupDocumento.style.display = isEmpresa ? '' : 'none';
+    refs.groupDocumento.style.display = '';
     refs.groupCompanyRole.style.display = isEmpresa ? '' : 'none';
     refs.groupEndereco.style.display = '';
+    if (refs.groupStatusEmpresa) refs.groupStatusEmpresa.style.display = isEmpresa ? '' : 'none';
 
     var docLabel = refs.groupDocumento.querySelector('label');
     if (docLabel) docLabel.textContent = isEmpresa ? 'CNPJ' : 'CPF';
+  }
+
+  function formatCepDisplay(digits) {
+    var d = String(digits || '').replace(/\D/g, '').slice(0, 8);
+    if (d.length <= 5) return d;
+    return d.slice(0, 5) + '-' + d.slice(5);
   }
 
   async function saveEditForm(e) {
@@ -598,11 +731,8 @@
       address: refs.inputEndereco.value.trim(),
       city: refs.inputCidade.value.trim(),
       state: refs.inputUF.value.trim().toUpperCase(),
-      createdAt: refs.inputCreatedAt.value,
-      sustainableLevel: refs.inputNivel.value,
-      totalCollections: parseInt(refs.inputColetas.value, 10) || 0,
-      lastCollection: refs.inputUltimaColeta.value,
-      status: refs.inputStatus.value
+      status: isEmpresa && refs.inputStatus ? refs.inputStatus.value : 'Ativa',
+      cep: refs.inputCep ? refs.inputCep.value.replace(/\D/g, '').slice(0, 8) : ''
     };
 
     if (isEmpresa) {
@@ -610,11 +740,14 @@
       patch.name = refs.inputRazaoSocial.value.trim() || refs.inputNome.value.trim();
       patch.companyRole = refs.inputCompanyRole.value;
       patch.cnpj = refs.inputDocumento.value.trim();
+    } else {
+      patch.cpf = refs.inputDocumento.value.trim();
     }
 
     try {
       await updateCurrentUser(patch);
       closeModal(refs.editModalBackdrop);
+      await syncColetasStats();
       renderPage();
       showToast('Perfil atualizado com sucesso!', 'success');
     } catch (err) {
@@ -748,6 +881,14 @@
     closeDrawer();
 
     switch (action) {
+      case 'editar-perfil-completo':
+        fillEditForm();
+        openModal(refs.editModalBackdrop);
+        setTimeout(function () {
+          refs.inputNome.focus();
+        }, 200);
+        break;
+
       case 'foto':
         setTimeout(function () {
           refs.fotoInput.click();
@@ -824,15 +965,28 @@
   refs.btnFecharDrawer.addEventListener('click', closeDrawer);
   refs.pageOverlay.addEventListener('click', closeDrawer);
 
+  refs.btnBuscarCep?.addEventListener('click', async function () {
+    if (!refs.inputCep) return;
+    var d = refs.inputCep.value.replace(/\D/g, '');
+    if (refs.cepHint) refs.cepHint.textContent = 'Buscando…';
+    try {
+      if (typeof ecoPneusBuscarCepBrasil !== 'function') throw new Error('CEP indisponível');
+      var r = await ecoPneusBuscarCepBrasil(d);
+      refs.inputEndereco.value = r.logradouro || '';
+      refs.inputCidade.value = r.cidade || '';
+      refs.inputUF.value = (r.uf || '').slice(0, 2);
+      if (refs.cepHint) refs.cepHint.textContent = 'Endereço preenchido automaticamente.';
+      showToast('CEP encontrado.', 'success');
+    } catch (e) {
+      if (refs.cepHint) refs.cepHint.textContent = e.message || 'CEP inválido.';
+      showToast(refs.cepHint.textContent, 'error');
+    }
+  });
+
   refs.settingsDrawer.querySelectorAll('.drawer-item[data-action]').forEach(function (btn) {
     btn.addEventListener('click', function () {
       handleDrawerAction(this.getAttribute('data-action'));
     });
-  });
-
-  refs.btnEditarPerfil.addEventListener('click', function () {
-    fillEditForm();
-    openModal(refs.editModalBackdrop);
   });
 
   refs.btnFecharEditModal.addEventListener('click', function () {
@@ -846,11 +1000,6 @@
   });
 
   refs.editForm.addEventListener('submit', saveEditForm);
-
-  refs.btnAlterarSenha.addEventListener('click', function () {
-    refs.passwordForm.reset();
-    openModal(refs.passwordModalBackdrop);
-  });
 
   refs.btnFecharPasswordModal.addEventListener('click', function () {
     closeModal(refs.passwordModalBackdrop);
@@ -925,15 +1074,44 @@
 
   auth.onAuthStateChanged(async function (user) {
     if (!user) {
+      if (unsubUsuarioPerfil) {
+        try {
+          unsubUsuarioPerfil();
+        } catch (e0) {}
+        unsubUsuarioPerfil = null;
+      }
       window.location.href = 'login.html';
       return;
     }
     firebaseUser = user;
     try {
-      var snap = await db.collection('usuarios').doc(user.uid).get();
+      var refUser = db.collection('usuarios').doc(user.uid);
+      var snap = await refUser.get();
       mergeCurrentFromDoc(snap, user);
+      await syncColetasStats();
       renderPage();
       await loadActivityList();
+
+      if (unsubUsuarioPerfil) {
+        try {
+          unsubUsuarioPerfil();
+        } catch (e1) {}
+        unsubUsuarioPerfil = null;
+      }
+      unsubUsuarioPerfil = refUser.onSnapshot(
+        function (s2) {
+          mergeCurrentFromDoc(s2, user);
+          syncColetasStats()
+            .then(function () {
+              renderPage();
+            })
+            .catch(function () {
+              renderPage();
+            });
+          loadActivityList();
+        },
+        function () {}
+      );
     } catch (err) {
       console.error(err);
       showToast('Erro ao carregar perfil.', 'error');

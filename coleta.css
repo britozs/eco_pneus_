@@ -438,8 +438,29 @@ img{
 /* TOOLBAR */
 .toolbar-wrap{
     position: relative;
-    margin-top: -40px;
-    z-index: 5;
+    margin-top: 0;
+    padding-top: 8px;
+    z-index: 4;
+    clear: both;
+}
+
+body.coletas-logistica .toolbar-wrap{
+    margin-top: -28px;
+    padding-top: 0;
+}
+
+body.coletas-pf .toolbar-wrap{
+    margin-top: 12px;
+    padding-top: 8px;
+}
+
+/* Faixa de etapas (Registrada / Em rota / Concluída) — apenas contas logísticas */
+body.coletas-pf .coletas-flow-wrap {
+    display: none !important;
+    height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
 }
 
 .toolbar-card{
@@ -799,6 +820,7 @@ img{
 
 .card-actions{
     display: flex;
+    flex-wrap: wrap;
     gap: 8px;
     align-items: center;
     margin-top: 16px;
@@ -825,7 +847,8 @@ img{
 }
 
 .card-btn.track{
-    flex: 1;
+    flex: 1 1 calc(50% - 4px);
+    min-width: 0;
     background: var(--green-800);
     color: #fff;
 }
@@ -835,9 +858,17 @@ img{
 }
 
 .card-btn.details{
-    flex: 1;
+    flex: 1 1 calc(50% - 4px);
+    min-width: 0;
     background: #f4ede2;
     color: #403f38;
+}
+
+/* “Concluir” em linha inteira para não cortar texto com 3+ ações */
+.card-actions > .card-btn[data-action="complete"]{
+    flex: 1 1 100%;
+    width: 100%;
+    order: 10;
 }
 
 .card-btn.details:hover{
@@ -845,8 +876,9 @@ img{
 }
 
 .card-btn.code{
-    width: 42px;
-    min-width: 42px;
+    flex: 0 0 44px;
+    width: 44px;
+    min-width: 44px;
     padding: 0;
     background: #f6fff0;
     color: var(--green-800);
@@ -1276,5 +1308,424 @@ img{
 
     .code-modal{
         padding: 26px 18px 22px;
+    }
+}
+
+/* ============================================================
+   COLETAS — fluxo, cards e notificações (harmoniza com Registrar)
+   ============================================================ */
+
+.coletas-body {
+    background: linear-gradient(180deg, #f1f7f3 0%, #e8f1ec 45%, #efe6d8 100%);
+    min-height: 100vh;
+}
+
+.coletas-flow-wrap {
+    margin-top: 8px;
+    margin-bottom: 10px;
+    position: relative;
+    z-index: 3;
+    clear: both;
+}
+
+.empresa-coletas-panel[hidden],
+.empresa-coletas-panel.hidden {
+    display: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    height: 0 !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+
+.coletas-flow-strip {
+    background: rgba(255, 255, 255, 0.88);
+    border: 1px solid rgba(11, 107, 58, 0.1);
+    border-radius: 22px;
+    padding: 18px 20px 16px;
+    box-shadow: 0 14px 36px rgba(15, 36, 25, 0.06);
+    backdrop-filter: blur(12px);
+    animation: coletaStripIn 0.55s ease both;
+}
+
+@keyframes coletaStripIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.coletas-flow-track {
+    height: 6px;
+    border-radius: 999px;
+    background: #e8efe9;
+    overflow: hidden;
+    margin-bottom: 16px;
+}
+
+.coletas-flow-track-fill {
+    display: block;
+    height: 100%;
+    width: 28%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #0b6b3a, #2e8a5a, #b8ec4f);
+    transition: width 0.65s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.coletas-flow-steps {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+}
+
+.coletas-flow-step {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: 16px;
+    border: 2px solid transparent;
+    background: rgba(248, 250, 249, 0.9);
+    transition: border-color 0.25s ease, box-shadow 0.25s ease, transform 0.2s ease;
+}
+
+.coletas-flow-step:hover {
+    transform: translateY(-1px);
+}
+
+.coletas-flow-step.active {
+    border-color: #0b6b3a;
+    background: #fff;
+    box-shadow: 0 8px 22px rgba(11, 107, 58, 0.12);
+}
+
+.coletas-flow-step.done {
+    opacity: 0.92;
+}
+
+.coletas-flow-badge {
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+    display: grid;
+    place-items: center;
+    background: #eef2f0;
+    color: #64748b;
+    flex-shrink: 0;
+    transition: background 0.25s ease, color 0.25s ease;
+}
+
+.coletas-flow-step.active .coletas-flow-badge {
+    background: #0b6b3a;
+    color: #fff;
+}
+
+.coletas-flow-step.done .coletas-flow-badge {
+    background: #0b6b3a;
+    color: #fff;
+}
+
+.coletas-flow-meta {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.15;
+    min-width: 0;
+}
+
+.coletas-flow-meta small {
+    font-size: 0.62rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    color: #94a3b8;
+    text-transform: uppercase;
+}
+
+.coletas-flow-meta strong {
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: #0f2419;
+}
+
+.coletas-stage-card {
+    background: rgba(255, 255, 255, 0.92);
+    border: 1px solid rgba(11, 107, 58, 0.08);
+    border-radius: 24px;
+    padding: 20px 22px 22px;
+    box-shadow: 0 18px 44px rgba(15, 36, 25, 0.07);
+    backdrop-filter: blur(10px);
+    animation: coletaStageIn 0.5s ease both;
+}
+
+@keyframes coletaStageIn {
+    from {
+        opacity: 0;
+        transform: translateY(12px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.coletas-toolbar-stage {
+    padding-bottom: 16px;
+}
+
+.coletas-stage-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 14px;
+    margin-bottom: 14px;
+}
+
+.coletas-toolbar-stage-head {
+    margin-bottom: 10px;
+}
+
+.coletas-stage-label {
+    display: inline-block;
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    color: #0b6b3a;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+}
+
+.coletas-stage-head h3,
+.coletas-toolbar-title {
+    margin: 0;
+    font-family: "Cormorant Garamond", serif;
+    font-size: 1.55rem;
+    font-weight: 700;
+    color: #0f2419;
+    letter-spacing: -0.02em;
+}
+
+.coletas-stage-desc {
+    margin: 8px 0 0;
+    font-size: 0.88rem;
+    line-height: 1.55;
+    color: #64748b;
+    max-width: 720px;
+}
+
+.coletas-stage-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+    display: grid;
+    place-items: center;
+    background: rgba(11, 107, 58, 0.08);
+    color: #0b6b3a;
+    flex-shrink: 0;
+}
+
+.coletas-stage-icon svg {
+    width: 20px;
+    height: 20px;
+}
+
+.toolbar-card-inner {
+    border-radius: 18px;
+    background: linear-gradient(180deg, #fbfbf9, #f4f7f4);
+    padding: 4px;
+}
+
+.coletas-toolbar-stage .toolbar-card {
+    box-shadow: none;
+    border-radius: 16px;
+    border: 1px solid rgba(25, 50, 37, 0.05);
+}
+
+.coletas-list-stage {
+    margin-top: 8px;
+    padding-bottom: 28px;
+}
+
+.coletas-section-head {
+    margin-bottom: 22px;
+}
+
+.collection-card.coleta-card-reveal {
+    animation: coletaCardReveal 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation-delay: var(--coleta-reveal-delay, 0ms);
+}
+
+@keyframes coletaCardReveal {
+    from {
+        opacity: 0;
+        transform: translateY(16px) scale(0.98);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.notif-wrap {
+    position: relative;
+}
+
+.icon-glass--notif {
+    position: relative;
+}
+
+.notif-badge {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #ef4444, #b91c1c);
+    color: #fff;
+    font-size: 0.65rem;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    box-shadow: 0 4px 10px rgba(185, 28, 28, 0.35);
+}
+
+.notif-dropdown {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 10px);
+    width: min(360px, calc(100vw - 32px));
+    max-height: 380px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    background: #fff;
+    border: 1px solid rgba(11, 107, 58, 0.12);
+    border-radius: 18px;
+    box-shadow: 0 24px 50px rgba(15, 36, 25, 0.18);
+    z-index: 80;
+    animation: notifDrop 0.28s ease both;
+}
+
+@keyframes notifDrop {
+    from {
+        opacity: 0;
+        transform: translateY(-6px) scale(0.98);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.notif-dropdown-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 14px;
+    border-bottom: 1px solid #eef2f0;
+    background: linear-gradient(180deg, #f8faf8, #fff);
+}
+
+.notif-dropdown-head strong {
+    font-size: 0.9rem;
+    color: #0f2419;
+}
+
+.notif-mark-all {
+    border: 0;
+    background: none;
+    color: #0b6b3a;
+    font-size: 0.78rem;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 6px 8px;
+    border-radius: 8px;
+}
+
+.notif-mark-all:hover {
+    background: rgba(11, 107, 58, 0.08);
+}
+
+.notif-list {
+    overflow-y: auto;
+    max-height: 300px;
+    padding: 6px;
+}
+
+.notif-item {
+    padding: 10px 12px;
+    border-radius: 12px;
+    margin-bottom: 4px;
+    cursor: pointer;
+    transition: background 0.18s ease;
+}
+
+.notif-item:hover {
+    background: #f4f7f4;
+}
+
+.notif-item--unread {
+    background: rgba(11, 107, 58, 0.06);
+    border: 1px solid rgba(11, 107, 58, 0.1);
+}
+
+.notif-item strong {
+    display: block;
+    font-size: 0.82rem;
+    color: #0f2419;
+    margin-bottom: 4px;
+}
+
+.notif-item p {
+    margin: 0;
+    font-size: 0.78rem;
+    color: #475569;
+    line-height: 1.4;
+}
+
+.notif-item small {
+    display: block;
+    margin-top: 6px;
+    font-size: 0.68rem;
+    color: #94a3b8;
+}
+
+.notif-empty {
+    padding: 20px 14px;
+    text-align: center;
+    font-size: 0.85rem;
+    color: #64748b;
+    margin: 0;
+}
+
+.empresa-disponiveis-empty,
+.empresa-disponiveis-err {
+    font-size: 0.88rem;
+    margin: 0;
+    padding: 8px 0;
+}
+
+.empresa-disponiveis-empty {
+    color: #64748b;
+}
+
+.empresa-disponiveis-err {
+    color: #b45309;
+}
+
+@media (max-width: 900px) {
+    .coletas-flow-steps {
+        grid-template-columns: 1fr;
+    }
+    .coletas-flow-step {
+        flex-direction: row;
     }
 }

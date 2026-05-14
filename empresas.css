@@ -575,6 +575,21 @@ img { max-width: 100%; display: block; }
     box-shadow: var(--dash-shadow-soft);
 }
 
+.empresas-filter-line {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 4px;
+    align-items: center;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    padding-bottom: 2px;
+}
+
+.empresas-filter-line .filter-chip {
+    flex: 0 0 auto;
+}
+
 .toolbar-top-row {
     display: flex;
     justify-content: space-between;
@@ -802,6 +817,21 @@ img { max-width: 100%; display: block; }
     gap: 8px;
     flex-wrap: wrap;
     margin-bottom: 16px;
+}
+
+.map-toolbar.map-sort-row {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 4px;
+    scrollbar-width: thin;
+}
+.map-toolbar.map-sort-row::-webkit-scrollbar {
+    height: 5px;
+}
+.map-toolbar.map-sort-row::-webkit-scrollbar-thumb {
+    background: rgba(13, 106, 74, 0.25);
+    border-radius: 999px;
 }
 
 .map-sort-chip {
@@ -1496,4 +1526,63 @@ img { max-width: 100%; display: block; }
         justify-content: flex-start;
         overflow-x: auto;
     }
+}
+
+/* Leaflet — marcadores por tipo (parceiros reais) */
+.eco-marker-wrap {
+    background: transparent !important;
+    border: none !important;
+}
+.eco-pin {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: 3px solid #fff;
+    box-shadow: 0 4px 14px rgba(9, 38, 28, 0.35);
+    margin: 0 auto;
+    transition: transform 0.2s ease;
+}
+.leaflet-marker-icon:hover .eco-pin {
+    transform: scale(1.12);
+}
+.eco-pin--recicla {
+    background: linear-gradient(145deg, #0d6a4a, #0b5a40);
+}
+.eco-pin--transport {
+    background: linear-gradient(145deg, #2563eb, #1d4ed8);
+}
+.eco-pin--gerador {
+    background: linear-gradient(145deg, #ca8a04, #a16207);
+}
+.eco-map-popup {
+    font-family: inherit;
+    line-height: 1.35;
+}
+.eco-map-popup-meta {
+    font-size: 0.78rem;
+    color: #5f736b;
+    margin: 4px 0 2px;
+}
+.eco-map-popup-addr {
+    font-size: 0.8rem;
+    color: #17352c;
+    margin-bottom: 8px;
+}
+.eco-map-popup-btn {
+    display: inline-block;
+    width: 100%;
+    padding: 8px 12px;
+    border-radius: 12px;
+    border: none;
+    background: linear-gradient(135deg, #0d6a4a 0%, #0b5a41 100%);
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
+    box-shadow: 0 8px 18px rgba(13, 106, 74, 0.22);
+}
+.eco-map-popup-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 10px 22px rgba(13, 106, 74, 0.28);
 }
