@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Nova Coleta - Eco Pneus</title>
 
-    <link rel="icon" href="https://i.postimg.cc/rp5Py0Rr/Eco-Pneus-2-removebg-preview.png">
+    <link rel="icon" href="https://dreadful-ivory-ihdpmbndl3.edgeone.app/Logo_EcoPneus-removebg-preview.png">
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -27,7 +27,7 @@
         <div class="hero-top">
             <div class="brand">
                 <div class="brand-mark">
-                    <img src="https://i.postimg.cc/rp5Py0Rr/Eco-Pneus-2-removebg-preview.png" alt="Eco Pneus">
+                    <img src="https://www.image2url.com/r2/default/images/1777093024202-b764b621-3e6f-4b89-b838-ca9fd5e06ab4.png" alt="Eco Pneus">
                 </div>
 
                 <div class="brand-copy">
@@ -38,7 +38,7 @@
 
             <button class="panel-back-btn" onclick="voltar()">
                 <span class="btn-icon">←</span>
-                <span>Voltar ao inicio</span>
+                <span>Voltar ao início</span>
             </button>
         </div>
 
@@ -202,66 +202,104 @@
                 <div class="field-block">
                     <label class="field-label">TIPO DE PNEU *</label>
 
-                    <div class="tipo-grid">
-                        <button class="tipo-chip" type="button" onclick="selTipo(this,'Passeio')">
-                            <span class="tipo-icon">🚗</span>
-                            <span>Passeio</span>
+                    <div class="tipo-grid tipo-grid-detalhado">
+                        <button class="tipo-chip tipo-card active" type="button" data-tipo="Passeio" data-peso="8" onclick="selTipo(this,'Passeio',8)">
+                            <span class="tipo-check">✓</span>
+                            <span class="tipo-icon-box">🚗</span>
+                            <strong>Passeio</strong>
+                            <small>Carros leves</small>
+                            <em>~8 KG/UN</em>
                         </button>
 
-                        <button class="tipo-chip" type="button" onclick="selTipo(this,'Caminhão')">
-                            <span class="tipo-icon">🚚</span>
-                            <span>Caminhão</span>
+                        <button class="tipo-chip tipo-card" type="button" data-tipo="Caminhão" data-peso="65" onclick="selTipo(this,'Caminhão',65)">
+                            <span class="tipo-check">✓</span>
+                            <span class="tipo-icon-box">🚚</span>
+                            <strong>Caminhão</strong>
+                            <small>Cargas pesadas</small>
+                            <em>~65 KG/UN</em>
                         </button>
 
-                        <button class="tipo-chip" type="button" onclick="selTipo(this,'Moto')">
-                            <span class="tipo-icon">🏍</span>
-                            <span>Moto</span>
+                        <button class="tipo-chip tipo-card" type="button" data-tipo="Moto" data-peso="4" onclick="selTipo(this,'Moto',4)">
+                            <span class="tipo-check">✓</span>
+                            <span class="tipo-icon-box">🏍</span>
+                            <strong>Moto</strong>
+                            <small>Duas rodas</small>
+                            <em>~4 KG/UN</em>
                         </button>
 
-                        <button class="tipo-chip" type="button" onclick="selTipo(this,'Ônibus')">
-                            <span class="tipo-icon">🚌</span>
-                            <span>Ônibus</span>
+                        <button class="tipo-chip tipo-card" type="button" data-tipo="Ônibus" data-peso="55" onclick="selTipo(this,'Ônibus',55)">
+                            <span class="tipo-check">✓</span>
+                            <span class="tipo-icon-box">🚌</span>
+                            <strong>Ônibus</strong>
+                            <small>Transporte coletivo</small>
+                            <em>~55 KG/UN</em>
                         </button>
 
-                        <button class="tipo-chip" type="button" onclick="selTipo(this,'Agrícola')">
-                            <span class="tipo-icon">🌽</span>
-                            <span>Agrícola</span>
+                        <button class="tipo-chip tipo-card" type="button" data-tipo="Agrícola" data-peso="120" onclick="selTipo(this,'Agrícola',120)">
+                            <span class="tipo-check">✓</span>
+                            <span class="tipo-icon-box">🚜</span>
+                            <strong>Agrícola</strong>
+                            <small>Tratores / colheitadeiras</small>
+                            <em>~120 KG/UN</em>
                         </button>
 
-                        <button class="tipo-chip" type="button" onclick="selTipo(this,'Outro')">
-                            <span class="tipo-icon">◌</span>
-                            <span>Outro</span>
+                        <button class="tipo-chip tipo-card" type="button" data-tipo="Outro" data-peso="10" onclick="selTipo(this,'Outro',10)">
+                            <span class="tipo-check">✓</span>
+                            <span class="tipo-icon-box">◌</span>
+                            <strong>Outro</strong>
+                            <small>Especificar nas observações</small>
+                            <em>~10 KG/UN</em>
                         </button>
                     </div>
                 </div>
 
-                <div class="two-fields">
+                <div class="two-fields two-fields-enhanced">
                     <div class="field-block">
-                        <label class="field-label" for="col-qtd">QUANTIDADE *</label>
-                        <input type="number" id="col-qtd" placeholder="Ex: 50" min="1">
+                        <label class="field-label" for="col-qtd"># QUANTIDADE DE PNEUS *</label>
+
+                        <div class="qty-box-modern">
+                            <button class="qty-btn-modern" id="btn-qtd-minus" type="button">−</button>
+                            <input type="number" id="col-qtd" value="50" min="1">
+                            <button class="qty-btn-modern" id="btn-qtd-plus" type="button">+</button>
+                        </div>
+
+                        <div class="qty-shortcuts-modern">
+                            <button class="qty-chip-modern" type="button" data-add="10">+10</button>
+                            <button class="qty-chip-modern" type="button" data-add="25">+25</button>
+                            <button class="qty-chip-modern active" type="button" data-add="50">+50</button>
+                            <button class="qty-chip-modern" type="button" data-add="100">+100</button>
+                        </div>
                     </div>
 
                     <div class="field-block">
                         <label class="field-label" for="col-peso">PESO ESTIMADO (KG)</label>
-                        <input type="number" id="col-peso" placeholder="Ex: 500" min="0">
+
+                        <div class="peso-box-modern">
+                            <input type="number" id="col-peso" placeholder="Sugerido: 400 kg" min="0">
+                            <span class="peso-suffix">KG</span>
+                        </div>
+
+                        <div class="field-help-text" id="peso-help-text">
+                            Sugerido automaticamente: 400 kg (8 kg × 50).
+                        </div>
                     </div>
                 </div>
 
-                <div class="field-block">
-                    <label class="field-label">URGÊNCIA</label>
+                <div class="field-block field-block-urgencia">
+                    <label class="field-label field-label-center">URGÊNCIA</label>
 
-                    <div class="urgencia-row">
-                        <button class="urg-chip" type="button" onclick="selUrg(this,'baixa','low')">
+                    <div class="urgencia-row urgencia-row-large">
+                        <button class="urg-chip urg-chip-large" type="button" onclick="selUrg(this,'baixa','low')">
                             <span class="urg-dot low"></span>
                             <span>Baixa</span>
                         </button>
 
-                        <button class="urg-chip active-med" type="button" onclick="selUrg(this,'normal','med')">
+                        <button class="urg-chip urg-chip-large active-med" type="button" onclick="selUrg(this,'normal','med')">
                             <span class="urg-dot med"></span>
                             <span>Normal</span>
                         </button>
 
-                        <button class="urg-chip" type="button" onclick="selUrg(this,'alta','high')">
+                        <button class="urg-chip urg-chip-large" type="button" onclick="selUrg(this,'alta','high')">
                             <span class="urg-dot high"></span>
                             <span>Alta</span>
                         </button>
@@ -270,7 +308,11 @@
 
                 <div class="field-block">
                     <label class="field-label" for="col-obs">OBSERVAÇÕES</label>
-                    <textarea id="col-obs" rows="4" placeholder="Estado dos pneus, acesso ao local, melhor horário para retirar..."></textarea>
+                    <textarea id="col-obs" rows="5" maxlength="300" placeholder="Estado dos pneus, acesso ao local, melhor horário para retirar..."></textarea>
+                    <div class="field-meta-inline">
+                        <span>Opcional, mas ajuda na execução</span>
+                        <span id="obs-counter">0/300</span>
+                    </div>
                 </div>
 
                 <div class="action-row action-row-between">
@@ -290,7 +332,7 @@
                     <div>
                         <h2 class="panel-title">Revisar &amp; confirmar</h2>
                         <p class="panel-desc">
-                            Confira os detalhes antes de enviar. Tudo certo? Um toque em confirmar e a coleta entra na fila de despacho.
+                            Confira os detalhes antes de enviar. Se estiver tudo certo, confirme a coleta.
                         </p>
                     </div>
 
@@ -300,19 +342,127 @@
                     </div>
                 </div>
 
-                <div class="confirm-grid">
-                    <div class="summary-list" id="summary"></div>
+                <div class="confirm-layout">
+                    <div class="confirm-main">
+                        <div class="two-fields">
+                            <div class="field-block">
+                                <label class="field-label" for="resp-nome">NOME DO RESPONSÁVEL *</label>
+                                <input type="text" id="resp-nome" placeholder="Nome de quem receberá a equipe">
+                            </div>
+
+                            <div class="field-block">
+                                <label class="field-label" for="resp-telefone">TELEFONE PARA CONTATO *</label>
+                                <input type="tel" id="resp-telefone" placeholder="(11) 99999-0000">
+                            </div>
+                        </div>
+
+                        <div class="confirm-summary-card">
+                            <div class="confirm-summary-row">
+                                <div class="confirm-summary-label">
+                                    <span class="confirm-summary-icon">♻</span>
+                                    <span>TIPO DE PNEU</span>
+                                </div>
+                                <div class="confirm-summary-value" id="summary-tipo">Passeio</div>
+                            </div>
+
+                            <div class="confirm-summary-row">
+                                <div class="confirm-summary-label">
+                                    <span class="confirm-summary-icon">#</span>
+                                    <span>QUANTIDADE</span>
+                                </div>
+                                <div class="confirm-summary-value" id="summary-qtd">50 unidades</div>
+                            </div>
+
+                            <div class="confirm-summary-row">
+                                <div class="confirm-summary-label">
+                                    <span class="confirm-summary-icon">⚖</span>
+                                    <span>PESO ESTIMADO</span>
+                                </div>
+                                <div class="confirm-summary-value" id="summary-peso">400 kg</div>
+                            </div>
+
+                            <div class="confirm-summary-row">
+                                <div class="confirm-summary-label">
+                                    <span class="confirm-summary-icon">📍</span>
+                                    <span>ENDEREÇO</span>
+                                </div>
+                                <div class="confirm-summary-value" id="summary-endereco">Rua Juliano Coluccini, 53</div>
+                            </div>
+
+                            <div class="confirm-summary-row">
+                                <div class="confirm-summary-label">
+                                    <span class="confirm-summary-icon">△</span>
+                                    <span>URGÊNCIA</span>
+                                </div>
+                                <div class="confirm-summary-value" id="summary-urgencia">Normal</div>
+                            </div>
+
+                            <div class="confirm-summary-row confirm-summary-row-obs">
+                                <div class="confirm-summary-label">
+                                    <span class="confirm-summary-icon">✎</span>
+                                    <span>OBSERVAÇÕES</span>
+                                </div>
+                                <div class="confirm-summary-value" id="summary-observacoes">Nenhuma observação</div>
+                            </div>
+                        </div>
+
+                        <label class="confirm-box-modern">
+                            <input type="checkbox" id="confirmacao-final">
+                            <span class="confirm-custom-modern"></span>
+                            <span>
+                                Confirmo que as informações estão corretas e autorizo a equipe Eco Pneus a realizar a coleta no endereço informado, conforme CONAMA 416 e nossa política de logística reversa.
+                            </span>
+                        </label>
+                    </div>
 
                     <aside class="confirm-side">
                         <div class="mini-map-card">
                             <div id="review-map"></div>
                         </div>
 
-                        <div class="impact-card">
-                            <div class="impact-label">IMPACTO ESTIMADO</div>
-                            <div class="impact-value" id="impact-value">0 kg CO₂</div>
-                            <div class="impact-note" id="impact-note">
-                                Equivalente a plantar ~0 árvore(s) ou 0 km de carro evitados.
+                        <div class="coleta-mini-card">
+                            <div class="coleta-mini-top">
+                                <span class="coleta-mini-title">RESUMO DA COLETA</span>
+                                <span class="coleta-mini-live">● ao vivo</span>
+                            </div>
+
+                            <div class="coleta-mini-main">
+                                <div class="coleta-mini-icon">🚗</div>
+                                <div class="coleta-mini-main-text">
+                                    <strong id="mini-tipo">Passeio</strong>
+                                    <span><span id="mini-qtd">50 unidades</span> — <span id="mini-peso">400 kg</span></span>
+                                </div>
+                            </div>
+
+                            <div class="coleta-mini-metrics">
+                                <div class="coleta-metric">
+                                    <small>CO₂ EVITADO</small>
+                                    <strong id="mini-co2">100 kg</strong>
+                                </div>
+
+                                <div class="coleta-metric">
+                                    <small>URGÊNCIA</small>
+                                    <strong id="mini-urgencia">Normal</strong>
+                                </div>
+                            </div>
+
+                            <div class="coleta-mini-list">
+                                <div class="coleta-mini-item">
+                                    <span>📍 Endereço</span>
+                                    <strong id="mini-endereco">Rua Juliano Coluccini, 53</strong>
+                                </div>
+                                <div class="coleta-mini-item">
+                                    <span>🗓 Janela</span>
+                                    <strong id="mini-janela">Próximas 72h</strong>
+                                </div>
+                                <div class="coleta-mini-item">
+                                    <span>👤 Responsável</span>
+                                    <strong id="mini-responsavel">Pendente</strong>
+                                </div>
+                                <div class="coleta-mini-item">
+                                    <span>☎ Contato</span>
+                                    <strong id="mini-contato">Pendente</strong>
+                                </div>
                             </div>
                         </div>
                     </aside>
@@ -353,7 +503,7 @@
 
                 <div class="success-actions">
                     <button class="btn btn-lime" type="button" onclick="window.location.href='dashboard.html'">
-                        ⌘ Voltar ao inicio
+                        ⌘ Voltar ao início
                     </button>
 
                     <button class="btn btn-outline-dark" type="button" onclick="reiniciarColeta()">

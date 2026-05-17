@@ -1,10 +1,10 @@
 // ============================================================
-// ECO PNEUS - Coleta com Mapa (design rewrite sem mudar backend)
+// ECO PNEUS - coletac.js
+// Ajustado para o HTML/CSS atual
 // Mantém:
-// - auth / db
 // - Firebase Auth
-// - Firestore collection('coletas').add(...)
-// - Leaflet / OpenStreetMap
+// - Firestore
+// - Leaflet / OSM
 // ============================================================
 
 let map;
@@ -15,68 +15,108 @@ let reviewMarker;
 let lat = -22.87834;
 let lng = -47.06399;
 
-let colTipo = '';
-let colUrg = 'normal';
 let currentStep = 1;
 let currentAddress = 'Buscando localização...';
 let ultimoCodigoGerado = '----';
 
-// ------------------------------------------
-// AUTH
-// ------------------------------------------
-auth.onAuthStateChanged(user => {
-    if (!user) {
-        window.location.href = 'login.html';
-    }
-});
+let colTipo = 'Passeio';
+let colUrg = 'normal';
+let pesoManual = false;
 
-// ------------------------------------------
-// INIT
-// ------------------------------------------
-function scheduleLeafletResize() {
-    const run = () => {
-        try {
-            if (map) map.invalidateSize();
-            if (reviewMap) reviewMap.invalidateSize();
-            syncReviewMap();
-        } catch (e) {}
-    };
-    requestAnimationFrame(run);
-    setTimeout(run, 120);
-    setTimeout(run, 380);
-    setTimeout(run, 800);
+const TIPO_PESOS = {
+    'Passeio': 8,
+    'Caminhão': 65,
+    'Moto': 4,
+    'Ônibus': 55,
+    'Agrícola': 120,
+    'Outro': 10
+};
+
+// --------------------------------------------------
+// AUTH
+// --------------------------------------------------
+if (typeof auth !== 'undefined' && auth?.onAuthStateChanged) {
+    auth.onAuthStateChanged(user => {
+        if (!user) {
+            window.location.href = 'login.html';
+        }
+    });
 }
 
+// --------------------------------------------------
+// INIT
+// --------------------------------------------------
 document.addEventListener('DOMContentLoaded', () => {
     initFallbackHelpers();
+    readInitialSelections();
     initMap();
     initReviewMap();
     bindEvents();
+    garantirQuantidadeMinima();
+    syncPesoEstimado(true);
+    updateObsCounter();
+    updateLocationUI();
     updateStepper(1);
-    renderImpact();
+    renderAllReviewData();
+    updateConfirmButtonState();
     scheduleLeafletResize();
-    window.addEventListener('resize', scheduleLeafletResize);
-    const mapHost = document.getElementById('map');
-    if (mapHost && typeof ResizeObserver !== 'undefined') {
-        const ro = new ResizeObserver(() => scheduleLeafletResize());
-        ro.observe(mapHost.parentElement || mapHost);
-    }
-    const rm = document.getElementById('review-map');
-    if (rm && typeof ResizeObserver !== 'undefined') {
-        const ro2 = new ResizeObserver(() => scheduleLeafletResize());
-        ro2.observe(rm.parentElement || rm);
-    }
 });
 
-window.addEventListener('load', () => scheduleLeafletResize());
+window.addEventListener('load', () => {
+    scheduleLeafletResize();
+});
 
-// ------------------------------------------
+window.addEventListener('resize', () => {
+    scheduleLeafletResize();
+});
+
+// --------------------------------------------------
+// LEITURA INICIAL DO HTML
+// --------------------------------------------------
+function readInitialSelections() {
+    const tipoAtivo = document.querySelector('.tipo-chip.active');
+    if (tipoAtivo) {
+        colTipo = tipoAtivo.dataset.tipo || obterTextoTipoDoBotao(tipoAtivo);
+    }
+
+    const urgAtiva =
+        document.querySelector('.urg-chip.active-low') ||
+        document.querySelector('.urg-chip.active-med') ||
+        document.querySelector('.urg-chip.active-high');
+
+    if (urgAtiva) {
+        const txt = urgAtiva.textContent.trim().toLowerCase();
+        if (txt.includes('baixa')) colUrg = 'baixa';
+        else if (txt.includes('alta')) colUrg = 'alta';
+        else colUrg = 'normal';
+    }
+
+    const pesoInput = document.getElementById('col-peso');
+    const qtdInput = document.getElementById('col-qtd');
+
+    if (pesoInput && qtdInput) {
+        const qtd = parseInt(qtdInput.value || '0', 10);
+        const autoPeso = calcularPesoEstimado(colTipo, qtd);
+        const pesoAtual = parseFloat(pesoInput.value || '0');
+        pesoManual = pesoInput.value.trim() !== '' && pesoAtual !== autoPeso;
+    }
+}
+
+// --------------------------------------------------
 // EVENTOS
-// ------------------------------------------
+// --------------------------------------------------
 function bindEvents() {
     const searchInput = document.getElementById('search-address');
     const qtdInput = document.getElementById('col-qtd');
     const pesoInput = document.getElementById('col-peso');
+    const obsInput = document.getElementById('col-obs');
+    const nomeInput = document.getElementById('resp-nome');
+    const telefoneInput = document.getElementById('resp-telefone');
+    const checkbox = document.getElementById('confirmacao-final');
+
+    const btnMinus = document.getElementById('btn-qtd-minus');
+    const btnPlus = document.getElementById('btn-qtd-plus');
+    const qtyChips = document.querySelectorAll('.qty-chip-modern');
 
     if (searchInput) {
         searchInput.addEventListener('keydown', async (e) => {
@@ -94,14 +134,120 @@ function bindEvents() {
         });
     }
 
-    if (qtdInput) qtdInput.addEventListener('input', renderImpact);
-    if (pesoInput) pesoInput.addEventListener('input', renderImpact);
+    if (btnMinus) {
+        btnMinus.addEventListener('click', () => {
+            alterarQuantidade(-1);
+        });
+    }
+
+    if (btnPlus) {
+        btnPlus.addEventListener('click', () => {
+            alterarQuantidade(1);
+        });
+    }
+
+    qtyChips.forEach(chip => {
+        chip.addEventListener('click', () => {
+            const valor = parseInt(chip.dataset.add || '0', 10);
+            if (!valor) return;
+
+            if (qtdInput) {
+                qtdInput.value = valor;
+                garantirQuantidadeMinima();
+                syncPesoEstimado(false);
+                updateQtyShortcutState();
+                renderAllReviewData();
+            }
+        });
+    });
+
+    if (qtdInput) {
+        qtdInput.addEventListener('input', () => {
+            garantirQuantidadeMinima();
+            syncPesoEstimado(false);
+            updateQtyShortcutState();
+            renderAllReviewData();
+        });
+    }
+
+    if (pesoInput) {
+        pesoInput.addEventListener('input', () => {
+            const valor = pesoInput.value.trim();
+            pesoManual = valor !== '';
+            renderAllReviewData();
+            updatePesoHelpText();
+        });
+    }
+
+    if (obsInput) {
+        obsInput.addEventListener('input', () => {
+            updateObsCounter();
+            renderAllReviewData();
+        });
+    }
+
+    if (nomeInput) {
+        nomeInput.addEventListener('input', () => {
+            renderAllReviewData();
+            updateConfirmButtonState();
+        });
+    }
+
+    if (telefoneInput) {
+        telefoneInput.addEventListener('input', (e) => {
+            e.target.value = formatarTelefone(e.target.value);
+            renderAllReviewData();
+            updateConfirmButtonState();
+        });
+    }
+
+    if (checkbox) {
+        checkbox.addEventListener('change', updateConfirmButtonState);
+    }
 }
 
-// ------------------------------------------
+function alterarQuantidade(delta) {
+    const qtdInput = document.getElementById('col-qtd');
+    if (!qtdInput) return;
+
+    let qtd = parseInt(qtdInput.value || '0', 10);
+    if (!Number.isFinite(qtd)) qtd = 0;
+
+    qtd += delta;
+    if (qtd < 1) qtd = 1;
+
+    qtdInput.value = qtd;
+    garantirQuantidadeMinima();
+    syncPesoEstimado(false);
+    updateQtyShortcutState();
+    renderAllReviewData();
+}
+
+function updateQtyShortcutState() {
+    const qtd = parseInt(document.getElementById('col-qtd')?.value || '0', 10);
+
+    document.querySelectorAll('.qty-chip-modern').forEach(chip => {
+        chip.classList.remove('active');
+        const valor = parseInt(chip.dataset.add || '0', 10);
+        if (valor === qtd) chip.classList.add('active');
+    });
+}
+
+function updateObsCounter() {
+    const obs = document.getElementById('col-obs');
+    const counter = document.getElementById('obs-counter');
+    if (!obs || !counter) return;
+
+    counter.textContent = `${obs.value.length}/300`;
+}
+
+// --------------------------------------------------
 // MAPA PRINCIPAL
-// ------------------------------------------
+// --------------------------------------------------
 function initMap() {
+    const mapElement = document.getElementById('map');
+    if (!mapElement || typeof L === 'undefined') return;
+
     map = L.map('map', {
         zoomControl: true
     }).setView([lat, lng], 14);
@@ -120,6 +266,7 @@ function initMap() {
         marker.setLatLng([lat, lng]);
         syncReviewMap();
         await updateLocationText();
+        renderAllReviewData();
     });
 
     marker.on('dragend', async (e) => {
@@ -128,6 +275,7 @@ function initMap() {
         lng = pos.lng;
         syncReviewMap();
         await updateLocationText();
+        renderAllReviewData();
     });
 
     if (navigator.geolocation) {
@@ -135,25 +283,33 @@ function initMap() {
             async (pos) => {
                 lat = pos.coords.latitude;
                 lng = pos.coords.longitude;
-                map.setView([lat, lng], 16);
-                marker.setLatLng([lat, lng]);
+
+                if (map) map.setView([lat, lng], 16);
+                if (marker) marker.setLatLng([lat, lng]);
+
                 syncReviewMap();
                 await updateLocationText();
+                renderAllReviewData();
             },
             async () => {
                 await updateLocationText();
+                renderAllReviewData();
             },
             { enableHighAccuracy: true, timeout: 9000 }
         );
     } else {
         updateLocationText();
+        renderAllReviewData();
     }
 }
 
-// ------------------------------------------
+// --------------------------------------------------
 // MINI MAPA DA CONFIRMAÇÃO
-// ------------------------------------------
+// --------------------------------------------------
 function initReviewMap() {
+    const reviewElement = document.getElementById('review-map');
+    if (!reviewElement || typeof L === 'undefined') return;
+
     reviewMap = L.map('review-map', {
         zoomControl: false,
         attributionControl: false,
@@ -179,9 +335,27 @@ function syncReviewMap() {
     reviewMarker.setLatLng([lat, lng]);
 }
 
-// ------------------------------------------
+// --------------------------------------------------
+// REDIMENSIONAMENTO DOS MAPAS
+// --------------------------------------------------
+function scheduleLeafletResize() {
+    const run = () => {
+        try {
+            if (map) map.invalidateSize();
+            if (reviewMap) reviewMap.invalidateSize();
+            syncReviewMap();
+        } catch (e) {}
+    };
+
+    requestAnimationFrame(run);
+    setTimeout(run, 100);
+    setTimeout(run, 300);
+    setTimeout(run, 700);
+}
+
+// --------------------------------------------------
 // GEOLOCALIZAÇÃO
-// ------------------------------------------
+// --------------------------------------------------
 async function useCurrentLocation() {
     const btn = document.getElementById('geo-btn');
     setLoadingState(btn, true, 'Localizando...');
@@ -197,12 +371,14 @@ async function useCurrentLocation() {
             lat = pos.coords.latitude;
             lng = pos.coords.longitude;
 
-            map.setView([lat, lng], 16);
-            marker.setLatLng([lat, lng]);
-            syncReviewMap();
+            if (map) map.setView([lat, lng], 16);
+            if (marker) marker.setLatLng([lat, lng]);
 
+            syncReviewMap();
             await updateLocationText();
-            showToast('Localização atual capturada com sucesso.');
+            renderAllReviewData();
+
+            showToast('Localização capturada com sucesso.');
             setLoadingState(btn, false);
         },
         () => {
@@ -213,9 +389,9 @@ async function useCurrentLocation() {
     );
 }
 
-// ------------------------------------------
+// --------------------------------------------------
 // BUSCA DE ENDEREÇO
-// ------------------------------------------
+// --------------------------------------------------
 async function searchAddress() {
     const input = document.getElementById('search-address');
     if (!input) return;
@@ -244,12 +420,13 @@ async function searchAddress() {
         lat = parseFloat(data[0].lat);
         lng = parseFloat(data[0].lon);
 
-        map.setView([lat, lng], 17);
-        marker.setLatLng([lat, lng]);
-        syncReviewMap();
+        if (map) map.setView([lat, lng], 17);
+        if (marker) marker.setLatLng([lat, lng]);
 
-        currentAddress = data[0].display_name || query;
+        currentAddress = montarEnderecoBusca(data[0].display_name || query);
         updateLocationUI();
+        syncReviewMap();
+        renderAllReviewData();
 
         showToast('Endereço localizado com sucesso.');
     } catch (error) {
@@ -261,9 +438,14 @@ async function searchAddress() {
     }
 }
 
-// ------------------------------------------
-// REVERSE GEOCODING / TEXTO DO LOCAL
-// ------------------------------------------
+function montarEnderecoBusca(displayName) {
+    if (!displayName) return 'Endereço selecionado';
+    return displayName.replace('Brasil', '').replace(/\s+,/g, ',').trim();
+}
+
+// --------------------------------------------------
+// REVERSE GEOCODING
+// --------------------------------------------------
 async function updateLocationText() {
     currentAddress = 'Atualizando endereço...';
     updateLocationUI();
@@ -300,9 +482,9 @@ function buildFriendlyAddress(data) {
     const linha2 = [bairro, cidade].filter(Boolean).join(' - ');
     const linha3 = [estado, cep].filter(Boolean).join(' • ');
 
-    const parts = [linha1, linha2, linha3].filter(Boolean);
+    const partes = [linha1, linha2, linha3].filter(Boolean);
 
-    return parts.length ? parts.join(' | ') : (data.display_name || 'Local selecionado');
+    return partes.length ? partes.join(' | ') : (data.display_name || 'Local selecionado');
 }
 
 function updateLocationUI() {
@@ -313,14 +495,17 @@ function updateLocationUI() {
     if (locCoords) locCoords.textContent = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
 }
 
-// ------------------------------------------
-// STEPS
-// ------------------------------------------
+// --------------------------------------------------
+// NAVEGAÇÃO ENTRE ETAPAS
+// --------------------------------------------------
 function nextStep(step) {
     if (step === 2 && !validateStep1()) return;
     if (step === 3 && !validateStep2()) return;
 
     currentStep = step;
+
+    const success = document.getElementById('success-screen');
+    if (success) success.classList.remove('active');
 
     document.querySelectorAll('.step-screen').forEach(el => {
         el.classList.remove('active');
@@ -331,19 +516,20 @@ function nextStep(step) {
 
     updateStepper(step);
 
-    if (step === 1 && map) {
-        setTimeout(() => map.invalidateSize(), 120);
+    if (step === 1) {
+        setTimeout(() => {
+            if (map) map.invalidateSize();
+        }, 120);
     }
 
     if (step === 3) {
-        renderSummary();
-        renderImpact();
+        renderAllReviewData();
         syncReviewMap();
 
         setTimeout(() => {
             if (reviewMap) reviewMap.invalidateSize();
             syncReviewMap();
-        }, 120);
+        }, 150);
     }
 
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -361,6 +547,9 @@ function updateStepper(step) {
     }
 }
 
+// --------------------------------------------------
+// VALIDAÇÕES
+// --------------------------------------------------
 function validateStep1() {
     if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
         showToast('Selecione um local válido no mapa.', 'error');
@@ -385,13 +574,44 @@ function validateStep2() {
     return true;
 }
 
-// ------------------------------------------
+function validateStep3() {
+    const nome = document.getElementById('resp-nome')?.value.trim() || '';
+    const telefone = document.getElementById('resp-telefone')?.value.trim() || '';
+    const confirmado = document.getElementById('confirmacao-final')?.checked || false;
+
+    if (!nome) {
+        showToast('Informe o nome do responsável.', 'error');
+        return false;
+    }
+
+    if (!telefone || telefone.replace(/\D/g, '').length < 10) {
+        showToast('Informe um telefone válido.', 'error');
+        return false;
+    }
+
+    if (!confirmado) {
+        showToast('Confirme as informações para continuar.', 'error');
+        return false;
+    }
+
+    return true;
+}
+
+// --------------------------------------------------
 // TIPO / URGÊNCIA
-// ------------------------------------------
-function selTipo(el, tipo) {
+// --------------------------------------------------
+function selTipo(el, tipo, pesoPorUnidade) {
     document.querySelectorAll('.tipo-chip').forEach(btn => btn.classList.remove('active'));
     el.classList.add('active');
-    colTipo = tipo;
+
+    colTipo = tipo || obterTextoTipoDoBotao(el);
+
+    if (typeof pesoPorUnidade === 'number' && !Number.isNaN(pesoPorUnidade)) {
+        TIPO_PESOS[colTipo] = pesoPorUnidade;
+    }
+
+    syncPesoEstimado(false);
+    renderAllReviewData();
 }
 
 function selUrg(el, urg, style) {
@@ -400,10 +620,17 @@ function selUrg(el, urg, style) {
     });
 
     if (style === 'low') el.classList.add('active-low');
-    if (style === 'med') el.classList.add('active-med');
-    if (style === 'high') el.classList.add('active-high');
+    else if (style === 'high') el.classList.add('active-high');
+    else el.classList.add('active-med');
 
-    colUrg = urg;
+    colUrg = urg || 'normal';
+    renderAllReviewData();
+}
+
+function obterTextoTipoDoBotao(el) {
+    if (!el) return 'Passeio';
+    const strong = el.querySelector('strong');
+    return strong ? strong.textContent.trim() : (el.textContent.trim() || 'Passeio');
 }
 
 function getUrgenciaLabel(valor) {
@@ -412,122 +639,186 @@ function getUrgenciaLabel(valor) {
     return 'Normal';
 }
 
-function getUrgenciaClass(valor) {
-    if (valor === 'baixa') return 'low';
-    if (valor === 'alta') return 'high';
-    return 'med';
+function getJanelaUrgencia(valor) {
+    if (valor === 'alta') return 'Próximas 24h';
+    if (valor === 'baixa') return 'Próximos 5 dias';
+    return 'Próximas 72h';
 }
 
-// ------------------------------------------
-// RESUMO + IMPACTO
-// ------------------------------------------
-function renderSummary() {
-    const summary = document.getElementById('summary');
-    if (!summary) return;
-
-    const qtd = document.getElementById('col-qtd')?.value || '-';
-    const peso = document.getElementById('col-peso')?.value || 'Não informado';
-    const obs = document.getElementById('col-obs')?.value.trim() || 'Nenhuma observação';
-
-    summary.innerHTML = `
-        <div class="summary-row">
-            <div class="summary-label">LOCAL</div>
-            <div class="summary-value">${escapeHtml(currentAddress)}</div>
-        </div>
-
-        <div class="summary-row">
-            <div class="summary-label">COORDENADAS</div>
-            <div class="summary-value">${lat.toFixed(6)}, ${lng.toFixed(6)}</div>
-        </div>
-
-        <div class="summary-row">
-            <div class="summary-label">TIPO DE PNEU</div>
-            <div class="summary-value">${escapeHtml(colTipo || '-')}</div>
-        </div>
-
-        <div class="summary-row">
-            <div class="summary-label">QUANTIDADE</div>
-            <div class="summary-value">${qtd} pneu(s)</div>
-        </div>
-
-        <div class="summary-row">
-            <div class="summary-label">PESO ESTIMADO</div>
-            <div class="summary-value">${peso === 'Não informado' ? peso : `${peso} kg`}</div>
-        </div>
-
-        <div class="summary-row">
-            <div class="summary-label">URGÊNCIA</div>
-            <div class="summary-value">
-                <span class="summary-urg">
-                    <span class="urg-dot ${getUrgenciaClass(colUrg)}"></span>
-                    <span>${getUrgenciaLabel(colUrg)}</span>
-                </span>
-            </div>
-        </div>
-
-        <div class="summary-row">
-            <div class="summary-label">OBSERVAÇÕES</div>
-            <div class="summary-value">${escapeHtml(obs)}</div>
-        </div>
-    `;
+// --------------------------------------------------
+// PESO / IMPACTO / RESUMO
+// --------------------------------------------------
+function calcularPesoEstimado(tipo, qtd) {
+    const pesoUn = TIPO_PESOS[tipo] || 8;
+    return Math.max(0, pesoUn * (qtd || 0));
 }
 
-function renderImpact() {
-    const impactValue = document.getElementById('impact-value');
-    const impactNote = document.getElementById('impact-note');
+function garantirQuantidadeMinima() {
+    const qtdInput = document.getElementById('col-qtd');
+    if (!qtdInput) return;
 
-    if (!impactValue || !impactNote) return;
+    let qtd = parseInt(qtdInput.value || '0', 10);
+    if (!qtd || qtd < 1) qtd = 1;
+    qtdInput.value = qtd;
+}
 
-    const qtd = parseInt(document.getElementById('col-qtd')?.value || '0', 10);
-    const peso = parseFloat(document.getElementById('col-peso')?.value || '0');
+function syncPesoEstimado(force = false) {
+    const qtdInput = document.getElementById('col-qtd');
+    const pesoInput = document.getElementById('col-peso');
 
-    // Regra visual baseada no texto da UI:
-    // cada pneu ≈ 2kg de CO₂ evitados
-    // se não houver qtd, usa peso como fallback leve
-    let co2 = 0;
+    if (!qtdInput || !pesoInput) return;
 
-    if (qtd > 0) {
-        co2 = qtd * 2;
-    } else if (peso > 0) {
-        co2 = peso * 0.1;
+    const qtd = parseInt(qtdInput.value || '0', 10);
+    const autoPeso = calcularPesoEstimado(colTipo, qtd);
+
+    if (force || !pesoManual || pesoInput.value.trim() === '') {
+        pesoInput.value = autoPeso;
+        pesoManual = false;
     }
 
-    const arvores = Math.max(0, Math.round(co2 / 22));
-    const kmCarro = Math.max(0, Math.round(co2 / 0.12));
-
-    impactValue.textContent = `${Math.round(co2)} kg CO₂`;
-    impactNote.textContent = `Equivalente a plantar ~${arvores} árvore(s) ou ${kmCarro} km de carro evitados.`;
+    updatePesoHelpText();
 }
 
-function getImpactData() {
+function updatePesoHelpText() {
+    const help = document.getElementById('peso-help-text');
     const qtd = parseInt(document.getElementById('col-qtd')?.value || '0', 10);
-    const peso = parseFloat(document.getElementById('col-peso')?.value || '0');
+    const autoPeso = calcularPesoEstimado(colTipo, qtd);
+    const pesoAtual = getPesoAtual();
 
-    let co2 = 0;
+    if (!help) return;
 
+    if (pesoManual) {
+        help.textContent = `Peso automático sugerido: ${autoPeso} kg (${TIPO_PESOS[colTipo] || 0} kg × ${qtd}).`;
+    } else {
+        help.textContent = `Sugerido automaticamente: ${pesoAtual} kg (${TIPO_PESOS[colTipo] || 0} kg × ${qtd}).`;
+    }
+}
+
+function getPesoAtual() {
+    const qtd = parseInt(document.getElementById('col-qtd')?.value || '0', 10);
+    const pesoDigitado = document.getElementById('col-peso')?.value?.trim() || '';
+
+    if (pesoDigitado !== '') {
+        return Math.round(parseFloat(pesoDigitado) || 0);
+    }
+
+    return Math.round(calcularPesoEstimado(colTipo, qtd));
+}
+
+function calcularImpacto() {
+    const qtd = parseInt(document.getElementById('col-qtd')?.value || '0', 10);
+    const peso = getPesoAtual();
+
+    let co2Kg = 0;
+
+    // Regra principal da UI:
+    // cada pneu ≈ 2kg CO2 evitados
     if (qtd > 0) {
-        co2 = qtd * 2;
+        co2Kg = qtd * 2;
     } else if (peso > 0) {
-        co2 = peso * 0.1;
+        co2Kg = peso * 0.1;
     }
 
     return {
-        co2Kg: Math.round(co2),
-        arvores: Math.max(0, Math.round(co2 / 22)),
-        kmCarro: Math.max(0, Math.round(co2 / 0.12))
+        pesoKg: Math.round(peso),
+        co2Kg: Math.round(co2Kg),
+        co2Ton: co2Kg / 1000
     };
 }
 
-// ------------------------------------------
+function formatarImpacto(co2Kg, co2Ton) {
+    if (co2Kg >= 1000) {
+        return `${co2Ton.toFixed(2)} t`;
+    }
+    return `${Math.round(co2Kg)} kg`;
+}
+
+function renderAllReviewData() {
+    renderResumoFinal();
+    renderMiniCard();
+    updateConfirmButtonState();
+}
+
+function renderResumoFinal() {
+    const qtd = parseInt(document.getElementById('col-qtd')?.value || '0', 10);
+    const peso = getPesoAtual();
+    const obs = document.getElementById('col-obs')?.value.trim() || 'Nenhuma observação';
+
+    const summaryTipo = document.getElementById('summary-tipo');
+    const summaryQtd = document.getElementById('summary-qtd');
+    const summaryPeso = document.getElementById('summary-peso');
+    const summaryEndereco = document.getElementById('summary-endereco');
+    const summaryUrgencia = document.getElementById('summary-urgencia');
+    const summaryObs = document.getElementById('summary-observacoes');
+
+    if (summaryTipo) summaryTipo.textContent = colTipo || 'Passeio';
+    if (summaryQtd) summaryQtd.textContent = `${qtd} unidade${qtd === 1 ? '' : 's'}`;
+    if (summaryPeso) summaryPeso.textContent = `${peso} kg`;
+    if (summaryEndereco) summaryEndereco.textContent = currentAddress || 'Endereço não definido';
+    if (summaryUrgencia) summaryUrgencia.textContent = getUrgenciaLabel(colUrg);
+    if (summaryObs) summaryObs.textContent = obs;
+}
+
+function renderMiniCard() {
+    const qtd = parseInt(document.getElementById('col-qtd')?.value || '0', 10);
+    const peso = getPesoAtual();
+    const impacto = calcularImpacto();
+
+    const nome = document.getElementById('resp-nome')?.value.trim() || 'Pendente';
+    const telefone = document.getElementById('resp-telefone')?.value.trim() || 'Pendente';
+
+    const miniTipo = document.getElementById('mini-tipo');
+    const miniQtd = document.getElementById('mini-qtd');
+    const miniPeso = document.getElementById('mini-peso');
+    const miniCo2 = document.getElementById('mini-co2');
+    const miniUrg = document.getElementById('mini-urgencia');
+    const miniEndereco = document.getElementById('mini-endereco');
+    const miniJanela = document.getElementById('mini-janela');
+    const miniResp = document.getElementById('mini-responsavel');
+    const miniContato = document.getElementById('mini-contato');
+
+    if (miniTipo) miniTipo.textContent = colTipo || 'Passeio';
+    if (miniQtd) miniQtd.textContent = `${qtd} unidade${qtd === 1 ? '' : 's'}`;
+    if (miniPeso) miniPeso.textContent = `${peso} kg`;
+    if (miniCo2) miniCo2.textContent = formatarImpacto(impacto.co2Kg, impacto.co2Ton);
+    if (miniUrg) miniUrg.textContent = getUrgenciaLabel(colUrg);
+    if (miniEndereco) miniEndereco.textContent = currentAddress || 'Endereço não definido';
+    if (miniJanela) miniJanela.textContent = getJanelaUrgencia(colUrg);
+    if (miniResp) miniResp.textContent = nome;
+    if (miniContato) miniContato.textContent = telefone;
+}
+
+// --------------------------------------------------
+// BOTÃO DE CONFIRMAÇÃO
+// --------------------------------------------------
+function updateConfirmButtonState() {
+    const btn = document.getElementById('confirm-submit-btn');
+    if (!btn) return;
+
+    const nome = document.getElementById('resp-nome')?.value.trim() || '';
+    const telefone = document.getElementById('resp-telefone')?.value.trim() || '';
+    const confirmado = document.getElementById('confirmacao-final')?.checked || false;
+
+    const telefoneValido = telefone.replace(/\D/g, '').length >= 10;
+    btn.disabled = !(nome && telefoneValido && confirmado);
+}
+
+// --------------------------------------------------
 // FIRESTORE / CRIAR COLETA
-// ------------------------------------------
+// --------------------------------------------------
 async function criarColeta() {
-    if (!validateStep1() || !validateStep2()) return;
+    if (!validateStep1() || !validateStep2() || !validateStep3()) return;
 
     const btn = document.getElementById('confirm-submit-btn');
     setLoadingState(btn, true, 'Confirmando...');
 
     try {
+        if (typeof auth === 'undefined' || typeof db === 'undefined') {
+            showToast('Firebase não foi inicializado corretamente.', 'error');
+            setLoadingState(btn, false);
+            return;
+        }
+
         const user = auth.currentUser;
 
         if (!user) {
@@ -537,10 +828,11 @@ async function criarColeta() {
         }
 
         const qtd = parseInt(document.getElementById('col-qtd')?.value || '0', 10);
-        const pesoStr = document.getElementById('col-peso')?.value || '';
-        const peso = pesoStr !== '' ? parseFloat(pesoStr) : null;
+        const peso = getPesoAtual();
         const obs = document.getElementById('col-obs')?.value.trim() || '';
-        const impacto = getImpactData();
+        const responsavelNome = document.getElementById('resp-nome')?.value.trim() || '';
+        const responsavelTelefone = document.getElementById('resp-telefone')?.value.trim() || '';
+        const impacto = calcularImpacto();
         const codigo = gerarCodigoRastreamento();
 
         const payload = {
@@ -554,6 +846,8 @@ async function criarColeta() {
             endereco: currentAddress,
             latitude: lat,
             longitude: lng,
+            responsavelNome: responsavelNome,
+            responsavelTelefone: responsavelTelefone,
             status: 'pendente',
             codigo: codigo,
             impactoCo2Kg: impacto.co2Kg,
@@ -567,33 +861,43 @@ async function criarColeta() {
         const resultCodigo = document.getElementById('result-codigo');
         if (resultCodigo) resultCodigo.textContent = codigo;
 
-        document.querySelectorAll('.step-screen').forEach(el => el.classList.remove('active'));
-        document.getElementById('success-screen')?.classList.add('active');
+        setLoadingState(btn, false);
+        abrirTelaSucesso();
 
-        updateStepper(3);
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-        showToast('Coleta registrada com sucesso.');
+        showToast(`Coleta registrada com sucesso. Código: ${codigo}`);
     } catch (error) {
         console.error('Erro ao criar coleta:', error);
         showToast('Erro ao registrar coleta. Tente novamente.', 'error');
-    } finally {
         setLoadingState(btn, false);
     }
 }
 
-// ------------------------------------------
+function abrirTelaSucesso() {
+    document.querySelectorAll('.step-screen').forEach(el => {
+        el.classList.remove('active');
+    });
+
+    const success = document.getElementById('success-screen');
+    if (success) success.classList.add('active');
+
+    updateStepper(3);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// --------------------------------------------------
 // AÇÕES DE TELA
-// ------------------------------------------
+// --------------------------------------------------
 function voltar() {
     window.location.href = 'dashboard.html';
 }
 
 async function copiarCodigo() {
-    const text = ultimoCodigoGerado || document.getElementById('result-codigo')?.textContent || '----';
+    const codigo = ultimoCodigoGerado || document.getElementById('result-codigo')?.textContent || '----';
     const btnText = document.getElementById('copy-btn-text');
 
     try {
-        await navigator.clipboard.writeText(text);
+        await navigator.clipboard.writeText(codigo);
+
         if (btnText) btnText.textContent = 'Copiado!';
         showToast('Código copiado para a área de transferência.');
 
@@ -608,16 +912,35 @@ async function copiarCodigo() {
 
 function reiniciarColeta() {
     currentStep = 1;
-    colTipo = '';
-    colUrg = 'normal';
     ultimoCodigoGerado = '----';
+    colTipo = 'Passeio';
+    colUrg = 'normal';
+    pesoManual = false;
 
-    document.getElementById('search-address').value = '';
-    document.getElementById('col-qtd').value = '';
-    document.getElementById('col-peso').value = '';
-    document.getElementById('col-obs').value = '';
+    const search = document.getElementById('search-address');
+    const qtd = document.getElementById('col-qtd');
+    const peso = document.getElementById('col-peso');
+    const obs = document.getElementById('col-obs');
+    const nome = document.getElementById('resp-nome');
+    const tel = document.getElementById('resp-telefone');
+    const check = document.getElementById('confirmacao-final');
+    const success = document.getElementById('success-screen');
+    const resultCodigo = document.getElementById('result-codigo');
+    const copyBtnText = document.getElementById('copy-btn-text');
+
+    if (search) search.value = '';
+    if (qtd) qtd.value = 50;
+    if (peso) peso.value = 400;
+    if (obs) obs.value = '';
+    if (nome) nome.value = '';
+    if (tel) tel.value = '';
+    if (check) check.checked = false;
+    if (resultCodigo) resultCodigo.textContent = '----';
+    if (copyBtnText) copyBtnText.textContent = 'Copiar código';
 
     document.querySelectorAll('.tipo-chip').forEach(btn => btn.classList.remove('active'));
+    const primeiroTipo = document.querySelector('.tipo-chip[data-tipo="Passeio"]') || document.querySelector('.tipo-chip');
+    if (primeiroTipo) primeiroTipo.classList.add('active');
 
     document.querySelectorAll('.urg-chip').forEach(btn => {
         btn.classList.remove('active-low', 'active-med', 'active-high');
@@ -628,14 +951,18 @@ function reiniciarColeta() {
     );
     if (urgNormal) urgNormal.classList.add('active-med');
 
-    document.getElementById('success-screen')?.classList.remove('active');
+    if (success) success.classList.remove('active');
 
     document.querySelectorAll('.step-screen').forEach(el => el.classList.remove('active'));
     document.getElementById('step-1')?.classList.add('active');
 
+    updateObsCounter();
+    updateQtyShortcutState();
     updateStepper(1);
-    renderImpact();
     updateLocationUI();
+    syncPesoEstimado(true);
+    renderAllReviewData();
+    updateConfirmButtonState();
 
     setTimeout(() => {
         if (map) map.invalidateSize();
@@ -646,16 +973,13 @@ function reiniciarColeta() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-// ------------------------------------------
+// --------------------------------------------------
 // HELPERS
-// ------------------------------------------
+// --------------------------------------------------
 function gerarCodigoRastreamento() {
-    const now = new Date();
-    const y = now.getFullYear().toString().slice(-2);
-    const m = String(now.getMonth() + 1).padStart(2, '0');
-    const d = String(now.getDate()).padStart(2, '0');
-    const rand = Math.random().toString(36).substring(2, 6).toUpperCase();
-    return `EC${y}${m}${d}-${rand}`;
+    const letras = Math.random().toString(36).substring(2, 6).toUpperCase();
+    const numeros = Math.floor(1000 + Math.random() * 9000);
+    return `EC-${letras}-${numeros}`;
 }
 
 function setLoadingState(button, isLoading, loadingText = 'Carregando...') {
@@ -672,6 +996,22 @@ function setLoadingState(button, isLoading, loadingText = 'Carregando...') {
         button.disabled = false;
         button.innerHTML = button.dataset.originalHtml;
     }
+}
+
+function formatarTelefone(valor) {
+    let v = String(valor || '').replace(/\D/g, '');
+
+    if (v.length > 11) v = v.slice(0, 11);
+
+    if (v.length <= 10) {
+        return v
+            .replace(/^(\d{2})(\d)/g, '($1) $2')
+            .replace(/(\d{4})(\d)/, '$1-$2');
+    }
+
+    return v
+        .replace(/^(\d{2})(\d)/g, '($1) $2')
+        .replace(/(\d{5})(\d)/, '$1-$2');
 }
 
 function initFallbackHelpers() {
@@ -701,13 +1041,4 @@ function showToast(message, type = '') {
     setTimeout(() => {
         toast.remove();
     }, 2800);
-}
-
-function escapeHtml(value) {
-    return String(value)
-        .replaceAll('&', '&amp;')
-        .replaceAll('<', '&lt;')
-        .replaceAll('>', '&gt;')
-        .replaceAll('"', '&quot;')
-        .replaceAll("'", '&#039;');
 }
