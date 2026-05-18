@@ -644,6 +644,16 @@ img {
   border: 1px solid rgba(18, 58, 35, 0.08);
   font-size: 0.88rem;
   color: #5d6f64;
+  transition: var(--ease);
+}
+
+.activity-line:hover {
+  transform: translateX(2px);
+}
+
+.activity-line-concluida {
+  background: linear-gradient(135deg, #f0fdf4, #f7faf6);
+  border-color: rgba(45, 140, 94, 0.2);
 }
 
 .activity-line strong {
@@ -1004,6 +1014,51 @@ img {
   .summary-grid {
     grid-template-columns: repeat(2, minmax(160px, 1fr));
   }
+}
+
+/* Botão de certificado no resumo */
+.summary-item-certificado {
+    background: linear-gradient(135deg, #f0fdf4, #ecfdf5);
+    border: 2px solid #bbf7d0;
+    border-radius: 12px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-certificado {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 10px 16px;
+    background: linear-gradient(135deg, #0b6b3a, #10b981);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    width: 100%;
+    margin-top: 4px;
+}
+
+.btn-certificado:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px -2px rgba(11, 107, 58, 0.3);
+}
+
+.btn-certificado:active {
+    transform: translateY(0);
+}
+
+.btn-certificado:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
 }
 
 @media (max-width: 640px) {

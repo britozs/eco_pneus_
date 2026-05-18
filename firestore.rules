@@ -1,0 +1,190 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // =========================
+    // FUNÇÕES AUXILIARES
+    // =========================
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return isSignedIn() &&
+             request.auth.uid == uid;
+    }
+
+    function isAdmin() {
+      return isSignedIn() &&
+        request.auth.token.admin == true;
+    }
+
+    // =========================
+    // USUÁRIOS
+    // =========================
+
+    match /usuarios/{userId} {
+
+      // leitura para usuários logados
+      allow read: if isSignedIn();
+
+      // criar apenas própria conta
+      allow create: if isOwner(userId);
+
+      // atualizar apenas própria conta
+      allow update: if isOwner(userId);
+
+      // deletar apenas própria conta ou admin
+      allow delete: if isOwner(userId) || isAdmin();
+
+      // =========================
+      // NOTIFICAÇÕES
+      // =========================
+
+      match /notificacoes/{notifId} {
+        allow read, write: if isOwner(userId);
+      }
+
+      // =========================
+      // CERTIFICADOS
+      // =========================
+
+      match /certificados/{certId} {
+
+        // usuário pode visualizar próprios certificados
+        allow read: if isOwner(userId);
+
+        // permitir gerar certificados automaticamente
+        allow create: if isOwner(userId);
+
+        // impedir alterações indevidas
+        allow update: if false;
+
+        // permitir deletar próprio certificado
+        allow delete: if isOwner(userId);
+      }
+    }
+
+    // =========================
+    // COLETAS
+    // =========================
+
+    match /coletas/{coletaId} {
+
+      // leitura para dashboard, mapa e certificados
+      allow read: if isSignedIn();
+
+      // criar coleta
+      allow create: if isSignedIn() &&
+        request.resource.data.uid == request.auth.uid;
+
+      // atualizar coleta
+      allow update: if isSignedIn() &&
+        (
+          resource.data.uid == request.auth.uid ||
+          resource.data.criadorUid == request.auth.uid ||
+          resource.data.empresaResponsavelUid == request.auth.uid ||
+          isAdmin()
+        );
+
+      // deletar coleta
+      allow delete: if isSignedIn() &&
+        (
+          resource.data.uid == request.auth.uid ||
+          isAdmin()
+        );
+    }
+
+    // =========================
+    // REVIEWS
+    // =========================
+
+    match /reviews/{reviewId} {
+
+      // qualquer usuário logado pode visualizar
+      allow read: if isSignedIn();
+
+      // criar review
+      allow create: if isSignedIn() &&
+        request.resource.data.userId == request.auth.uid;
+
+      // editar própria review
+      allow update: if isSignedIn() &&
+        resource.data.userId == request.auth.uid;
+
+      // deletar própria review
+      allow delete: if isSignedIn() &&
+        (
+          resource.data.userId == request.auth.uid ||
+          isAdmin()
+        );
+    }
+
+    // =========================
+    // AVALIAÇÕES
+    // =========================
+
+    match /avaliacoes/{avaliacaoId} {
+
+      // dashboard e empresas precisam ler
+      allow read: if isSignedIn();
+
+      // criar avaliação
+      allow create: if isSignedIn() &&
+        request.resource.data.avaliadorId == request.auth.uid;
+
+      // editar própria avaliação
+      allow update: if isSignedIn() &&
+        resource.data.avaliadorId == request.auth.uid;
+
+      // deletar avaliação
+      allow delete: if isSignedIn() &&
+        (
+          resource.data.avaliadorId == request.auth.uid ||
+          isAdmin()
+        );
+    }
+
+    // =========================
+    // PARCEIROS (Empresas/Recicladoras/Transportadoras)
+    // =========================
+
+    match /parceiros/{parceiroId} {
+      // leitura para usuários logados (necessário para tela empresas.html e dashboard)
+      allow read: if isSignedIn();
+
+      // criar parceiro - apenas admin
+      allow create: if isAdmin();
+
+      // atualizar parceiro - apenas admin
+      allow update: if isAdmin();
+
+      // deletar parceiro - apenas admin
+      allow delete: if isAdmin();
+    }
+
+    // =========================
+    // EMPRESAS agora são armazenadas em `usuarios` (tipoConta != pessoa_fisica)
+    // A collection `parceiros` contém parceiros verificados da rede
+    // Regras de leitura/escrita de empresas são gerenciadas pela seção `match /usuarios/{userId}` acima.
+
+    // =========================
+    // CONFIGURAÇÕES DO APP
+    // =========================
+
+    match /config/{docId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    // =========================
+    // FALLBACK
+    // =========================
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

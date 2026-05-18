@@ -17,7 +17,7 @@ if (!firebase.apps.length) {
 
 const auth = firebase.auth();
 const db = firebase.firestore();
-const storage = firebase.storage();
+// const storage = firebase.storage(); // Removido: requer firebase-storage-compat.js se necessário
 
 // --- Toast notification helper ---
 function showToast(message, type = 'success') {

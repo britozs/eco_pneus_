@@ -2002,3 +2002,331 @@ img {
         width: 100%;
     }
 }
+
+/* =========================================================
+   EMPRESAS EM DESTAQUE SECTION
+   ========================================================= */
+.empresas-destaque-section {
+    padding: 48px 0 80px;
+    background: linear-gradient(180deg, transparent 0%, rgba(214, 244, 111, 0.05) 100%);
+}
+
+.empresas-destaque-section .section-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 24px;
+}
+
+.empresas-destaque-section .section-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 24px;
+    margin-bottom: 32px;
+}
+
+.empresas-destaque-section .section-title-group {
+    flex: 1;
+}
+
+.empresas-destaque-section .section-eyebrow {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: var(--dash-muted);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+}
+
+.empresas-destaque-section .section-title {
+    margin: 0;
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--dash-dark);
+    line-height: 1.2;
+}
+
+.empresas-destaque-section .section-subtitle {
+    margin: 8px 0 0;
+    font-size: 15px;
+    color: var(--dash-muted);
+    line-height: 1.5;
+}
+
+.empresas-destaque-section .btn-see-all {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 24px;
+    background: var(--dash-dark);
+    color: white;
+    border: none;
+    border-radius: 14px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.empresas-destaque-section .btn-see-all:hover {
+    background: var(--dash-dark-2);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(9, 62, 47, 0.3);
+}
+
+.empresas-destaque-section .btn-see-all svg {
+    width: 16px;
+    height: 16px;
+}
+
+.empresas-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+}
+
+.empresa-card-destaque {
+    background: white;
+    border-radius: var(--dash-radius);
+    padding: 24px;
+    box-shadow: var(--dash-shadow-soft);
+    border: 1px solid var(--dash-line);
+    transition: all 0.25s ease;
+}
+
+.empresa-card-destaque:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--dash-shadow);
+}
+
+.empresa-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.empresa-avatar-destaque {
+    width: 56px;
+    height: 56px;
+    border-radius: 16px;
+    object-fit: cover;
+    background: var(--dash-soft);
+    flex-shrink: 0;
+}
+
+.empresa-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.empresa-nome-destaque {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--dash-dark);
+    line-height: 1.3;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.badge-verificado {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    background: rgba(214, 244, 111, 0.2);
+    color: var(--dash-dark-2);
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.empresa-categoria {
+    display: block;
+    margin-top: 4px;
+    font-size: 13px;
+    color: var(--dash-muted);
+}
+
+.empresa-avaliacao {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.estrelas {
+    color: #f5a623;
+    font-size: 16px;
+    letter-spacing: 2px;
+}
+
+.estrela-cheia {
+    color: #f5a623;
+}
+
+.estrela-vazia {
+    color: #d1d5db;
+}
+
+.nota-texto {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--dash-dark);
+}
+
+.avaliacoes-texto {
+    font-size: 13px;
+    color: var(--dash-muted);
+}
+
+.empresa-localizacao {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+    font-size: 13px;
+    color: var(--dash-muted);
+}
+
+.empresa-tags-destaque {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.empresa-tag {
+    display: inline-block;
+    padding: 4px 10px;
+    background: var(--dash-soft);
+    color: var(--dash-muted);
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.empresa-acoes-destaque {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.btn-contato-destaque,
+.btn-whatsapp-destaque,
+.btn-avaliar-destaque {
+    flex: 1;
+    min-width: 0;
+    padding: 10px 12px;
+    border: none;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.btn-contato-destaque {
+    background: var(--dash-dark);
+    color: white;
+}
+
+.btn-contato-destaque:hover {
+    background: var(--dash-dark-2);
+}
+
+.btn-whatsapp-destaque {
+    background: #25D366;
+    color: white;
+}
+
+.btn-whatsapp-destaque:hover {
+    background: #1ebc57;
+}
+
+.btn-avaliar-destaque {
+    background: var(--dash-soft);
+    color: var(--dash-dark);
+    border: 1px solid var(--dash-line);
+}
+
+.btn-avaliar-destaque:hover {
+    background: var(--dash-line);
+}
+
+/* Empty state for empresas */
+.empresas-grid .empty-state {
+    grid-column: 1 / -1;
+    padding: 48px 24px;
+    text-align: center;
+    background: white;
+    border-radius: var(--dash-radius);
+    border: 1px dashed var(--dash-line);
+}
+
+.empresas-grid .empty-state .empty-icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+}
+
+.empresas-grid .empty-state h3 {
+    margin: 0 0 8px;
+    font-size: 18px;
+    color: var(--dash-dark);
+}
+
+.empresas-grid .empty-state p {
+    margin: 0;
+    font-size: 14px;
+    color: var(--dash-muted);
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+    .empresas-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .empresas-destaque-section {
+        padding: 32px 0 60px;
+    }
+
+    .empresas-destaque-section .section-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .empresas-destaque-section .btn-see-all {
+        justify-content: center;
+    }
+
+    .empresas-destaque-section .section-title {
+        font-size: 24px;
+    }
+
+    .empresas-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .empresa-acoes-destaque {
+        flex-direction: column;
+    }
+
+    .btn-contato-destaque,
+    .btn-whatsapp-destaque,
+    .btn-avaliar-destaque {
+        width: 100%;
+    }
+}

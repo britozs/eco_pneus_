@@ -537,6 +537,17 @@
       nivelHtml +
       '</div>' +
       '</div>';
+    
+    // Card para baixar certificado
+    html +=
+      '<div class="summary-item summary-item-certificado">' +
+      '<div class="summary-icon" data-icon="award"></div>' +
+      '<span class="summary-label">CERTIFICADO</span>' +
+      '<button class="btn-certificado" type="button" onclick="baixarCertificado()" id="btnCertificadoPerfil">' +
+      '<i data-lucide="download" style="width:16px;height:16px;"></i>' +
+      '<span>Baixar PDF</span>' +
+      '</button>' +
+      '</div>';
 
     refs.summaryGrid.innerHTML = html;
 
@@ -661,13 +672,27 @@
         .map(function (r) {
           var qtd = Number(r.quantidade || r.qtd || 0);
           var st = String(r.status || 'Pendente');
+          var isConcluida = st.toLowerCase() === 'concluida' || st.toLowerCase() === 'concluída';
+          
+          // Adiciona ícone e destaque para coletas concluídas
+          var statusHtml = isConcluida 
+            ? '<span style="color:#2d8c5e;font-weight:700;">✓ ' + sanitize(st) + '</span>'
+            : sanitize(st);
+          
+          // Adiciona informação de impacto ambiental para coletas concluídas
+          var impactoHtml = '';
+          if (isConcluida && qtd > 0) {
+            var co2Evitado = (qtd * 0.0027).toFixed(2);
+            impactoHtml = '<br><small style="color:#64748b;margin-top:4px;display:block;">🌱 ' + co2Evitado + 't CO₂ evitado</small>';
+          }
+          
           return (
-            '<p class="activity-line"><strong>' +
-            sanitize(String(qtd)) +
-            ' pneus</strong> · ' +
-            sanitize(st) +
+            '<p class="activity-line' + (isConcluida ? ' activity-line-concluida' : '') + '">' +
+            '<strong>' + sanitize(String(qtd)) + ' pneus</strong> · ' +
+            statusHtml +
             ' · ' +
             sanitize(formatColetaDataCurta(r)) +
+            impactoHtml +
             '</p>'
           );
         })
@@ -1050,6 +1075,40 @@
   refs.btnVerTodas.addEventListener('click', function () {
     window.location.href = 'coleta.html';
   });
+
+  // Função para baixar certificado - usa certificados.js se disponível
+  window.baixarCertificado = async function () {
+    var btn = document.getElementById('btnCertificadoPerfil');
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = '<span style="animation:spin 1s linear infinite;">⟳</span> Gerando...';
+    }
+
+    try {
+      // Tenta usar o módulo de certificados se estiver disponível
+      if (window.CertificadosEcoPneus) {
+        var result = await window.CertificadosEcoPneus.gerarPDF();
+        if (result.success) {
+          showToast('Certificado gerado com ' + result.coletasCount + ' coletas!', 'success');
+        } else {
+          showToast(result.error || 'Erro ao gerar certificado.', 'error');
+        }
+      } else {
+        // Fallback: abre a página de certificados
+        window.open('certificados.html', '_blank');
+        showToast('Abrindo página de certificados...', 'info');
+      }
+    } catch (error) {
+      console.error('Erro ao baixar certificado:', error);
+      showToast('Erro ao gerar certificado. Tente novamente.', 'error');
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = '<i data-lucide="download" style="width:16px;height:16px;"></i><span>Baixar PDF</span>';
+        lucide.createIcons();
+      }
+    }
+  };
 
   document.addEventListener('keydown', function (e) {
     if (e.key !== 'Escape') return;

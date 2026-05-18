@@ -304,6 +304,10 @@ function setLoading(button, isLoading, loadingText = 'Carregando...') {
 // RENDER DASHBOARD
 // ============================================================
 async function renderDashboard() {
+    // Carrega empresas em destaque no final da página
+    if (typeof carregarEmpresasEmDestaque === 'function') {
+        setTimeout(() => carregarEmpresasEmDestaque(), 500);
+    }
     const content = document.getElementById('app-content');
     if (!content) return;
 
@@ -911,15 +915,46 @@ function renderAgendaDashboard(lista, totalPendentes) {
 // ============================================================
 // EMPRESAS EM DESTAQUE
 // ============================================================
-async function carregarEmpresasDestaque() {
+
+/**
+ * Busca as 3 empresas com maior nota média usando orderBy + limit no Firestore.
+ * Requer índice composto (notaMedia desc). Em caso de falha, usa fallback com ordenação local.
+ */
+async function buscarTop3EmpresasFirestore() {
     try {
-        const snap = await db.collection('parceiros').limit(40).get();
+        // Query otimizada: orderBy('notaMedia', 'desc') + limit(3)
+        const snap = await db.collection('parceiros')
+            .orderBy('notaMedia', 'desc')
+            .limit(3)
+            .get();
+
         const list = [];
         snap.forEach((doc) => {
-            list.push(Object.assign({ id: doc.id }, doc.data() || {}));
+            const d = doc.data() || {};
+            list.push(Object.assign({ id: doc.id }, d));
         });
-        list.sort((a, b) => (Number(b.rating) || 0) - (Number(a.rating) || 0));
-        const top = list.slice(0, 4);
+        return list;
+    } catch (error) {
+        // Fallback: se faltar índice, busca 40 e ordena localmente
+        if (error.code === 'failed-precondition' || (error.message && error.message.includes('index'))) {
+            console.log('Índice Firestore não encontrado — usando fallback com ordenação local.');
+            const snap = await db.collection('parceiros').limit(40).get();
+            const list = [];
+            snap.forEach((doc) => {
+                const d = doc.data() || {};
+                list.push(Object.assign({ id: doc.id }, d));
+            });
+            list.sort((a, b) => (Number(b.notaMedia || b.rating) || 0) - (Number(a.notaMedia || a.rating) || 0));
+            return list.slice(0, 3);
+        }
+        throw error;
+    }
+}
+
+async function carregarEmpresasDestaque() {
+    try {
+        // Busca as top 3 empresas por nota média (orderBy + limit)
+        const top = await buscarTop3EmpresasFirestore();
 
         let html = '';
         if (!top.length) {

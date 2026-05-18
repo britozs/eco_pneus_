@@ -417,6 +417,7 @@ function refreshParceirosMapMarkers() {
 
     partnerMarkersLayer.clearLayers();
 
+    // Usa a lista filtrada que já inclui PARCEIROS e PARCEIROS_EXTRA (empresas de usuarios)
     const list = getFiltered();
     const bounds = [];
 
@@ -1158,29 +1159,68 @@ function abrirAvaliar(p) {
 async function atualizarRatingParceiroNaLista(parceiroId) {
     const idx = PARCEIROS.findIndex((x) => x && x.id === parceiroId);
     const idx2 = PARCEIROS_EXTRA.findIndex((x) => x && x.id === parceiroId);
-    if (idx < 0 && idx2 < 0) return;
+    if (idx < 0 && idx2 < 0) {
+        console.log('Parceiro não encontrado para atualizar rating:', parceiroId);
+        return;
+    }
     if (typeof db === 'undefined') return;
+    
     try {
+        // Busca todas as avaliações deste parceiro
         const snap = await db.collection('avaliacoes').where('parceiroId', '==', parceiroId).get();
         let soma = 0;
+        let totalAvaliacoes = 0;
+        
         snap.forEach((doc) => {
-            soma += Number(doc.data().estrelas || 0);
+            const data = doc.data();
+            // Usa 'nota' ou 'estrelas' (compatibilidade com ambos os campos)
+            const notaValue = Number(data.nota || data.estrelas || 0);
+            if (notaValue > 0) {
+                soma += notaValue;
+                totalAvaliacoes++;
+            }
         });
-        const rating = snap.size > 0 ? soma / snap.size : 0;
-        const n = snap.size;
+        
+        const rating = totalAvaliacoes > 0 ? soma / totalAvaliacoes : 0;
+        const n = totalAvaliacoes;
+        
+        console.log(`Atualizando rating do parceiro ${parceiroId}: nota=${rating.toFixed(2)}, total=${n}`);
+        
+        // Atualiza array local PARCEIROS
         if (idx >= 0) {
             PARCEIROS[idx].rating = rating;
             PARCEIROS[idx].avaliacoes = n;
         }
+        
+        // Atualiza array local PARCEIROS_EXTRA
         if (idx2 >= 0) {
             PARCEIROS_EXTRA[idx2].rating = rating;
             PARCEIROS_EXTRA[idx2].avaliacoes = n;
         }
+        
+        // Atualiza o documento do parceiro na coleção USUÁRIOS (onde as empresas estão)
+        try {
+            // Remove prefixo 'usr_' se existir para obter o uid real
+            const userId = parceiroId.startsWith('usr_') ? parceiroId.substring(4) : parceiroId;
+            await db.collection('usuarios').doc(userId).update({
+                rating: rating,
+                avaliacoes: n,
+                notaMedia: rating,
+                totalAvaliacoes: n
+            });
+            console.log(`Documento do usuário/empresa ${userId} atualizado no Firestore`);
+        } catch (updateError) {
+            console.warn('Não foi possível atualizar documento do usuário/empresa:', updateError.message);
+        }
+        
     } catch (e) {
-        console.warn('atualizarRatingParceiroNaLista', e);
+        console.error('Erro em atualizarRatingParceiroNaLista:', e);
     }
+    
+    // Atualiza a interface
     renderFeatured();
     renderCompanies();
+    atualizarHeroResumoNumeros();
     scheduleRefreshMapMarkersDebounced();
 }
 
@@ -1199,34 +1239,93 @@ async function enviarAvaliacao() {
             showToast('Faça login para avaliar', 'error');
             return;
         }
+        
+        const novaNota = Math.min(5, Math.max(1, Number(activeReviewStars) || 0));
+        const parceiroId = activeReviewCompanyId;
+        
+        // 1. Salva a avaliação na coleção avaliacoes
         if (typeof ecoPneusSalvarAvaliacaoParceiro === 'function') {
             await ecoPneusSalvarAvaliacaoParceiro(
-                activeReviewCompanyId,
+                parceiroId,
                 auth.currentUser,
-                activeReviewStars,
+                novaNota,
                 comentario
             );
         } else if (typeof db !== 'undefined') {
-            const docId = `${String(activeReviewCompanyId).replace(/\//g, '_')}_${auth.currentUser.uid}`;
+            const docId = `${String(parceiroId).replace(/\//g, '_')}_${auth.currentUser.uid}`;
             await db.collection('avaliacoes').doc(docId).set(
                 {
-                    parceiroId: String(activeReviewCompanyId),
+                    parceiroId: String(parceiroId),
                     empresaId: null,
                     avaliadorId: auth.currentUser.uid,
                     nomeAvaliador: auth.currentUser.displayName || 'Usuário',
-                    estrelas: Math.min(5, Math.max(1, Number(activeReviewStars) || 0)),
-                    comentario,
+                    nota: novaNota,
+                    estrelas: novaNota,
+                    comentario: comentario,
                     data: firebase.firestore.FieldValue.serverTimestamp()
                 },
                 { merge: true }
             );
         }
+        
+        // 2. Busca todas as avaliações deste parceiro para calcular a nova média
+        let somaNotas = 0;
+        let totalAvaliacoes = 0;
+        
+        if (typeof db !== 'undefined') {
+            const snap = await db.collection('avaliacoes')
+                .where('parceiroId', '==', parceiroId)
+                .get();
+            
+            snap.forEach((doc) => {
+                const data = doc.data();
+                const notaValue = Number(data.nota || data.estrelas || 0);
+                if (notaValue > 0) {
+                    somaNotas += notaValue;
+                    totalAvaliacoes++;
+                }
+            });
+        }
+        
+        const novaMedia = totalAvaliacoes > 0 ? somaNotas / totalAvaliacoes : 0;
+        
+        // 3. ATUALIZA O DOCUMENTO NA COLEÇÃO USUÁRIOS (onde as empresas estão)
+        if (typeof db !== 'undefined') {
+            // Remove prefixo 'usr_' se existir para obter o uid real
+            const userId = parceiroId.startsWith('usr_') ? parceiroId.substring(4) : parceiroId;
+            await db.collection('usuarios').doc(userId).update({
+                rating: novaMedia,
+                avaliacoes: totalAvaliacoes,
+                notaMedia: novaMedia,
+                totalAvaliacoes: totalAvaliacoes
+            });
+        }
+        
+        // 4. Atualiza arrays locais
+        const idx = PARCEIROS.findIndex(p => p.id === parceiroId);
+        if (idx >= 0) {
+            PARCEIROS[idx].rating = novaMedia;
+            PARCEIROS[idx].avaliacoes = totalAvaliacoes;
+        }
+        
+        const idx2 = PARCEIROS_EXTRA.findIndex(p => p.id === parceiroId);
+        if (idx2 >= 0) {
+            PARCEIROS_EXTRA[idx2].rating = novaMedia;
+            PARCEIROS_EXTRA[idx2].avaliacoes = totalAvaliacoes;
+        }
+        
         showToast('Avaliação enviada com sucesso!');
         closeModal('modal-avaliar');
-        await atualizarRatingParceiroNaLista(activeReviewCompanyId);
+        
+        // 5. Atualiza a interface imediatamente
+        renderFeatured();
+        renderCompanies();
+        atualizarHeroResumoNumeros();
+        scheduleRefreshMapMarkersDebounced();
+        
     } catch (e) {
-        console.error(e);
-        showToast('Erro ao enviar avaliação', 'error');
+        console.error('Erro ao enviar avaliação:', e);
+        showToast('Erro ao enviar avaliação: ' + e.message, 'error');
     }
 }
 

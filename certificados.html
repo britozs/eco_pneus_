@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eco Pneus - Certificado</title>
+    <link rel="icon" href="https://dreadful-ivory-ihdpmbndl3.edgeone.app/Logo_EcoPneus-removebg-preview.png">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <!-- Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="eco-ui.css">
+    <style>
+        /* Estilos específicos para a página de certificados */
+        .certificados-page {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 50%, #f8fafc 100%);
+        }
+        
+        .certificados-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+        
+        .certificados-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .certificados-logo {
+            width: 100px;
+            height: 100px;
+            margin-bottom: 20px;
+        }
+        
+        .certificados-title {
+            font-size: 32px;
+            font-weight: 700;
+            color: #0b6b3a;
+            margin-bottom: 8px;
+        }
+        
+        .certificados-subtitle {
+            font-size: 16px;
+            color: #64748b;
+            margin-bottom: 32px;
+        }
+        
+        .certificados-card {
+            background: white;
+            border-radius: 16px;
+            padding: 32px;
+            margin-bottom: 24px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        
+        .certificados-card-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        .certificados-card-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #0b6b3a, #10b981);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+        
+        .certificados-card-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #1a1a2e;
+        }
+        
+        .certificados-card-description {
+            font-size: 14px;
+            color: #64748b;
+            margin-top: 4px;
+        }
+        
+        .certificados-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        
+        .stat-item {
+            text-align: center;
+            padding: 16px;
+            background: #f8fafc;
+            border-radius: 12px;
+        }
+        
+        .stat-item-action {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            background: linear-gradient(135deg, #f0fdf4, #ecfdf5);
+            border: 2px solid #bbf7d0;
+        }
+        
+        .btn-download-certificado {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px 20px;
+            background: linear-gradient(135deg, #0b6b3a, #10b981);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            width: 100%;
+        }
+        
+        .btn-download-certificado:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px -2px rgba(11, 107, 58, 0.3);
+        }
+        
+        .btn-download-certificado:active {
+            transform: translateY(0);
+        }
+        
+        .btn-download-certificado:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .btn-download-certificado i {
+            width: 18px;
+            height: 18px;
+        }
+        
+        .stat-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: #0b6b3a;
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 4px;
+        }
+        
+        .certificados-actions {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+        
+        .btn-gerar-certificado {
+            flex: 1;
+            min-width: 200px;
+            padding: 16px 32px;
+            background: linear-gradient(135deg, #0b6b3a, #10b981);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            transition: all 0.2s ease;
+        }
+        
+        .btn-gerar-certificado:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px -4px rgba(11, 107, 58, 0.3);
+        }
+        
+        .btn-gerar-certificado:active {
+            transform: translateY(0);
+        }
+        
+        .btn-gerar-certificado:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .btn-voltar {
+            padding: 16px 32px;
+            background: #f1f5f9;
+            color: #1a1a2e;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+        }
+        
+        .btn-voltar:hover {
+            background: #e2e8f0;
+        }
+        
+        .loading-state {
+            text-align: center;
+            padding: 40px;
+        }
+        
+        .loading-spinner {
+            width: 48px;
+            height: 48px;
+            border: 4px solid #e2e8f0;
+            border-top-color: #0b6b3a;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .loading-text {
+            font-size: 16px;
+            color: #64748b;
+        }
+        
+        .error-state {
+            text-align: center;
+            padding: 40px;
+            background: #fef2f2;
+            border-radius: 12px;
+            border: 1px solid #fecaca;
+        }
+        
+        .error-icon {
+            width: 48px;
+            height: 48px;
+            margin: 0 auto 16px;
+            color: #dc2626;
+        }
+        
+        .error-text {
+            font-size: 16px;
+            color: #991b1b;
+            margin-bottom: 16px;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+        }
+        
+        .empty-icon {
+            width: 64px;
+            height: 64px;
+            margin: 0 auto 16px;
+            color: #94a3b8;
+        }
+        
+        .empty-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1a1a2e;
+            margin-bottom: 8px;
+        }
+        
+        .empty-description {
+            font-size: 14px;
+            color: #64748b;
+            margin-bottom: 24px;
+        }
+        
+        .info-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .info-list-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 12px 0;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        
+        .info-list-item:last-child {
+            border-bottom: none;
+        }
+        
+        .info-list-icon {
+            width: 20px;
+            height: 20px;
+            color: #10b981;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+        
+        .info-list-text {
+            font-size: 14px;
+            color: #475569;
+            line-height: 1.5;
+        }
+        
+        .nivel-badge {
+            display: inline-block;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            background: linear-gradient(135deg, #0b6b3a, #10b981);
+            color: white;
+        }
+        
+        /* Bottom Nav Integration */
+        .floating-bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            display: flex;
+            justify-content: space-around;
+            padding: 8px 0;
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+        }
+        
+        .bottom-nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            padding: 8px 16px;
+            background: none;
+            border: none;
+            color: #64748b;
+            font-size: 12px;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+        
+        .bottom-nav-item.active {
+            color: #0b6b3a;
+        }
+        
+        .bottom-nav-item i {
+            width: 24px;
+            height: 24px;
+        }
+        
+        /* Toast */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+        }
+        
+        .toast {
+            padding: 16px 24px;
+            border-radius: 12px;
+            margin-bottom: 12px;
+            font-size: 14px;
+            font-weight: 500;
+            animation: slideIn 0.3s ease;
+            max-width: 400px;
+        }
+        
+        .toast.success {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #a7f3d0;
+        }
+        
+        .toast.error {
+            background: #fef2f2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+        }
+        
+        .toast.info {
+            background: #eff6ff;
+            color: #1e40af;
+            border: 1px solid #bfdbfe;
+        }
+        
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        @media (max-width: 640px) {
+            .certificados-container {
+                padding: 20px 16px;
+            }
+            
+            .certificados-card {
+                padding: 20px;
+            }
+            
+            .certificados-title {
+                font-size: 24px;
+            }
+            
+            .certificados-stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .certificados-actions {
+                flex-direction: column;
+            }
+            
+            .btn-gerar-certificado,
+            .btn-voltar {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="certificados-page">
+        <!-- Toast Container -->
+        <div class="toast-container" id="toastContainer"></div>
+        
+        <div class="certificados-container">
+            <!-- Header -->
+            <div class="certificados-header">
+                <img src="https://www.image2url.com/r2/default/images/1777093024202-b764b621-3e6f-4b89-b838-ca9fd5e06ab4.png" alt="Eco Pneus" class="certificados-logo">
+                <h1 class="certificados-title">Certificado de Destinação Sustentável</h1>
+                <p class="certificados-subtitle">Gere seu certificado com todas as coletas concluídas</p>
+            </div>
+            
+            <!-- Main Content -->
+            <div id="mainContent">
+                <!-- Loading State -->
+                <div class="loading-state" id="loadingState" style="display: none;">
+                    <div class="loading-spinner"></div>
+                    <p class="loading-text">Carregando seus dados...</p>
+                </div>
+                
+                <!-- Error State -->
+                <div class="error-state" id="errorState" style="display: none;">
+                    <div class="error-icon">
+                        <i data-lucide="alert-circle"></i>
+                    </div>
+                    <p class="error-text" id="errorText">Ocorreu um erro ao carregar os dados.</p>
+                    <button class="btn-gerar-certificado" onclick="carregarDados()" style="margin: 0 auto;">
+                        <i data-lucide="refresh-cw"></i>
+                        Tentar Novamente
+                    </button>
+                </div>
+                
+                <!-- Empty State -->
+                <div class="empty-state" id="emptyState" style="display: none;">
+                    <div class="empty-icon">
+                        <i data-lucide="inbox"></i>
+                    </div>
+                    <h3 class="empty-title">Nenhuma coleta concluída</h3>
+                    <p class="empty-description">Você ainda não possui coletas concluídas para gerar um certificado.</p>
+                    <button class="btn-gerar-certificado" onclick="window.location.href='registrar.html'" style="margin: 0 auto;">
+                        <i data-lucide="plus-circle"></i>
+                        Registrar Primeira Coleta
+                    </button>
+                </div>
+                
+                <!-- Success State -->
+                <div id="successState" style="display: none;">
+                    <!-- User Info Card -->
+                    <div class="certificados-card">
+                        <div class="certificados-card-header">
+                            <div class="certificados-card-icon">
+                                <i data-lucide="user"></i>
+                            </div>
+                            <div>
+                                <h2 class="certificados-card-title" id="userName">Carregando...</h2>
+                                <p class="certificados-card-description" id="userEmail">—</p>
+                            </div>
+                        </div>
+                        
+                        <div class="certificados-stats" id="statsGrid">
+                            <div class="stat-item">
+                                <div class="stat-value" id="statColetas">0</div>
+                                <div class="stat-label">Coletas</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-value" id="statPneus">0</div>
+                                <div class="stat-label">Pneus</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-value" id="statCO2">0</div>
+                                <div class="stat-label">CO₂ Evitado (t)</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-value" id="statNivel">—</div>
+                                <div class="stat-label">Nível</div>
+                            </div>
+                            <div class="stat-item stat-item-action" id="statAction">
+                                <button class="btn-download-certificado" onclick="gerarPDF()" id="btnDownloadCard">
+                                    <i data-lucide="download"></i>
+                                    <span>Baixar Certificado</span>
+                                </button>
+                                <div class="stat-label">PDF Consolidado</div>
+                            </div>
+                        </div>
+                        
+                        <ul class="info-list">
+                            <li class="info-list-item">
+                                <i class="info-list-icon" data-lucide="check-circle"></i>
+                                <span class="info-list-text">Certificado inclui <strong>TODAS</strong> as suas coletas concluídas</span>
+                            </li>
+                            <li class="info-list-item">
+                                <i class="info-list-icon" data-lucide="check-circle"></i>
+                                <span class="info-list-text">Documento gerado automaticamente com dados reais do Firestore</span>
+                            </li>
+                            <li class="info-list-item">
+                                <i class="info-list-icon" data-lucide="check-circle"></i>
+                                <span class="info-list-text">Inclui resumo de impacto ambiental total</span>
+                            </li>
+                            <li class="info-list-item">
+                                <i class="info-list-icon" data-lucide="check-circle"></i>
+                                <span class="info-list-text">Válido como comprovante de destinação sustentável</span>
+                            </li>
+                        </ul>
+                    </div>
+                    
+                    <!-- Actions Card -->
+                    <div class="certificados-card">
+                        <div class="certificados-card-header">
+                            <div class="certificados-card-icon">
+                                <i data-lucide="file-text"></i>
+                            </div>
+                            <div>
+                                <h2 class="certificados-card-title">Gerar Certificado</h2>
+                                <p class="certificados-card-description">Clique abaixo para gerar seu certificado em PDF</p>
+                            </div>
+                        </div>
+                        
+                        <div class="certificados-actions">
+                            <button class="btn-gerar-certificado" id="btnGerarPDF" onclick="gerarPDF()">
+                                <i data-lucide="download"></i>
+                                <span id="btnGerarPDFText">Gerar Certificado PDF</span>
+                            </button>
+                            
+                            <button class="btn-voltar" onclick="window.location.href='dashboard.html'">
+                                <i data-lucide="arrow-left"></i>
+                                Voltar ao Dashboard
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Bottom Navigation -->
+        <nav class="floating-bottom-nav">
+            <button class="bottom-nav-item" type="button" onclick="window.location.href='dashboard.html'">
+                <i data-lucide="house"></i>
+                <span>Início</span>
+            </button>
+            
+            <button class="bottom-nav-item" type="button" onclick="window.location.href='registrar.html'">
+                <i data-lucide="package-plus"></i>
+                <span>Registrar</span>
+            </button>
+            
+            <button class="bottom-nav-item" type="button" onclick="window.location.href='empresas.html'">
+                <i data-lucide="building-2"></i>
+                <span>Empresas</span>
+            </button>
+            
+            <button class="bottom-nav-item" type="button" onclick="window.location.href='coleta.html'">
+                <i data-lucide="list-checks"></i>
+                <span>Coletas</span>
+            </button>
+            
+            <button class="bottom-nav-item active" type="button" onclick="window.location.href='certificados.html'">
+                <i data-lucide="award"></i>
+                <span>Certificado</span>
+            </button>
+        </nav>
+    </div>
+    
+    <!-- Firebase Compat (para auth) -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    
+    <!-- Certificados Module (ES6) -->
+    <script type="module" src="certificados.js"></script>
+    
+    <!-- Page Script -->
+    <script>
+        // Inicializa ícones Lucide
+        lucide.createIcons();
+        
+        // Estado da página
+        let pageState = {
+            loading: false,
+            error: null,
+            dados: null
+        };
+        
+        // Elementos DOM
+        const elements = {
+            loadingState: document.getElementById('loadingState'),
+            errorState: document.getElementById('errorState'),
+            emptyState: document.getElementById('emptyState'),
+            successState: document.getElementById('successState'),
+            errorText: document.getElementById('errorText'),
+            userName: document.getElementById('userName'),
+            userEmail: document.getElementById('userEmail'),
+            statColetas: document.getElementById('statColetas'),
+            statPneus: document.getElementById('statPneus'),
+            statCO2: document.getElementById('statCO2'),
+            statNivel: document.getElementById('statNivel'),
+            btnGerarPDF: document.getElementById('btnGerarPDF'),
+            btnGerarPDFText: document.getElementById('btnGerarPDFText')
+        };
+        
+        // Toast notification
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+            container.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateX(100%)';
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        }
+        
+        // Mostrar estado
+        function showState(state) {
+            elements.loadingState.style.display = 'none';
+            elements.errorState.style.display = 'none';
+            elements.emptyState.style.display = 'none';
+            elements.successState.style.display = 'none';
+            
+            switch(state) {
+                case 'loading':
+                    elements.loadingState.style.display = 'block';
+                    break;
+                case 'error':
+                    elements.errorState.style.display = 'block';
+                    break;
+                case 'empty':
+                    elements.emptyState.style.display = 'block';
+                    break;
+                case 'success':
+                    elements.successState.style.display = 'block';
+                    break;
+            }
+        }
+        
+        // Carregar dados
+        async function carregarDados() {
+            showState('loading');
+            
+            // Aguarda o módulo carregar
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            if (!window.CertificadosEcoPneus) {
+                elements.errorText.textContent = 'Sistema de certificados não disponível. Recarregue a página.';
+                showState('error');
+                return;
+            }
+            
+            try {
+                const result = await window.CertificadosEcoPneus.gerarCertificadoCompleto();
+                
+                if (!result.success) {
+                    if (result.error === 'Nenhuma coleta concluída encontrada para este usuário.') {
+                        showState('empty');
+                    } else {
+                        elements.errorText.textContent = result.error || 'Erro ao carregar dados.';
+                        showState('error');
+                    }
+                    return;
+                }
+                
+                // Preencher dados
+                const user = window.CertificadosEcoPneus.getUsuario();
+                const userData = window.CertificadosEcoPneus.getUserData();
+                const coletas = window.CertificadosEcoPneus.getColetas();
+                
+                elements.userName.textContent = userData?.razaoSocial || userData?.nome || user?.displayName || 'Usuário';
+                elements.userEmail.textContent = user?.email || '—';
+                
+                const resumo = window.CertificadosEcoPneus.calcularResumoAmbiental(coletas);
+                const nivel = window.CertificadosEcoPneus.calcularNivelSustentavel(resumo);
+                
+                elements.statColetas.textContent = resumo.totalColetas;
+                elements.statPneus.textContent = resumo.totalPneus.toLocaleString('pt-BR');
+                elements.statCO2.textContent = resumo.totalCO2;
+                elements.statNivel.textContent = nivel.nivel;
+                
+                showState('success');
+                showToast('Dados carregados com sucesso!', 'success');
+                
+            } catch (error) {
+                console.error('Erro ao carregar dados:', error);
+                elements.errorText.textContent = 'Erro ao carregar dados. Verifique sua conexão.';
+                showState('error');
+            }
+        }
+        
+        // Gerar PDF
+        async function gerarPDF() {
+            if (!window.CertificadosEcoPneus) {
+                showToast('Sistema não disponível.', 'error');
+                return;
+            }
+            
+            elements.btnGerarPDF.disabled = true;
+            elements.btnGerarPDFText.textContent = 'Gerando...';
+            
+            try {
+                const result = await window.CertificadosEcoPneus.gerarPDF();
+                
+                if (result.success) {
+                    showToast(`Certificado gerado com ${result.coletasCount} coletas!`, 'success');
+                } else {
+                    showToast(result.error || 'Erro ao gerar PDF.', 'error');
+                }
+            } catch (error) {
+                console.error('Erro ao gerar PDF:', error);
+                showToast('Erro ao gerar PDF. Tente novamente.', 'error');
+            } finally {
+                elements.btnGerarPDF.disabled = false;
+                elements.btnGerarPDFText.textContent = 'Gerar Certificado PDF';
+            }
+        }
+        
+        // Inicializar página
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Espera o módulo carregar
+            let attempts = 0;
+            while (!window.CertificadosEcoPneus && attempts < 20) {
+                await new Promise(resolve => setTimeout(resolve, 200));
+                attempts++;
+            }
+            
+            if (window.CertificadosEcoPneus) {
+                carregarDados();
+            } else {
+                elements.errorText.textContent = 'Sistema de certificados não carregou. Recarregue a página.';
+                showState('error');
+            }
+        });
+    </script>
+</body>
+</html>
