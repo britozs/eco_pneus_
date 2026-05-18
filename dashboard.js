@@ -50,7 +50,242 @@ auth.onAuthStateChanged(async (user) => {
 document.addEventListener('DOMContentLoaded', () => {
     replaceIcons();
     configurarFechamentoModais();
+    configurarBusca();
 });
+
+// ============================================================
+// SEARCH / BUSCA
+// ============================================================
+let searchTimeout = null;
+let cachedEmpresas = [];
+let cachedColetas = [];
+let empresasLoaded = false;
+let coletasLoaded = false;
+
+function configurarBusca() {
+    const searchInput = document.getElementById('search-input');
+    const searchResults = document.getElementById('search-results');
+
+    if (!searchInput || !searchResults) return;
+
+    // Focus on search with Cmd+K / Ctrl+K
+    document.addEventListener('keydown', (e) => {
+        if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+            e.preventDefault();
+            searchInput.focus();
+        }
+    });
+
+    // Close search results on Escape
+    searchInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            searchInput.blur();
+            searchResults.style.display = 'none';
+        }
+    });
+
+    // Close search results when clicking outside
+    document.addEventListener('click', (e) => {
+        if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) {
+            searchResults.style.display = 'none';
+        }
+    });
+
+    // Search on input with debounce
+    searchInput.addEventListener('input', (e) => {
+        const query = e.target.value.trim();
+
+        if (searchTimeout) {
+            clearTimeout(searchTimeout);
+        }
+
+        if (!query) {
+            searchResults.style.display = 'none';
+            return;
+        }
+
+        searchTimeout = setTimeout(() => {
+            performSearch(query);
+        }, 300);
+    });
+}
+
+async function performSearch(query) {
+    const searchResults = document.getElementById('search-results');
+    if (!searchResults) return;
+
+    const normalizedQuery = query.toLowerCase().trim();
+
+    // Load data if not already loaded
+    if (!empresasLoaded) {
+        await loadEmpresasForSearch();
+    }
+    if (!coletasLoaded && currentUser) {
+        await loadColetasForSearch();
+    }
+
+    const results = [];
+
+    // Search in empresas
+    cachedEmpresas.forEach(empresa => {
+        const nome = (empresa.nome || '').toLowerCase();
+        const cidade = (empresa.cidade || '').toLowerCase();
+        const categoria = (empresa.categoria || '').toLowerCase();
+
+        if (nome.includes(normalizedQuery) ||
+            cidade.includes(normalizedQuery) ||
+            categoria.includes(normalizedQuery)) {
+            results.push({
+                type: 'empresa',
+                id: empresa.id,
+                title: empresa.nome,
+                subtitle: `${empresa.categoria || 'Empresa'} • ${empresa.cidade || '—'}`,
+                meta: empresa.categoria || 'Empresa'
+            });
+        }
+    });
+
+    // Search in coletas
+    cachedColetas.forEach(coleta => {
+        const endereco = (coleta.endereco || '').toLowerCase();
+        const responsavel = (coleta.responsavel || '').toLowerCase();
+        const codigo = coleta.codigo ? `#${coleta.codigo}`.toLowerCase() : '';
+        const tipoPneu = (coleta.tipoPneu || '').toLowerCase();
+
+        if (endereco.includes(normalizedQuery) ||
+            responsavel.includes(normalizedQuery) ||
+            codigo.includes(normalizedQuery) ||
+            tipoPneu.includes(normalizedQuery)) {
+            const status = statusLabelUi(coleta.status);
+            results.push({
+                type: 'coleta',
+                id: coleta.id,
+                title: coleta.codigo ? `#${coleta.codigo} - ${coleta.responsavel || 'Coleta'}` : (coleta.responsavel || 'Coleta'),
+                subtitle: `${coleta.endereco || '—'} • ${status}`,
+                meta: status
+            });
+        }
+    });
+
+    // Limit results to 8
+    const limitedResults = results.slice(0, 8);
+
+    renderSearchResults(limitedResults, query);
+}
+
+async function loadEmpresasForSearch() {
+    try {
+        const snap = await db.collection('parceiros').limit(50).get();
+        cachedEmpresas = [];
+        snap.forEach(doc => {
+            cachedEmpresas.push({ id: doc.id, ...doc.data() });
+        });
+        empresasLoaded = true;
+    } catch (error) {
+        console.log('Não foi possível carregar empresas para busca:', error);
+        cachedEmpresas = [];
+        empresasLoaded = true;
+    }
+}
+
+async function loadColetasForSearch() {
+    if (!currentUser) {
+        coletasLoaded = true;
+        return;
+    }
+
+    try {
+        const snap = await db.collection('coletas')
+            .where('uid', '==', currentUser.uid)
+            .limit(50)
+            .get();
+        cachedColetas = [];
+        snap.forEach(doc => {
+            cachedColetas.push({ id: doc.id, ...doc.data() });
+        });
+        coletasLoaded = true;
+    } catch (error) {
+        console.log('Não foi possível carregar coletas para busca:', error);
+        cachedColetas = [];
+        coletasLoaded = true;
+    }
+}
+
+function renderSearchResults(results, query) {
+    const searchResults = document.getElementById('search-results');
+    if (!searchResults) return;
+
+    if (results.length === 0) {
+        searchResults.innerHTML = `
+            <div class="search-no-results">
+                <div class="search-no-results-icon">🔍</div>
+                <div class="search-no-results-text">Nenhum resultado encontrado</div>
+                <div class="search-no-results-sub">Tente buscar por nome, endereço ou código</div>
+            </div>
+        `;
+        searchResults.style.display = 'block';
+        return;
+    }
+
+    let html = '';
+
+    // Group by type
+    const empresas = results.filter(r => r.type === 'empresa');
+    const coletas = results.filter(r => r.type === 'coleta');
+
+    if (empresas.length > 0) {
+        html += `<div class="search-results-header">Empresas (${empresas.length})</div>`;
+        empresas.forEach(item => {
+            html += `
+                <div class="search-result-item" onclick="navegarParaEmpresa('${item.id}')">
+                    <div class="search-result-icon empresa">🏢</div>
+                    <div class="search-result-content">
+                        <div class="search-result-title">${highlightMatch(item.title, query)}</div>
+                        <div class="search-result-subtitle">${item.subtitle}</div>
+                    </div>
+                    <div class="search-result-meta empresa">${item.meta}</div>
+                </div>
+            `;
+        });
+    }
+
+    if (coletas.length > 0) {
+        html += `<div class="search-results-header">Coletas (${coletas.length})</div>`;
+        coletas.forEach(item => {
+            html += `
+                <div class="search-result-item" onclick="navegarParaColeta('${item.id}')">
+                    <div class="search-result-icon coleta">📦</div>
+                    <div class="search-result-content">
+                        <div class="search-result-title">${highlightMatch(item.title, query)}</div>
+                        <div class="search-result-subtitle">${item.subtitle}</div>
+                    </div>
+                    <div class="search-result-meta coleta">${item.meta}</div>
+                </div>
+            `;
+        });
+    }
+
+    searchResults.innerHTML = html;
+    searchResults.style.display = 'block';
+}
+
+function highlightMatch(text, query) {
+    if (!query) return text;
+    const regex = new RegExp(`(${escapeRegExp(query)})`, 'gi');
+    return text.replace(regex, '<strong>$1</strong>');
+}
+
+function escapeRegExp(string) {
+    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function navegarParaEmpresa(empresaId) {
+    window.location.href = `empresas.html?id=${empresaId}`;
+}
+
+function navegarParaColeta(coletaId) {
+    window.location.href = `coleta.html?id=${coletaId}`;
+}
 
 // ============================================================
 // HEADER
